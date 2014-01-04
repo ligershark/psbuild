@@ -1,0 +1,28 @@
+[user]
+	name = Sayed Ibrahim Hashimi
+	email = sayed.hashimi@gmail.com
+[core]
+	autocrlf = true
+[push]
+	default = matching
+[color "status"]
+	changed = cyan normal bold
+	untracked = cyan normal bold
+	unmerged = cyan normal bold
+[color "diff"]
+	old = red normal bold
+	new = green normal bold
+[merge]
+	keepBackup = false;
+	tool = p4merge
+[mergetool "p4merge"]
+	cmd = p4merge.exe \"$BASE\" \"$LOCAL\" \"$REMOTE\" \"$MERGED\"
+	keepTemporaries = false
+	trustExitCode = false
+	keepBackup = false
+[diff]
+	tool = p4merge
+[difftool "p4merge"]
+	cmd = p4merge.exe \"$LOCAL\" \"$BASE\"
+[diff "ps1"]
+	binary=false
