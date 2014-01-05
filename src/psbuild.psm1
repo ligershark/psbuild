@@ -256,6 +256,26 @@ function Open-Project{
     }
 }
 
+function Has-Import{
+    [cmdletbinding()]
+    param(
+        [Parameter(
+            Position=1,
+            Mandatory=$true,
+            ValueFromPipeline=$true)]
+        $project,
+        $labelValue,
+        $projectValue
+    )
+    begin{
+        Add-Type -AssemblyName Microsoft.Build
+    }
+    process{
+        $foundImport = (Find-Import -project $project -labelValue $labelValue -projectValue $projectValue)
+
+        return ($foundImport -ne $null)
+    }
+}
 <#
 .SYNOPSIS
     Can be used to find imports in an MSBuild file.
@@ -288,18 +308,15 @@ function Find-Import{
             "Both parameters labelValue and projectValue are empty. Not searching for imports." | Write-Warning
             return;
         }
-        "1" | Write-Host
+
         # $project can either be a ProjectRootElement object or a string
         [Microsoft.Build.Construction.ProjectRootElement]$realProject = $null
-        "2" | Write-Host
         if($project -is [Microsoft.Build.Construction.ProjectRootElement]){
             $realProject = $project
         }
         else{
             $realProject = (Open-Project -projectFile ([string]$project))
         }
-        "3"|Write-Host
-        "Num imports: {0}" -f $realProject.Imports.Count | Write-Host
         $foundImports = @()
         foreach($import in $realProject.Imports){
             [string]$projectStr = if($import.Project){$import.Project} else{''}
@@ -310,40 +327,27 @@ function Find-Import{
 
             if($labelValue){
                 if([string]::Compare($labelValue,$labelStr,$true) -eq 0){
-                "in if 1" | Write-Host
                     $foundImports += $import
                     "Found import via label" | Write-Verbose
                     if($stopOnFirstResult){
                         return $import
                     }
                 }
-                else{
-                "in else 1" | Write-Host
-                }
             }
             elseif($projectValue){
                 if([string]::Compare($projectValue,$projectStr,$true) -eq 0){
-                "in if 2" | Write-Host
                     $foundImports += $import
                     "Found import via project" | Write-Verbose
                     if($stopOnFirstResult){
                         return $import
                     }
                 }
-                else{
-                "in else 2" | Write-Host
-                }
-            }
-            else{
-                "Not found. LabelStr: [{0}] LabelValue: [{1}]" -f $labelStr,$projectStr | Write-Host
             }
         }
         
         return $foundImports
     }
 }
-
-
 
 Export-ModuleMember -function *
 Export-ModuleMember -Variable *
