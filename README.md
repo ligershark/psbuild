@@ -26,6 +26,9 @@ Invoke-MSBuild C:\temp\msbuild\proj1.proj -targets Demo
 # build an msbuild file and execute multiple targets
 Invoke-MSBuild C:\temp\msbuild\proj1.proj -targets @('Demo';'Demo2')
 
+# You can also create a new MSBuild file with the following
+New-Project | Save-Project -filePath .\new.proj
+
 # to see what commands are available
 Get-Command -Module psbuild
 

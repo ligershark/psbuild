@@ -2,7 +2,11 @@
 
 .SYNOPSIS  
 	This module will help to use msbuild from powershell.
-    When you import this module the msbuild alias will be set
+    When you import this module the msbuild alias will be set.
+    You can see what command are available by executing the
+    following command.
+
+    Get-Command -Module psbuild
 
 #>
 [cmdletbinding()]
@@ -237,8 +241,42 @@ function Save-Project{
     }
 
     process{
-        $project.Save([string]$filePath)
+        # not working as expected, making $filePath mandatory again
+        #if(-not $filePath){
+        #    $filePath = $project.Location
+        #}
+
+        $fullPath = (Get-Fullpath -path $filePath)
+        $project.Save([string]$fullPath)
         return $project
+    }
+}
+
+<#
+#>
+function Get-Fullpath{
+    [cmdletbinding()]
+    param(
+        [Parameter(
+            Mandatory=$true,
+            ValueFromPipeline = $true)]
+        $path,
+
+        $workingDir = ($pwd)
+    )
+    process{
+        $fullPath = $path
+        $oldPwd = $pwd
+
+        Push-Location
+        Set-Location $workingDir
+        [Environment]::CurrentDirectory = $pwd
+        $fullPath = ([System.IO.Path]::GetFullPath($path))
+        
+        Pop-Location
+        [Environment]::CurrentDirectory = $oldPwd
+
+        return $fullPath
     }
 }
 
@@ -254,7 +292,7 @@ function Get-Project{
             Mandatory=$true,
             Position=1)]
         $projectFile,
-
+        
         $projectCollection = (New-Object Microsoft.Build.Evaluation.ProjectCollection)
     )
     begin{
@@ -262,7 +300,8 @@ function Get-Project{
         Add-Type -AssemblyName Microsoft.Build
     }
     process{
-        $proj = ([Microsoft.Build.Construction.ProjectRootElement]::Open([string]$projectFile,$projectCollection))
+        $fullPath = (Get-Fullpath $projectFile)
+        $proj = ([Microsoft.Build.Construction.ProjectRootElement]::Open([string]$fullPath,$projectCollection))
         return $proj
     }
 }
@@ -419,6 +458,44 @@ function Add-Import{
             $importToAdd.Condition = $importCondition
         }
         
+        return $project
+    }
+}
+
+<#
+.SYNOPSIS
+    This can be used to remove an import from the given MSBuild file. All of the matching
+    imports will be removed from the project. If there are multiple imports with the
+    same label/project value that matches what is provided they will all be removed.
+
+.OUTPUTS
+    Microsoft.Build.Construction.ProjectRootElement. Returns the object
+    passed in the $project parameter.
+#>
+function Remove-Import{
+    [cmdletbinding()]
+    param(
+        [Parameter(
+            Position=1,
+            Mandatory=$true,
+            ValueFromPipeline=$true)]
+        [Microsoft.Build.Construction.ProjectRootElement]
+        $project,
+        $labelValue,
+        $projectValue
+    )
+    begin{
+        Add-Type -AssemblyName Microsoft.Build
+    }
+    process{
+        $importsToRemove = (Find-Import -project $project -labelValue $labelValue -projectValue $projectValue)
+        foreach($importToRemove in $importsToRemove){
+            'Removing import [Project=[{0}],Label=[{1}],Condition=[{2}]] from project [{3}]' -f `
+                $importToRemove.Project, $importToRemove.Label, $importToRemove.Condition, $project.Location | Write-Verbose
+
+            $importToRemove.Parent.RemoveChild($importToRemove) | Out-Null
+        }
+
         return $project
     }
 }

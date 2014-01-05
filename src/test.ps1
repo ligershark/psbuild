@@ -1,3 +1,4 @@
+$VerbosePreference = "Continue"
 function Get-ScriptDirectory
 {
     $Invocation = (Get-Variable MyInvocation -Scope 1).Value
@@ -22,7 +23,7 @@ else{
 	return
 }
 
-$VerbosePreference = "Continue"
+
 # Invoke-MSBuild C:\temp\msbuild\path.proj -properties (@{'foo'='bar';'visualstudioversion'='12.0'}) -extraArgs '/p:foo2=bar2'
 #Find-Import C:\temp\msbuild\proj1.proj -labelValue 'SlowCheetah'
 
@@ -32,5 +33,6 @@ $proj = (Get-Project $projFilePath)
 #Save-Project -project $proj -filePath $projFilePath
 #Add-Import -project $proj -importProject 'C:\temp\msbuild\import.targets' -importLabel 'LabelHere' -importCondition ' ''$(VSV)''====''12.0'' ' | Save-Project -filePath $projFilePath
 
+#New-Project | Save-Project -filePath .\new.proj
 #Save-Project -project $proj -filePath $projFilePath
 $test = "test"
