@@ -256,6 +256,14 @@ function Open-Project{
     }
 }
 
+<#
+.SYNOPSIS
+    Can be used to determine if the project file passed in has a specific import. 
+    It can search for the import either by the value for the Label attribute or 
+    the Project attribute. This is determined by the parameters passed in. 
+    If both labelValue an projectValue are passed in then labelValue will take precedence.
+
+#>
 function Test-Import{
     [cmdletbinding()]
     param(
@@ -278,12 +286,10 @@ function Test-Import{
 }
 <#
 .SYNOPSIS
-    Can be used to find imports in an MSBuild file.
-    You can find by looking for the Import by either
-    the Label value or the value for Project. This is
-    determined by the parameters passed in. If both
-    labelValue an projectValue are passed in then 
-    labelValue will take precedence.
+    Can be used to find imports in an MSBuild file. You can find by looking for the 
+    Import by either the Label value or the value for Project. This is determined 
+    by the parameters passed in. If both labelValue an projectValue are passed 
+    in then labelValue will take precedence.
 #>
 function Find-Import{
     [cmdletbinding()]
