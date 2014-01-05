@@ -209,6 +209,11 @@ function New-Project{
 <#
 .SYNOPSIS
 	Can be used to save the MSBuild project to a file.
+    After the project is saved $project will be returned.
+
+.OUTPUTS
+    Microsoft.Build.Construction.ProjectRootElement. Returns the object
+    passed in the $project parameter.
 #>
 function Save-Project{
     [cmdletbinding()]
@@ -228,6 +233,7 @@ function Save-Project{
 
     process{
         $project.Save([string]$filePath)
+        return $project
     }
 }
 
