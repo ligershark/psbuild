@@ -36,11 +36,6 @@ function Set-MSBuild{
     param(
         [Parameter(ValueFromPipeline=$true)]
         $msbuildPath = (Get-MSBuild)
-        #[switch]
-        #$setAlias = ($true),
-
-        #[switch]
-        #$setAsDefault = $false
     )
 
     process{
