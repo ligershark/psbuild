@@ -3,7 +3,7 @@
 	This module will help to use msbuild from powershell.
     When you import this module the msbuild alias will be set
 #>
-
+param()
 
 
 <#
@@ -114,6 +114,13 @@ function Save-Project{
     the Get-MSBuild function will be called to determine the version of MSBuild
     which should be used.
 
+.PARAMETER $projectsToBuild
+    This is the parameter which determines which file(s) will be built. If a single
+    value is passed in only that item will be processed. If multiple values are passed
+    in then all the values will be processed.
+
+    This will accept the pipeline value as well.
+
 .PARAMETER extraArgs
     You can use this to pass in additional parameters to msbuild.exe. This can be
     one of these types:
@@ -141,6 +148,10 @@ function Save-Project{
     @('C:\temp\msbuild\proj1.proj';'C:\temp\msbuild\proj2.proj') | Invoke-MSBuild
 
 .EXAMPLE
+    @((get-item C:\temp\msbuild\proj1.proj);'C:\temp\msbuild\proj2.proj') | Invoke-MSBuild
+
+
+.EXAMPLE
     $projects = @()
     $projects += (get-item C:\temp\msbuild\proj1.proj)
     $projects += 'C:\temp\msbuild\proj1.proj'
@@ -155,7 +166,7 @@ function Invoke-MSBuild{
             Position=1,
             Mandatory=$true,
             ValueFromPipeline=$true)]
-        $projectToBuild,
+        $projectsToBuild,
         
         $msbuildPath = (Get-MSBuild),
         
@@ -205,6 +216,11 @@ function Invoke-MSBuild{
     }
 }
 
+
+
+Export-ModuleMember -function *
+Export-ModuleMember -Variable *
+Export-ModuleMember -Cmdlet *
 #################################################################
 # begin script portions
 #################################################################
@@ -214,3 +230,4 @@ function Invoke-MSBuild{
 [string]$script:VisualStudioVersion = $null
 # call this once to ensure the alias is set
 Get-MSBuild | Set-MSBuild
+
