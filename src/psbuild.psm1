@@ -1,8 +1,11 @@
 ﻿<#
+
 .SYNOPSIS  
 	This module will help to use msbuild from powershell.
     When you import this module the msbuild alias will be set
+
 #>
+[cmdletbinding()]
 param()
 
 #####################################################################
@@ -106,6 +109,8 @@ function Set-MSBuild{
 .EXAMPLE
     @((get-item C:\temp\msbuild\proj1.proj);'C:\temp\msbuild\proj2.proj') | Invoke-MSBuild
 
+.EXAMPLE
+    Invoke-MSBuild C:\temp\msbuild\path.proj -properties (@{'foo'='bar';'visualstudioversion'='12.0'}) -extraArgs '/nologo'
 
 .EXAMPLE
     $projects = @()
@@ -425,6 +430,7 @@ Export-ModuleMember -Cmdlet *
 # begin script portions
 #################################################################
 
+Add-Type -AssemblyName Microsoft.Build
 
 [string]$script:defaultMSBuildPath = $null
 [string]$script:VisualStudioVersion = $null
