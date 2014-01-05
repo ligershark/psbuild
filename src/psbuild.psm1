@@ -256,7 +256,7 @@ function Open-Project{
     }
 }
 
-function Has-Import{
+function Test-Import{
     [cmdletbinding()]
     param(
         [Parameter(
