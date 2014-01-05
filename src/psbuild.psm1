@@ -242,7 +242,7 @@ function Save-Project{
     This can be used to open an MSBuild projcet file.
     The object returned is of type Microsoft.Build.Construction.ProjectRootElement.
 #>
-function Open-Project{
+function Get-Project{
     [cmdletbinding()]
     param(
         [Parameter(
@@ -262,6 +262,9 @@ function Open-Project{
     }
 }
 
+#####################################################################
+# Functions for manipulating MSBuild files
+#####################################################################
 <#
 .SYNOPSIS
     Can be used to determine if the project file passed in has a specific import. 
@@ -327,7 +330,7 @@ function Find-Import{
             $realProject = $project
         }
         else{
-            $realProject = (Open-Project -projectFile ([string]$project))
+            $realProject = (Get-Project -projectFile ([string]$project))
         }
         $foundImports = @()
         foreach($import in $realProject.Imports){
@@ -358,6 +361,60 @@ function Find-Import{
         }
         
         return $foundImports
+    }
+}
+
+<#
+.SYNOPSIS
+    Used to add an import to a project. The project that will be imported
+    is passed in $importProject. You can also optionally add a label to 
+    the import as well as a condition.
+
+.OUTPUTS
+    Microsoft.Build.Construction.ProjectRootElement. Returns the object
+    passed in the $project parameter.
+
+.EXAMPLE
+    Get-Project C:\temp\build.proj | 
+        Add-Import -importProject 'c:\temp\import.targets' | 
+        Save-Project -filePath 'C:\temp\build.proj'
+
+.EXAMPLE
+    Get-Project C:\temp\build.proj | 
+        Add-Import -importProject 'c:\temp\import.targets'-importLabel 'Label' -importCondition ' ''$(VisualStudioVersion)''==''12.0'' ' | 
+        Save-Project -filePath 'C:\temp\build.proj'
+#>
+function Add-Import{
+    [cmdletbinding()]
+    param(
+        [Parameter(
+            Position=1,
+            Mandatory=$true,
+            ValueFromPipeline=$true)]
+        [Microsoft.Build.Construction.ProjectRootElement]
+        $project,
+        [Parameter(
+            Position=2,
+            Mandatory=$true)]
+        $importProject,
+        $importLabel,
+        $importCondition
+    )
+    begin{
+        Add-Type -AssemblyName Microsoft.Build
+    }
+    process{
+        $importToAdd = $project.AddImport($importProject)
+        
+        if($importLabel){
+            $importToAdd.Label = $importLabel
+        }
+
+        if($importCondition){
+            $importToAdd.Condition = $importCondition
+        }
+        
+        return $project
     }
 }
 
