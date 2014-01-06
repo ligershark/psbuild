@@ -715,7 +715,6 @@ function Test-PropertyGroup{
     }
 }
 
-
 <#
 .SYNOPSIS
     Can be used to look for a property within a given container (typically either a Project or PropertyGroup)
@@ -777,6 +776,60 @@ function Find-Property{
         }
 
         return $foundProperties
+    }
+}
+
+<#
+.SYNOPSIS
+    Can be used to see if a given property exists. You can search by either Name or Label of the
+    given property. The parameters will be passed to Find-Property and the rules for what is
+    found or not is determined by that.
+
+.OUTPUTS
+    [bool]
+
+.EXAMPLE
+    You can search through the entire project by passing it in as the propertyContainer parameter
+    
+    Get-Project 'C:\temp\msbuild\new\new.proj' | Test-Property -label Label1
+
+.EXAMPLE
+    You can search through a specific PropertyGroup element by passing it in as the propertyContainer parameter
+
+    Get-Project 'C:\temp\msbuild\new\new.proj' | Find-PropertyGroup -labelValue first | Test-Property -label Label1
+#>
+function Test-Property{
+    [cmdletbinding()]
+    param(
+        [Parameter(
+            Position=1,
+            Mandatory=$true,
+            ValueFromPipeline=$true)]
+        $propertyContainer,
+
+        [Parameter(
+            Position=2)]
+        $name,
+
+        [Parameter(
+            Position=3)]
+        $label
+    )
+    begin{
+        Add-Type -AssemblyName Microsoft.Build
+    }
+    process{
+        $foundProp = (Find-Property -propertyContainer $propertyContainer -name $name -label $label -stopOnFirstResult)
+
+        $wasFound = $false
+        if(-not $foundProp){
+            $wasFound = $false
+        }
+        else{
+            $wasFound = $true
+        }
+
+        return $wasFound
     }
 }
 
