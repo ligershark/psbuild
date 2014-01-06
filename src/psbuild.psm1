@@ -190,7 +190,10 @@ function Invoke-MSBuild{
     }
 }
 
+# variables related to logging
 $script:logDirectory = ('{0}\PSBuild\logs\' -f $env:LOCALAPPDATA)
+$script:loggers = @()
+$script:lastLogDirectory
 <#
 .SYNOPSIS  
 	Will return the directory where psbuild will write msbuild log files to while invoking builds.
@@ -213,11 +216,7 @@ function Get-PSBuildLogDirectory{
             $logDir = $script:logDirectory
         
             if($project){
-                '$project.Location: [{0}]' -f $project.Location | Write-Host -ForegroundColor DarkCyan
-                '$project.Location.File: [{0}]' -f $project.Location.File | Write-Host -ForegroundColor DarkCyan
-
                 $itemResult = (Get-Item $project.Location.File)
-                '$itemResult: [{0}]' -f $itemResult | Write-Host -ForegroundColor DarkCyan
 
                 $projFileName = ((Get-Item $project.Location.File).Name)
                 $logDir = (Join-Path -Path $script:logDirectory -ChildPath ('{0}\' -f $projFileName) )
@@ -269,7 +268,7 @@ function Set-PSBuildLogDirectory{
     }
 }
 
-$script:loggers = @()
+
 <#
 .SYNOPSIS  
     This will return the logger strings for the next build for the given project (optional).
