@@ -341,7 +341,15 @@ function Test-Import{
     process{
         $foundImport = (Find-Import -project $project -labelValue $labelValue -projectValue $projectValue)
 
-        return ($foundImport -ne $null)
+        $wasFound = $false
+        if(-not $foundImport){
+            $wasFound = $false
+        }
+        else{
+            $wasFound = $true
+        }
+
+        return $wasFound
     }
 }
 <#
@@ -661,6 +669,49 @@ function Add-PropertyGroup{
         }
         
         return $project
+    }
+}
+
+<#
+.SYNOPSIS
+    Will return $true/$false indicating if there exists at least on PropertyGroup
+    with the provided Label.
+
+.OUTPUTS
+    [bool]
+
+.EXAMPLE
+    Get-Project 'C:\temp\msbuild\new\new.proj' | Test-PropertyGroup -label Label1
+#>
+function Test-PropertyGroup{
+    [cmdletbinding()]
+    param(
+        [Parameter(
+            Position=1,
+            Mandatory=$true,
+            ValueFromPipeline=$true)]
+        $project,
+
+        [Parameter(
+            Position=2,
+            Mandatory=$true)]
+        $label
+    )
+    begin{
+        Add-Type -AssemblyName Microsoft.Build
+    }
+    process{
+        $foundPg = (Find-PropertyGroup -project $project -label $label)
+
+        $wasFound = $false
+        if(-not $foundPg){
+            $wasFound = $false
+        }
+        else{
+            $wasFound = $true
+        }
+
+        return $wasFound
     }
 }
 
