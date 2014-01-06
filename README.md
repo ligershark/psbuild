@@ -12,7 +12,7 @@ Currently psbuild is still a ***preview*** but should be stable enough for regul
 
 ```
 # download and install psbulid
-(new-object Net.WebClient).DownloadString("https://raw.github.com/sayedihashimi/psbuild/master/src/GetPSBuild.ps1") | iex
+(new-object Net.WebClient).DownloadString("https://raw.github.com/ligershark/psbuild/master/src/GetPSBuild.ps1") | iex
 
 # build an msbuild file
 Invoke-MSBuild C:\temp\msbuild\msbuild.proj
