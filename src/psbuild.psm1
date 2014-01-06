@@ -911,6 +911,68 @@ function Remove-Property{
     }
 }
 
+<#
+.SYNOPSIS
+    This will add a property to the given project.
+.OUTPUTS
+
+.EXAMPLE
+    Get-Project 'C:\temp\msbuild\new\new.proj' | Add-Property -name Configuration -value Debug | Get-Project | Save-Project -filePath 'C:\temp\msbuild\new\new.proj'
+
+.EXAMPLE
+    Add-Property -propertyContainer (Get-Project 'C:\temp\msbuild\new\new.proj') -name Configuration -value Debug | Get-Project | Save-Project -filePath 'C:\temp\msbuild\new\new.proj'
+
+.EXAMPLE
+    Add-Property -propertyContainer (Get-Project 'C:\temp\msbuild\new\new.proj') `
+         -name Configuration -value Debug -label Custom -condition' ''$(VSV)''==''12.0'' ' | 
+    Get-Project | 
+    Save-Project -filePath 'C:\temp\msbuild\new\new.proj'
+#>
+function Add-Property{
+    [cmdletbinding()]
+    param(
+        [Parameter(
+            Position=1,
+            Mandatory=$true,
+            ValueFromPipeline=$true)]
+        $propertyContainer,
+        
+        [Parameter(
+            Position=2,
+            Mandatory=$true)]
+        $name,
+
+        [Parameter(
+            Position=3)]
+        $value,
+
+        [Parameter(
+            Position=4)]
+        $label,
+
+        [Parameter(
+            Position=5)]
+        $condition
+    )
+    begin{
+        Add-Type -AssemblyName Microsoft.Build
+    }
+    process{
+        $propToAdd = $propertyContainer.AddProperty($name,$value)
+
+        if($label){
+            $propToAdd.Label = $label
+        }
+
+        if($condition){
+            $propToAdd.Condition = $condition
+        }
+        
+        return $propToAdd
+    }
+}
+
+
 Export-ModuleMember -function *
 Export-ModuleMember -Variable *
 Export-ModuleMember -Cmdlet *

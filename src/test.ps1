@@ -33,4 +33,8 @@ $proj = (Get-Project $projFile)
 #$pgs = (Get-Project C:\temp\msbuild\proj1.proj | Find-PropertyGroup -labelValue MyPropGroup)
 #Get-Project $projFile | Remove-PropertyGroup -labelValue MyPropGroup | Save-Project -filePath $projFile
 #Get-Project $projFile | Add-PropertyGroup | Save-Project -filePath $projFile
+#Test-PropertyGroup -project $proj -label Label1
+
+#Remove-Property -propertyContainer $proj -Label label1 | Save-Project -filePath $projFile
+#Add-Property -propertyContainer $proj -name Configuration -value Debug | Get-Project | Save-Project -filePath $projFile
 $test = "test"
