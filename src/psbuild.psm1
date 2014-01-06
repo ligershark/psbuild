@@ -141,7 +141,10 @@ function Invoke-MSBuild{
         $targets,
         
         [string]
-        $extraArgs
+        $extraArgs,
+
+        [switch]
+        $addLoggers = $true
     )
 
     begin{
@@ -175,8 +178,189 @@ function Invoke-MSBuild{
                 }
             }
         
+            if($addLoggers){
+                foreach($logger in (Get-PSBuildLoggers -project (Get-Project -projectFile $project))){
+                    $msbuildArgs += $logger
+                }
+            }
+
             "Calling msbuild.exe with the following args: {0}" -f (($msbuildArgs -join ' ')) | Write-Verbose
             & msbuild $msbuildArgs
+        }
+    }
+}
+
+$script:logDirectory = ('{0}\PSBuild\logs\' -f $env:LOCALAPPDATA)
+<#
+.SYNOPSIS  
+	Will return the directory where psbuild will write msbuild log files to while invoking builds.
+
+.EXAMPLE
+    $logDir1 = Get-PSBuildLogDirectory
+
+.EXAMPLE
+    Get-Project 'C:\temp\msbuild\new\new.proj' | Get-PSBuildLogDirectory
+#>
+function Get-PSBuildLogDirectory{
+    [cmdletbinding()]
+    param(
+        [Parameter(
+            Position=1,
+            ValueFromPipeline=$true)]
+        $project)
+    process{
+        if($script:logDirectory){
+            $logDir = $script:logDirectory
+        
+            if($project){
+                '$project.Location: [{0}]' -f $project.Location | Write-Host -ForegroundColor DarkCyan
+                '$project.Location.File: [{0}]' -f $project.Location.File | Write-Host -ForegroundColor DarkCyan
+
+                $itemResult = (Get-Item $project.Location.File)
+                '$itemResult: [{0}]' -f $itemResult | Write-Host -ForegroundColor DarkCyan
+
+                $projFileName = ((Get-Item $project.Location.File).Name)
+                $logDir = (Join-Path -Path $script:logDirectory -ChildPath ('{0}\' -f $projFileName) )
+            }
+
+            # before returning ensure the log directory is created on disk
+            if(!(Test-Path -Path $logDir) ){
+                'Creating PSBuild log directory at [{0}]' -f $logDir | Write-Verbose
+                mkdir $logDir
+            }
+
+            return $logDir
+        }
+        else{
+            return $null   
+        }
+    }
+}
+
+<#
+.SYNOPSIS  
+	Used to set the directory where psbuild will keep msbuild log files.
+
+.EXAMPLE
+    Set-PSBuildLogDirectory -logDirectory 'C:\temp\logs2'
+#>
+function Set-PSBuildLogDirectory{
+    [cmdletbinding()]
+    param(
+        [Parameter(
+            Position=1,
+            ValueFromPipeline=$true)]
+        [string]
+        $logDirectory
+    )
+    process{
+        if($logDirectory){
+            # ensure that it ends with a slash
+            if(!($logDirectory.EndsWith('\')) -and !($logDirectory.EndsWith('/'))){
+                # add a trailing slash
+                $logDirectory += '\'
+            }
+            $script:logDirectory = $logDirectory
+        }
+        else{
+            # reset the log directory
+            $script:logDirectory = ('{0}\PSBuild\logs\' -f $env:LOCALAPPDATA)
+        }
+    }
+}
+
+$script:loggers = @()
+<#
+.SYNOPSIS  
+    This will return the logger strings for the next build for the given project (optional).
+    The strings will have all place holders replaced with final values. You can pass the
+    result of this call directly to msbuild.exe as parameters
+
+.DESCRIPTION
+    This will return the collection of logger strings fully expanded. The logger strings will
+    be called with a string format with the following tokens.
+        # {0} is the log directory
+        # {1} is the name of the file being built
+        # {2} is a timestamp property
+
+Here are the default loggers that psbuild will use.
+    @('/flp1:v=d;logfile={0}msbuild.d.{1}.{2}.log';'/flp1:v=diag;logfile={0}msbuild.diag.{1}.{2}.log')
+
+.EXAMPLE
+    $loggers1 = (Get-PSBuildLoggers -project $proj)
+#>
+function Get-PSBuildLoggers{
+    [cmdletbinding()]
+    param(
+        [Parameter(
+            Position=1,
+            ValueFromPipeline=$true)]
+        $project
+    )
+    begin{
+        Add-Type -AssemblyName Microsoft.Build
+    }
+    process{
+        if(!($script:loggers)){
+            Set-PSBuildLoggers
+        }
+        # we need to expand the logger strings before returning
+            # {0} is the log directory
+            # {1} is the name of the file being built
+            # {2} is a timestamp property
+        $loggersResult = @()
+        foreach($loggerToAdd in $script:loggers){
+            [string]$logDir = (Get-PSBuildLogDirectory -project $project)
+            [string]$projName = if($project) {(get-item $project.Location.File).BaseName} else{''}
+            [string]$dateStr = (Get-Date -format yyyy-MM-dd.h.m.s)
+            $loggerStr = ($loggerToAdd -f $logDir, $projName,$dateStr)
+            $loggersResult += $loggerStr
+        }
+
+        return $loggersResult
+    }
+}
+
+<#
+.SYNOPSIS  
+    This will return the logger strings for the next build for the given project (optional).
+    The strings will have all place holders replaced with final values. You can pass the
+    result of this call directly to msbuild.exe as parameters
+
+.DESCRIPTION
+    This will return the collection of logger strings fully expanded. The logger strings will
+    be called with a string format with the following tokens.
+        # {0} is the log directory
+        # {1} is the name of the file being built
+        # {2} is a timestamp property
+
+.EXAMPLE
+    $customLoggers = @()
+    $customLoggers += '/flp1:v=d;logfile={0}custom.d.{2}.log'
+    $customLoggers += '/flp2:v=diag;logfile={0}custom.diag.{2}.log'
+
+    Set-PSBuildLoggers -loggers $customLoggers
+#>
+function Set-PSBuildLoggers{
+    [cmdletbinding()]
+    param(
+        [Parameter(
+            Position=1,
+            ValueFromPipeline=$true)]
+        $loggers
+    )
+    process{
+        if($loggers){
+            $script:loggers = $loggers
+        }
+        else{
+            # reset loggers to the default value
+            $script:loggers = @()
+            # {0} is the log directory
+            # {1} is the name of the file being built
+            # {2} is a timestamp property
+            $script:loggers += '/flp1:v=d;logfile={0}msbuild.log'
+            $script:loggers += '/flp2:v=diag;logfile={0}msbuild.diag.log'
         }
     }
 }
@@ -236,7 +420,7 @@ function Save-Project{
         $project,
 
         [Parameter(
-            Position=1,
+            Position=2,
             Mandatory=$true)]
         $filePath
     )
@@ -250,7 +434,7 @@ function Save-Project{
         #if(-not $filePath){
         #    $filePath = $project.Location
         #}
-        # 'project.Location: [{0}]' -f $project.Location | Write-Host
+        #'project.Location.File: [{0}]' -f $project.Location.File | Write-Host
 
         $fullPath = (Get-Fullpath -path $filePath)
         $project.Save([string]$fullPath)

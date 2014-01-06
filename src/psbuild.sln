@@ -6,6 +6,7 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PowerShell", "PowerShell", "{F17460F8-4080-433E-BC0F-B4A88AD7F1D5}"
 	ProjectSection(SolutionItems) = preProject
 		psbuild.psm1 = psbuild.psm1
+		test.ps1 = test.ps1
 	EndProjectSection
 EndProject
 Global

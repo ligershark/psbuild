@@ -29,6 +29,9 @@ else{
 
 $projFile = 'C:\temp\msbuild\new\new.proj'
 $proj = (Get-Project $projFile)
+
+#Invoke-MSBuild -projectsToBuild C:\temp\msbuild\new\new.proj
+#Get-Project $projFile | Save-Project -filePath $projFile
 #$pgs = (Find-PropertyGroup -project $proj -labelValue MyPropGroup)
 #$pgs = (Get-Project C:\temp\msbuild\proj1.proj | Find-PropertyGroup -labelValue MyPropGroup)
 #Get-Project $projFile | Remove-PropertyGroup -labelValue MyPropGroup | Save-Project -filePath $projFile
@@ -37,4 +40,22 @@ $proj = (Get-Project $projFile)
 
 #Remove-Property -propertyContainer $proj -Label label1 | Save-Project -filePath $projFile
 #Add-Property -propertyContainer $proj -name Configuration -value Debug | Get-Project | Save-Project -filePath $projFile
+#$logDir1 = Get-PSBuildLogDirectory
+#Set-PSBuildLogDirectory -logDirectory 'C:\Users\Sayed\AppData\Local\PSBuild\logs2'
+#$logDir2 = Get-PSBuildLogDirectory
+
+#######################################################################
+<#
+Get-Project 'C:\temp\msbuild\new\new.proj' | Get-PSBuildLogDirectory
+
+
+$loggers1 = (Get-PSBuildLoggers -project $proj)
+
+$customLoggers = @()
+$customLoggers += '/flp1:v=d;logfile={0}custom.d.{1}.{2}.log'
+$customLoggers += '/flp1:v=diag;logfile={0}custom.diag.{1}.{2}.log'
+
+Set-PSBuildLoggers -loggers $customLoggers
+$loggers2 = (Get-PSBuildLoggers -project $proj)
+#>
 $test = "test"
