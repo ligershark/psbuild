@@ -715,6 +715,71 @@ function Test-PropertyGroup{
     }
 }
 
+
+<#
+.SYNOPSIS
+    Can be used to look for a property within a given container (typically either a Project or PropertyGroup)
+    by either Name or Label. If both are provided the function will just search using Name.
+
+.EXAMPLE
+    Get-Project 'C:\temp\msbuild\new\new.proj' | Find-Property -label Label1
+
+.EXAMPLE
+    Get-Project 'C:\temp\msbuild\new\new.proj' | Find-PropertyGroup -labelValue first | Find-Property -label Label1
+#>
+function Find-Property{
+    [cmdletbinding()]
+    param(
+        [Parameter(
+            Position=1,
+            Mandatory=$true,
+            ValueFromPipeline=$true)]            
+        $propertyContainer,
+
+        $name,
+        $label,
+        [switch]
+        $stopOnFirstResult
+    )
+    begin{
+        Add-Type -AssemblyName Microsoft.Build
+    }
+    process{
+        if(!($name) -and !($label)){
+            'Both name and label parameters are empty. Not searching for property' | Write-Warning
+            return
+        }
+
+        $foundProperties = @()
+        foreach($prop in $propertyContainer.Properties){
+            [string]$propName = $prop.Name
+            [string]$propLabel = $prop.Label
+            
+            $propIsMatch = $false
+            if($label){
+                if([string]::Compare($propLabel,$label,$true) -eq 0){
+                    $propIsMatch = $true                    
+                }
+            }
+            elseif($name){
+                if([string]::Compare($propName,$name,$true) -eq 0){
+                    $propIsMatch = $true
+                }
+            }
+
+            if($propIsMatch){
+                'Found property with label [{0}]' -f $label | Write-Verbose
+                $foundProperties += $prop
+                if($stopOnFirstResult){
+                    break
+                }
+            }
+        }
+
+        return $foundProperties
+    }
+}
+
 Export-ModuleMember -function *
 Export-ModuleMember -Variable *
 Export-ModuleMember -Cmdlet *
