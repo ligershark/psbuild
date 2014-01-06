@@ -292,14 +292,35 @@ function Get-Fullpath{
 .SYNOPSIS
     This can be used to open an MSBuild projcet file.
     The object returned is of type Microsoft.Build.Construction.ProjectRootElement.
+
+    You can get the project either from a file or from an object. Regarding the from an existing
+    object if the passed in is a ProjectRootElement it will be returned, and otherwise the
+    value for $sourceObject.ContainingProject is returned. This is useful to enable
+    pipeline continuations based on the return type of the previous function call.
+
+.OUTPUTS
+    [Microsoft.Build.Construction.ProjectRootElement]
+
+.EXAMPLE
+    Get-Project -projectFile 'C:\temp\msbuild\new\new.proj'
+
+.EXAMPLE
+    Get-Project -projectFile 'C:\temp\msbuild\new\new.proj' | 
+        Find-PropertyGroup -labelValue second | 
+        Remove-Property -name Configuration |
+        Get-Project | 
+        Save-Project -filePath $projFile
 #>
 function Get-Project{
     [cmdletbinding()]
     param(
         [Parameter(
-            Mandatory=$true,
             Position=1)]
         $projectFile,
+
+        [Parameter(
+            ValueFromPipeline=$true)]
+        $sourceObject,
         
         $projectCollection = (New-Object Microsoft.Build.Evaluation.ProjectCollection)
     )
@@ -308,9 +329,18 @@ function Get-Project{
         Add-Type -AssemblyName Microsoft.Build
     }
     process{
-        $fullPath = (Get-Fullpath $projectFile)
-        $proj = ([Microsoft.Build.Construction.ProjectRootElement]::Open([string]$fullPath,$projectCollection))
-        return $proj
+        $project = $null
+        if($projectFile){
+            $fullPath = (Get-Fullpath $projectFile)
+            $project = ([Microsoft.Build.Construction.ProjectRootElement]::Open([string]$fullPath,$projectCollection))
+        }
+        elseif($sourceObject -is [Microsoft.Build.Construction.ProjectRootElement]){
+            $project = $sourceObject
+        }
+        else{
+            $project = $sourceObject.ContainingProject
+        }
+        return $project
     }
 }
 
@@ -830,6 +860,54 @@ function Test-Property{
         }
 
         return $wasFound
+    }
+}
+
+<#
+.SYNOPSIS
+    Can be used to remove a property. You can search for properties to be removed
+    based on Name or Label. Find-Property will be used to locate the properties.
+    The rules outlined there will apply here on items that will be removed.
+
+.OUTPUTS
+    Will return $propertyContainer
+
+.EXAMPLE
+    Get-Project -projectFile 'C:\temp\msbuild\new\new.proj' | Remove-Property -Label label1 | Save-Project -filePath $projFile
+
+.EXAMPLE
+    Get-Project -projectFile 'C:\temp\msbuild\new\new.proj' | Remove-Property -name Configuration | Save-Project -filePath $projFile
+
+.EXAMPLE
+    Get-Project -projectFile 'C:\temp\msbuild\new\new.proj' | 
+        Find-PropertyGroup -labelValue second | 
+        Remove-Property -name Configuration |
+        Get-Project | 
+        Save-Project -filePath $projFile
+#>
+function Remove-Property{
+    [cmdletbinding()]
+    param(
+        [Parameter(
+            Position=1,
+            Mandatory=$true,
+            ValueFromPipeline=$true)]            
+        $propertyContainer,
+
+        $name,
+        $label
+    )
+    begin{
+        Add-Type -AssemblyName Microsoft.Build
+    }
+    process{
+        $propsToRemove = (Find-Property -propertyContainer $propertyContainer -name $name -label $label)
+        foreach($prop in $propsToRemove){
+            'Removing Property name=[{0}],Label=[{1}]' -f $name, $label | Write-Verbose
+            $prop.Parent.RemoveChild($prop)
+        }
+
+        return $propertyContainer
     }
 }
 
