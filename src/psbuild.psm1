@@ -361,7 +361,7 @@ function Find-Import{
         Add-Type -AssemblyName Microsoft.Build
     }
     process{
-        "Looking for an import, project: {0}" -f $project | Write-Verbose
+        "Looking for an import, label=[{0}], projet=[{0}]" -f $labelValue,$projectValue | Write-Verbose
 
         if(!($labelValue) -and !($projectValue)){
             "Both parameters labelValue and projectValue are empty. Not searching for imports." | Write-Warning
@@ -506,9 +506,21 @@ function Remove-Import{
     Import by either the Label value or the value for Project. This is determined 
     by the parameters passed in. If both labelValue an projectValue are passed 
     in then labelValue will take precedence.
-#>
-<# work in progress
 
+.EXAMPLE
+    Find-PropertyGroup -project (Get-Project 'C:\temp\msbuild\proj1.proj') -labelValue MyPropGroup
+
+.EXAMPLE
+    $projFilePath = 'C:\temp\msbuild\proj1.proj'
+    $proj = (Get-Project $projFilePath)
+    $pgs = Find-PropertyGroup -project $proj -labelValue MyPropGroup
+
+.EXAMPLE
+    Get-Project C:\temp\msbuild\proj1.proj | Find-PropertyGroup -labelValue MyPropGroup
+
+.EXAMPLE
+    @('C:\temp\msbuild\proj1.proj';'C:\temp\msbuild\proj2.proj') | Find-PropertyGroup -labelValue MyPropGroup
+#>
 function Find-PropertyGroup{
     [cmdletbinding()]
     param(
@@ -517,8 +529,11 @@ function Find-PropertyGroup{
             Mandatory=$true,
             ValueFromPipeline=$true)]
         $project,
+
+        [Parameter(
+            Position=2,
+            Mandatory=$true)]
         $labelValue,
-        $projectValue,
         [switch]
         $stopOnFirstResult
     )
@@ -526,12 +541,7 @@ function Find-PropertyGroup{
         Add-Type -AssemblyName Microsoft.Build
     }
     process{
-        "Looking for an import, project: {0}" -f $project | Write-Verbose
-
-        if(!($labelValue) -and !($projectValue)){
-            "Both parameters labelValue and projectValue are empty. Not searching for imports." | Write-Warning
-            return;
-        }
+        "Looking for a PropertyGroup. Label=[{0}]" -f $labelValue | Write-Verbose
 
         # $project can either be a ProjectRootElement object or a string
         [Microsoft.Build.Construction.ProjectRootElement]$realProject = $null
@@ -541,38 +551,25 @@ function Find-PropertyGroup{
         else{
             $realProject = (Get-Project -projectFile ([string]$project))
         }
-        $foundImports = @()
-        foreach($import in $realProject.Imports){
-            [string]$projectStr = if($import.Project){$import.Project} else{''}
-            [string]$labelStr = if($import.Label){$import.Label} else{''}
 
-            $projectStr = $projectStr.Trim()
-            $labelStr = $labelStr.Trim()
+        $foundPgs = @()
+        foreach($pg in $realProject.PropertyGroups){
+            [string]$pgLabelStr = if($pg.Label){$pg.Label}else{''}
+            $pgLabelStr = $pgLabelStr.Trim()
 
-            if($labelValue){
-                if([string]::Compare($labelValue,$labelStr,$true) -eq 0){
-                    $foundImports += $import
-                    "Found import via label" | Write-Verbose
-                    if($stopOnFirstResult){
-                        return $import
-                    }
+            if([string]::Compare($labelValue,$pgLabelStr,$true) -eq 0){
+                $foundPgs += $pg
+                'Found property group for label [{0}]' -f $labelValue | Write-Verbose
+                if($stopOnFirstResult){
+                    return $pg
                 }
-            }
-            elseif($projectValue){
-                if([string]::Compare($projectValue,$projectStr,$true) -eq 0){
-                    $foundImports += $import
-                    "Found import via project" | Write-Verbose
-                    if($stopOnFirstResult){
-                        return $import
-                    }
-                }
-            }
+            }            
         }
         
-        return $foundImports
+        return $foundPgs
     }
 }
-#>
+
 Export-ModuleMember -function *
 Export-ModuleMember -Variable *
 Export-ModuleMember -Cmdlet *

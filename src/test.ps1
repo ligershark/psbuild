@@ -29,10 +29,6 @@ else{
 
 $projFilePath = 'C:\temp\msbuild\proj1.proj'
 $proj = (Get-Project $projFilePath)
-#Add-Import -project $proj -importProject $projFilePath
-#Save-Project -project $proj -filePath $projFilePath
-#Add-Import -project $proj -importProject 'C:\temp\msbuild\import.targets' -importLabel 'LabelHere' -importCondition ' ''$(VSV)''====''12.0'' ' | Save-Project -filePath $projFilePath
-
-#New-Project | Save-Project -filePath .\new.proj
-#Save-Project -project $proj -filePath $projFilePath
+#$pgs = (Find-PropertyGroup -project $proj -labelValue MyPropGroup)
+#$pgs = (Get-Project C:\temp\msbuild\proj1.proj | Find-PropertyGroup -labelValue MyPropGroup)
 $test = "test"
