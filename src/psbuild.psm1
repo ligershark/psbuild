@@ -198,6 +198,8 @@ function Invoke-MSBuild{
 function New-Project{
     [cmdletbinding()]
     param(
+        [Parameter(
+            Position=1)]
         $filePath
     )
     begin{
@@ -228,11 +230,14 @@ function Save-Project{
     [cmdletbinding()]
     param(
         [Parameter(
+            Position=1,
             Mandatory=$true,
             ValueFromPipeline = $true)]
         $project,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(
+            Position=1,
+            Mandatory=$true)]
         $filePath
     )
 
@@ -245,6 +250,7 @@ function Save-Project{
         #if(-not $filePath){
         #    $filePath = $project.Location
         #}
+        # 'project.Location: [{0}]' -f $project.Location | Write-Host
 
         $fullPath = (Get-Fullpath -path $filePath)
         $project.Save([string]$fullPath)
@@ -253,6 +259,8 @@ function Save-Project{
 }
 
 <#
+.SYNOPSIS
+    Can be used to convert a relative path (i.e. .\project.proj) to a full path.
 #>
 function Get-Fullpath{
     [cmdletbinding()]
@@ -315,7 +323,6 @@ function Get-Project{
     It can search for the import either by the value for the Label attribute or 
     the Project attribute. This is determined by the parameters passed in. 
     If both labelValue an projectValue are passed in then labelValue will take precedence.
-
 #>
 function Test-Import{
     [cmdletbinding()]
@@ -567,6 +574,93 @@ function Find-PropertyGroup{
         }
         
         return $foundPgs
+    }
+}
+
+<#
+.SYNOPSIS
+    Will remove PropertyGroup elements based on the Label attribute. If there is more than one
+    matching property group than all the matching values will be removed.
+
+.OUTPUTS
+    Microsoft.Build.Construction.ProjectRootElement. Returns the object
+    passed in the $project parameter.
+
+.EXAMPLE
+    Get-Project 'C:\temp\msbuild\new\new.proj' | Remove-PropertyGroup -labelValue MyPropGroup | Save-Project -filePath 'C:\temp\msbuild\new\new.proj'
+#>
+function Remove-PropertyGroup{
+    [cmdletbinding()]
+    param(
+        [Parameter(
+            Position=1,
+            Mandatory=$true,
+            ValueFromPipeline=$true)]
+        $project,
+
+        [Parameter(
+            Position=2,
+            Mandatory=$true)]
+        $labelValue
+    )
+    begin{
+        Add-Type -AssemblyName Microsoft.Build
+    }
+    process{
+        $pgsToRemove = (Find-PropertyGroup -project $project -labelValue $labelValue)
+        foreach($pg in $pgsToRemove){
+            'Removing PropertyGroup with label [{0}]' -f $labelValue | Write-Verbose
+            $pg.Parent.RemoveChild($pg)
+        }
+        return $project
+    }
+}
+
+<#
+.SYNOPSIS
+    This will create a new PropertyGroup element in the given project. Optionally you can
+    specify a label and condition for the element being created.
+
+.OUTPUTS
+    Microsoft.Build.Construction.ProjectRootElement. Returns the object
+    passed in the $project parameter.
+
+.EXAMPLE
+    Get-Project 'C:\temp\msbuild\new\new.proj' | Remove-PropertyGroup -labelValue MyPropGroup | Save-Project -filePath 'C:\temp\msbuild\new\new.proj'
+#>
+function Add-PropertyGroup{
+    [cmdletbinding()]
+    param(
+        [Parameter(
+            Position=1,
+            Mandatory=$true,
+            ValueFromPipeline=$true)]
+        [Microsoft.Build.Construction.ProjectRootElement]
+        $project,
+        
+        [Parameter(
+            Position=2)]
+        $label,
+
+        [Parameter(
+            Position=3)]
+        $condition
+    )
+    begin{
+        Add-Type -AssemblyName Microsoft.Build
+    }
+    process{
+        $pgToAdd = $project.AddPropertyGroup();
+
+        if($label){
+            $pgToAdd.Label = $label
+        }
+
+        if($condition){
+            $pgToAdd.Condition = $condition
+        }
+        
+        return $project
     }
 }
 

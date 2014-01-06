@@ -27,8 +27,10 @@ else{
 # Invoke-MSBuild C:\temp\msbuild\path.proj -properties (@{'foo'='bar';'visualstudioversion'='12.0'}) -extraArgs '/p:foo2=bar2'
 #Find-Import C:\temp\msbuild\proj1.proj -labelValue 'SlowCheetah'
 
-$projFilePath = 'C:\temp\msbuild\proj1.proj'
-$proj = (Get-Project $projFilePath)
+$projFile = 'C:\temp\msbuild\new\new.proj'
+$proj = (Get-Project $projFile)
 #$pgs = (Find-PropertyGroup -project $proj -labelValue MyPropGroup)
 #$pgs = (Get-Project C:\temp\msbuild\proj1.proj | Find-PropertyGroup -labelValue MyPropGroup)
+#Get-Project $projFile | Remove-PropertyGroup -labelValue MyPropGroup | Save-Project -filePath $projFile
+#Get-Project $projFile | Add-PropertyGroup | Save-Project -filePath $projFile
 $test = "test"
