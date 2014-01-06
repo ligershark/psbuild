@@ -500,6 +500,79 @@ function Remove-Import{
     }
 }
 
+<#
+.SYNOPSIS
+    Can be used to find imports in an MSBuild file. You can find by looking for the 
+    Import by either the Label value or the value for Project. This is determined 
+    by the parameters passed in. If both labelValue an projectValue are passed 
+    in then labelValue will take precedence.
+#>
+<# work in progress
+
+function Find-PropertyGroup{
+    [cmdletbinding()]
+    param(
+        [Parameter(
+            Position=1,
+            Mandatory=$true,
+            ValueFromPipeline=$true)]
+        $project,
+        $labelValue,
+        $projectValue,
+        [switch]
+        $stopOnFirstResult
+    )
+    begin{
+        Add-Type -AssemblyName Microsoft.Build
+    }
+    process{
+        "Looking for an import, project: {0}" -f $project | Write-Verbose
+
+        if(!($labelValue) -and !($projectValue)){
+            "Both parameters labelValue and projectValue are empty. Not searching for imports." | Write-Warning
+            return;
+        }
+
+        # $project can either be a ProjectRootElement object or a string
+        [Microsoft.Build.Construction.ProjectRootElement]$realProject = $null
+        if($project -is [Microsoft.Build.Construction.ProjectRootElement]){
+            $realProject = $project
+        }
+        else{
+            $realProject = (Get-Project -projectFile ([string]$project))
+        }
+        $foundImports = @()
+        foreach($import in $realProject.Imports){
+            [string]$projectStr = if($import.Project){$import.Project} else{''}
+            [string]$labelStr = if($import.Label){$import.Label} else{''}
+
+            $projectStr = $projectStr.Trim()
+            $labelStr = $labelStr.Trim()
+
+            if($labelValue){
+                if([string]::Compare($labelValue,$labelStr,$true) -eq 0){
+                    $foundImports += $import
+                    "Found import via label" | Write-Verbose
+                    if($stopOnFirstResult){
+                        return $import
+                    }
+                }
+            }
+            elseif($projectValue){
+                if([string]::Compare($projectValue,$projectStr,$true) -eq 0){
+                    $foundImports += $import
+                    "Found import via project" | Write-Verbose
+                    if($stopOnFirstResult){
+                        return $import
+                    }
+                }
+            }
+        }
+        
+        return $foundImports
+    }
+}
+#>
 Export-ModuleMember -function *
 Export-ModuleMember -Variable *
 Export-ModuleMember -Cmdlet *
