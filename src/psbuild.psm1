@@ -184,8 +184,8 @@ function Invoke-MSBuild{
                 }
             }
 
-            "Calling msbuild.exe with the following args: {0}" -f (($msbuildArgs -join ' ')) | Write-Verbose
-            & msbuild $msbuildArgs
+            "Calling msbuild.exe with the following args: {0}" -f (($msbuildArgs -join ' ')) | Write-Verbose            
+            & ((Get-MSBuild).FullName) $msbuildArgs
         }
     }
 }
@@ -225,7 +225,7 @@ function Get-PSBuildLogDirectory{
             # before returning ensure the log directory is created on disk
             if(!(Test-Path -Path $logDir) ){
                 'Creating PSBuild log directory at [{0}]' -f $logDir | Write-Verbose
-                mkdir $logDir
+                mkdir $logDir | Out-Null
             }
 
             return $logDir
