@@ -28,8 +28,9 @@ else{
 #Find-Import C:\temp\msbuild\proj1.proj -labelValue 'SlowCheetah'
 
 $projFile = 'C:\temp\msbuild\new\new.proj'
-$proj = (Get-Project $projFile)
+#$proj = (Get-Project $projFile)
 
+#Invoke-MSBuild -projectsToBuild C:\temp\msbuild\new\new.proj
 #Invoke-MSBuild -projectsToBuild C:\temp\msbuild\new\new.proj
 #Get-Project $projFile | Save-Project -filePath $projFile
 #$pgs = (Find-PropertyGroup -project $proj -labelValue MyPropGroup)
