@@ -121,7 +121,10 @@ function Set-MSBuild{
     When set this passes the /nologo switch to msbuild.exe.
 
 .PARAMETER preprocess
-    When set passses the /preprocess switch to msbuild.exe
+    When set passses the /preprocess switch to msbuild.exe.
+
+.PARAMETER detailedSummary
+    When set passses the /detailedSummary switch to msbuild.exe.
 
 .EXAMPLE
     Invoke-MSBuild C:\temp\msbuild\msbuild.proj
@@ -178,6 +181,9 @@ function Invoke-MSBuild{
         [switch]
         $preprocess,
 
+        [switch]
+        $detailedSummary,
+
         [string]
         $extraArgs,
 
@@ -224,6 +230,10 @@ function Invoke-MSBuild{
 
             if($preprocess){
                 $msbuildArgs += '/preprocess'
+            }
+
+            if($detailedSummary){
+                $msbuildArgs += '/detailedsummary'
             }
 
             if($extraArgs){
