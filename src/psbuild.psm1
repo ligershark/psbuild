@@ -12,6 +12,11 @@
 [cmdletbinding()]
 param()
 
+# User settings go here
+$global:PSBuildPromptSettings = New-Object PSObject -Property @{
+    BuildMessageForegroundColor = [ConsoleColor]::Cyan
+}
+
 #####################################################################
 # Functions relating to msbuild.exe
 #####################################################################
@@ -179,13 +184,41 @@ function Invoke-MSBuild{
             }
         
             if($addLoggers){
-                foreach($logger in (Get-PSBuildLoggers -project (Get-Project -projectFile $project))){
+                # $script:lastLogDirectory = (Get-PSBuildLogDirectory -project
+                $projObj = (Get-Project -projectFile $project)
+                $loggers = (Get-PSBuildLoggers -project $projObj)
+                foreach($logger in $loggers){
                     $msbuildArgs += $logger
                 }
+
+                $script:lastLogDirectory = (Get-PSBuildLogDirectory -project $projObj)
             }
 
-            "Calling msbuild.exe with the following args: {0}" -f (($msbuildArgs -join ' ')) | Write-Verbose            
+            "Calling msbuild.exe with the following args: {0}" -f (($msbuildArgs -join ' ')) | Write-BuildMessage
             & ((Get-MSBuild).FullName) $msbuildArgs
+
+            "`r`n>>>> Build completed you can use Get-PSBuildLastLogs to see the log files`n" | Write-BuildMessage
+        }
+    }
+}
+
+<#
+.SYNOPSIS
+    Function that can be called to write a build message.
+    This is just a wrapper to Write-Host so that if we chose to replace that with something else
+    it will be easy later.    
+#>
+function Write-BuildMessage{
+    [cmdletbinding()]
+    param(
+        [Parameter(
+            Position=1,
+            ValueFromPipeline=$true)]
+        $message
+    )
+    process{
+        if($message){
+            $message | Write-Host -ForegroundColor $global:PSBuildPromptSettings.BuildMessageForegroundColor
         }
     }
 }
@@ -268,6 +301,25 @@ function Set-PSBuildLogDirectory{
     }
 }
 
+<#
+.SYNOPSIS  
+	You can use this to access the last set of log files created.
+
+.EXAMPLE
+    Get-PSBuildLastLogs
+#>
+function Get-PSBuildLastLogs{
+    [cmdletbinding()]
+    param()
+    process{
+        if($script:lastLogDirectory){
+            return (Get-ChildItem $script:lastLogDirectory | Sort-Object LastWriteTime)
+        }
+        else{
+            '$script:lastLogDirectory is empty, no recent logs' | Write-Verbose
+        }
+    }
+}
 
 <#
 .SYNOPSIS  
@@ -358,8 +410,8 @@ function Set-PSBuildLoggers{
             # {0} is the log directory
             # {1} is the name of the file being built
             # {2} is a timestamp property
-            $script:loggers += '/flp1:v=d;logfile={0}msbuild.log'
-            $script:loggers += '/flp2:v=diag;logfile={0}msbuild.diag.log'
+            $script:loggers += '/flp1:v=d;logfile={0}msbuild.detailed.log'
+            $script:loggers += '/flp2:v=diag;logfile={0}msbuild.diagnostic.log'
         }
     }
 }
