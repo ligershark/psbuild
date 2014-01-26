@@ -120,6 +120,9 @@ function Set-MSBuild{
 .PARAMETER nologo
     When set this passes the /nologo switch to msbuild.exe.
 
+.PARAMETER preprocess
+    When set passses the /preprocess switch to msbuild.exe
+
 .EXAMPLE
     Invoke-MSBuild C:\temp\msbuild\msbuild.proj
 
@@ -145,6 +148,11 @@ function Set-MSBuild{
     Invoke-MSBuild $projects
     $projects | Invoke-MSBuild
 
+.EXAMPLE
+    Invoke-MSBuild .\ConsoleApplication1.csproj -visualStudioVersion 12.0  -nologo -preprocess | 
+    Set-Content c:\temp\msbuild-pp.txt | 
+    start c:\temp\msbuild-pp.txt
+
 #>
 function Invoke-MSBuild{
     [cmdletbinding()]
@@ -166,6 +174,9 @@ function Invoke-MSBuild{
         
         [switch]
         $nologo,
+
+        [switch]
+        $preprocess,
 
         [string]
         $extraArgs,
@@ -209,6 +220,10 @@ function Invoke-MSBuild{
 
             if($nologo){
                 $msbuildArgs += '/nologo'
+            }
+
+            if($preprocess){
+                $msbuildArgs += '/preprocess'
             }
 
             if($extraArgs){
