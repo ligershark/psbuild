@@ -14,7 +14,15 @@ param()
 
 # User settings go here
 $global:PSBuildPromptSettings = New-Object PSObject -Property @{
+    # set this to false to prevent any messages being output from here via Write-Host
+    BuildMessageEnabled = $true
+
     BuildMessageForegroundColor = [ConsoleColor]::Cyan
+    BuildMessageBackgroundColor = $host.UI.RawUI.BackgroundColor
+
+    BuildMessageStrongForegroundColor = [ConsoleColor]::Yellow
+    BuildMessageStrongBackgroundColor = [ConsoleColor]::DarkGreen
+
 }
 
 #####################################################################
@@ -145,6 +153,8 @@ function Invoke-MSBuild{
         
         $targets,
         
+        $visualStudioVersion,
+
         [string]
         $extraArgs,
 
@@ -160,6 +170,14 @@ function Invoke-MSBuild{
         foreach($project in $projectsToBuild){
             $msbuildArgs = @()
             $msbuildArgs += ([string]$project)
+
+            if(-not $properties){
+                $properties = @{}
+            }
+
+            if($visualStudioVersion){
+                $properties['VisualStudioVersion']=$visualStudioVersion
+            }
 
             if($properties){
                 foreach($key in $properties.Keys){
@@ -197,7 +215,7 @@ function Invoke-MSBuild{
             "Calling msbuild.exe with the following args: {0}" -f (($msbuildArgs -join ' ')) | Write-BuildMessage
             & ((Get-MSBuild).FullName) $msbuildArgs
 
-            "`r`n>>>> Build completed you can use Get-PSBuildLastLogs to see the log files`n" | Write-BuildMessage
+            ">>>> Build completed you can use Get-PSBuildLastLogs to see the log files`n" | Write-BuildMessage -strong
         }
     }
 }
@@ -214,11 +232,21 @@ function Write-BuildMessage{
         [Parameter(
             Position=1,
             ValueFromPipeline=$true)]
-        $message
+        $message,
+
+        [switch]
+        $strong
     )
     process{
-        if($message){
-            $message | Write-Host -ForegroundColor $global:PSBuildPromptSettings.BuildMessageForegroundColor
+        if($global:PSBuildPromptSettings.BuildMessageEnabled -and $message){
+            $fgColor = $global:PSBuildPromptSettings.BuildMessageForegroundColor
+            $bColor = $global:PSBuildPromptSettings.BuildMessageBackgroundColor
+            if($strong){
+                $fgColor = $global:PSBuildPromptSettings.BuildMessageStrongForegroundColor
+                $bColor = $global:PSBuildPromptSettings.BuildMessageStrongBackgroundColor
+            }
+
+            $message | Write-Host -ForegroundColor $fgColor -BackgroundColor $bColor
         }
     }
 }
