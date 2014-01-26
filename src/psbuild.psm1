@@ -445,7 +445,7 @@ function New-Project{
         $newProj = [Microsoft.Build.Construction.ProjectRootElement]::Create()
 
         if($filePath){
-            Save-Project $newProj
+            Save-Project -project $newProj -filePath $filePath | Out-Null
         }
 
         return $newProj
