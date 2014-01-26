@@ -168,19 +168,28 @@ function Invoke-MSBuild{
         
         $msbuildPath = (Get-MSBuild),
         
+        [alias('p')]
         [Hashtable]
         $properties,
         
+        [alias('t')]
         $targets,
         
+        [alias('vsv')]
         $visualStudioVersion,
+     
+        [alias("m")]
+        [int]
+        $maxcpucount,
         
         [switch]
         $nologo,
 
+        [alias('pp')]
         [switch]
         $preprocess,
 
+        [alias('ds')]
         [switch]
         $detailedSummary,
 
@@ -188,7 +197,7 @@ function Invoke-MSBuild{
         $extraArgs,
 
         [switch]
-        $addLoggers = $true
+        $noLogging
     )
 
     begin{
@@ -236,13 +245,17 @@ function Invoke-MSBuild{
                 $msbuildArgs += '/detailedsummary'
             }
 
+            if($maxcpucount){
+                $msbuildArgs += ('/m:{0}' -f $maxcpucount)
+            }
+
             if($extraArgs){
                 foreach($exArg in $extraArgs){
                     $msbuildArgs += $exArg
                 }
             }
         
-            if($addLoggers){
+            if(-not $noLogging){
                 # $script:lastLogDirectory = (Get-PSBuildLogDirectory -project
                 $projObj = (Get-Project -projectFile $project)
                 $loggers = (Get-PSBuildLoggers -project $projObj)
