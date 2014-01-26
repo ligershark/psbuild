@@ -111,6 +111,12 @@ function Set-MSBuild{
     in this value. If this is not specified then Get-MSBuild will be used
     to get the path to msbuild.exe.
 
+.PARAMETER visualStudioVersion
+    This will set the VisualStudioVersion MSBuild parameter. Typical values for this include:
+        10.0
+        11.0
+        12.0
+
 .EXAMPLE
     Invoke-MSBuild C:\temp\msbuild\msbuild.proj
 
