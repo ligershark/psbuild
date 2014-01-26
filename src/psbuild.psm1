@@ -117,6 +117,9 @@ function Set-MSBuild{
         11.0
         12.0
 
+.PARAMETER nologo
+    When set this passes the /nologo switch to msbuild.exe.
+
 .EXAMPLE
     Invoke-MSBuild C:\temp\msbuild\msbuild.proj
 
@@ -160,6 +163,9 @@ function Invoke-MSBuild{
         $targets,
         
         $visualStudioVersion,
+        
+        [switch]
+        $nologo,
 
         [string]
         $extraArgs,
@@ -199,6 +205,10 @@ function Invoke-MSBuild{
                 foreach($target in $targets){
                     $msbuildArgs += ('/t:{0}' -f $target)
                 }
+            }
+
+            if($nologo){
+                $msbuildArgs += '/nologo'
             }
 
             if($extraArgs){
