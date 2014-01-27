@@ -8,47 +8,46 @@ This project aims to make using MSBuild easier from powershell. The project has 
 
 Currently psbuild is still a ***preview*** but should be stable enough for regular usage.
 
-# Getting Started
+##### Getting Started
 
-```
-# download and install psbulid
 
-(new-object Net.WebClient).DownloadString("https://raw.github.com/ligershark/psbuild/master/src/GetPSBuild.ps1") | iex
+##### download and install psbulid
 
-# build an msbuild file
+    (new-object Net.WebClient).DownloadString("https://raw.github.com/ligershark/psbuild/master/src/GetPSBuild.ps1") | iex
 
-Invoke-MSBuild C:\temp\msbuild\msbuild.proj
+##### build an msbuild file
 
-# build the file provided with the given parameters
+    Invoke-MSBuild C:\temp\msbuild\msbuild.proj
 
-Invoke-MSBuild C:\temp\msbuild\path.proj -properties (@{'Configuration'='Release';'visualstudioversion'='12.0'}) -extraArgs '/nologo'
+##### build the file provided with the given parameters
 
-# build an msbuild file and execute a specific target
+    Invoke-MSBuild C:\temp\msbuild\path.proj -properties (@{'Configuration'='Release';'visualstudioversion'='12.0'}) -extraArgs '/nologo'
 
-Invoke-MSBuild C:\temp\msbuild\proj1.proj -targets Demo
+##### build an msbuild file and execute a specific target
 
-# build an msbuild file and execute multiple targets
+    Invoke-MSBuild C:\temp\msbuild\proj1.proj -targets Demo
 
-Invoke-MSBuild C:\temp\msbuild\proj1.proj -targets @('Demo';'Demo2')
+##### build an msbuild file and execute multiple targets
 
-# how to get the log file for the last build
+    Invoke-MSBuild C:\temp\msbuild\proj1.proj -targets @('Demo';'Demo2')
 
-Invoke-MSBuild C:\temp\msbuild\proj1.proj
-# returns the detailed log by default
-Get-PSBuildLog
+##### how to get the log file for the last build
 
-# returns the diagnostic
-Get-PSBuildLog -logIndex 1
+    Invoke-MSBuild C:\temp\msbuild\proj1.proj
+    # returns the detailed log by default
+    Get-PSBuildLog
 
-# You can also create a new MSBuild file with the following
+    # returns the diagnostic
+    Get-PSBuildLog -logIndex 1
 
-New-Project | Save-Project -filePath .\new.proj
+##### You can also create a new MSBuild file with the following
 
-# to see what commands are available
+    New-Project | Save-Project -filePath .\new.proj
 
-Get-Command -Module psbuild
+##### to see what commands are available
 
-```
+    Get-Command -Module psbuild
+
 
 Most functions have help defined so you can use ```get-help``` on most commands for more details.
 
