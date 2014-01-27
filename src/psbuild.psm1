@@ -224,6 +224,8 @@ function Invoke-MSBuild{
         if($defaultProperties){
             PSBuildReset-TempEnvVars
         }
+
+        ">>>> Build completed you can use Get-PSBuildLog to see the log files`n" | Write-BuildMessage -strong
     }
 
     process{
@@ -278,7 +280,6 @@ function Invoke-MSBuild{
             }
         
             if(-not $noLogging){
-                # $script:lastLogDirectory = (Get-PSBuildLogDirectory -project
                 $projObj = (Get-Project -projectFile $project)
                 $loggers = (Get-PSBuildLoggers -project $projObj)
                 foreach($logger in $loggers){
@@ -290,8 +291,6 @@ function Invoke-MSBuild{
 
             "Calling msbuild.exe with the following args: {0}" -f (($msbuildArgs -join ' ')) | Write-BuildMessage
             & ((Get-MSBuild).FullName) $msbuildArgs
-
-            ">>>> Build completed you can use Get-PSBuildLastLogs to see the log files`n" | Write-BuildMessage -strong
         }
     }
 }
@@ -460,6 +459,44 @@ function Get-PSBuildLastLogs{
         }
     }
 }
+
+<#
+.SYNOPSIS  
+	This will return the last log file. Typically there are two loggers attached
+    a detailed logger and a diagnostic logger. By default this will return the 
+    detailed log (0 index). You can use the logIndex parameter to access any log
+    other than the default.
+
+.OUTPUTS
+    System.IO.FileInfo.
+    Returns the FileInfo object for the log file specified.
+
+.EXAMPLE
+    Get-PSBuildLog
+
+.EXAMPLE
+    You can use this to see the last few lines of the log file easily.
+    Get-PSBuildLog | Get-Content -Tail 100
+
+.EXAMPLE
+    If you want to open the log file in the default editor you can use this.
+    Get-PSBuildLog | start
+
+.EXAMPLE
+    Get-PSBuildLog -logIndex 0 | Get-Content -Tail 50
+#>
+function Get-PSBuildLog{
+    [cmdletbinding()]
+    param(
+        [Parameter(
+            ValueFromPipeline=$true)]
+        $logIndex = 0
+    )
+    process{
+        return (Get-PSBuildLastLogs)[$logIndex]
+    }
+}
+
 
 <#
 .SYNOPSIS  
