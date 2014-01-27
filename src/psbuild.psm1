@@ -13,7 +13,8 @@
 param()
 
 # User settings go here
-$global:PSBuildPromptSettings = New-Object PSObject -Property @{
+$global:PSBuildSettings = New-Object PSObject -Property @{
+    EnableBuildLogging = $true
     # set this to false to prevent any messages being output from here via Write-Host
     BuildMessageEnabled = $true
 
@@ -207,10 +208,7 @@ function Invoke-MSBuild{
         $defaultProperties,
 
         [string]
-        $extraArgs,
-
-        [switch]
-        $noLogging
+        $extraArgs
     )
 
     begin{
@@ -279,7 +277,7 @@ function Invoke-MSBuild{
                 }
             }
         
-            if(-not $noLogging){
+            if($global:PSBuildSettings.EnableBuildLogging){
                 $projObj = (Get-Project -projectFile $project)
                 $loggers = (Get-PSBuildLoggers -project $projObj)
                 foreach($logger in $loggers){
@@ -349,12 +347,12 @@ function Write-BuildMessage{
         $strong
     )
     process{
-        if($global:PSBuildPromptSettings.BuildMessageEnabled -and $message){
-            $fgColor = $global:PSBuildPromptSettings.BuildMessageForegroundColor
-            $bColor = $global:PSBuildPromptSettings.BuildMessageBackgroundColor
+        if($global:PSBuildSettings.BuildMessageEnabled -and $message){
+            $fgColor = $global:PSBuildSettings.BuildMessageForegroundColor
+            $bColor = $global:PSBuildSettings.BuildMessageBackgroundColor
             if($strong){
-                $fgColor = $global:PSBuildPromptSettings.BuildMessageStrongForegroundColor
-                $bColor = $global:PSBuildPromptSettings.BuildMessageStrongBackgroundColor
+                $fgColor = $global:PSBuildSettings.BuildMessageStrongForegroundColor
+                $bColor = $global:PSBuildSettings.BuildMessageStrongBackgroundColor
             }
 
             $message | Write-Host -ForegroundColor $fgColor -BackgroundColor $bColor
