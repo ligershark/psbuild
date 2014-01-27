@@ -1,28 +1,14 @@
 ﻿# based off of the scrit at http://psget.net/GetPsGet.ps1
 function Install-PSBuild {
     $ModulePaths = @($Env:PSModulePath -split ';')
-    <#
-    # $PsGetDestinationModulePath is mostly needed for testing purposes, 
-    if ((Test-Path -Path Variable:PsGetDestinationModulePath) -and $PsGetDestinationModulePath) {
-        $Destination = $PsGetDestinationModulePath
-        if ($ModulePaths -notcontains $Destination) {
-            Write-Warning 'PsGet install destination is not included in the PSModulePath environment variable'
-        }
-    } else {
-        $ExpectedUserModulePath = Join-Path -Path ([Environment]::GetFolderPath('MyDocuments')) -ChildPath WindowsPowerShell\Modules
-        $Destination = $ModulePaths | Where-Object { $_ -eq $ExpectedUserModulePath}
-        if (-not $Destination) {
-            $Destination = $ModulePaths | Select-Object -Index 0
-        }
-    }
-    #>
+    
     $ExpectedUserModulePath = Join-Path -Path ([Environment]::GetFolderPath('MyDocuments')) -ChildPath WindowsPowerShell\Modules
     $Destination = $ModulePaths | Where-Object { $_ -eq $ExpectedUserModulePath}
     if (-not $Destination) {
         $Destination = $ModulePaths | Select-Object -Index 0
     }
 
-    $downloadUrl = 'https://raw.github.com/sayedihashimi/psbuild/master/src/psbuild.psm1'
+    $downloadUrl = 'https://raw.github.com/ligershark/psbuild/master/src/GetPSBuild.ps1'
     New-Item ($Destination + "\psbuild\") -ItemType Directory -Force | out-null
     'Downloading PsGet from {0}' -f $downloadUrl | Write-Host
     $client = (New-Object Net.WebClient)
