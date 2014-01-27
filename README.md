@@ -8,7 +8,7 @@ This project aims to make using MSBuild easier from powershell. The project has 
 
 Currently psbuild is still a ***preview*** but should be stable enough for regular usage.
 
-##### Getting Started
+## Getting Started
 
 
 ##### download and install psbulid
