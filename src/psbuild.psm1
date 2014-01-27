@@ -18,11 +18,10 @@ $global:PSBuildPromptSettings = New-Object PSObject -Property @{
     BuildMessageEnabled = $true
 
     BuildMessageForegroundColor = [ConsoleColor]::Cyan
-    BuildMessageBackgroundColor = $host.UI.RawUI.BackgroundColor
+    BuildMessageBackgroundColor = [ConsoleColor]::DarkMagenta
 
     BuildMessageStrongForegroundColor = [ConsoleColor]::Yellow
     BuildMessageStrongBackgroundColor = [ConsoleColor]::DarkGreen
-
 }
 
 #####################################################################
@@ -126,6 +125,12 @@ function Set-MSBuild{
 .PARAMETER detailedSummary
     When set passses the /detailedSummary switch to msbuild.exe.
 
+.PARAMETER defaultProperties
+    This can be used to set default property values. A default property is the value that
+    will be returned for a property if there is no value for that property defined.
+    This is implemented by setting environment variables at the process level before
+    msbuild.exe is invoked and re-setting them after it has completed.
+
 .EXAMPLE
     Invoke-MSBuild C:\temp\msbuild\msbuild.proj
 
@@ -156,6 +161,9 @@ function Set-MSBuild{
     Set-Content c:\temp\msbuild-pp.txt | 
     start c:\temp\msbuild-pp.txt
 
+.EXAMPLE
+    Invoke-MSBuild $defProps -defaultProperties @{'Configuration'='Release'}
+
 #>
 function Invoke-MSBuild{
     [cmdletbinding()]
@@ -164,6 +172,7 @@ function Invoke-MSBuild{
             Position=1,
             Mandatory=$true,
             ValueFromPipeline=$true)]
+        [alias('proj')]
         $projectsToBuild,
         
         $msbuildPath = (Get-MSBuild),
@@ -182,6 +191,7 @@ function Invoke-MSBuild{
         [int]
         $maxcpucount,
         
+        [alias('nl')]
         [switch]
         $nologo,
 
@@ -193,6 +203,9 @@ function Invoke-MSBuild{
         [switch]
         $detailedSummary,
 
+        [alias('dp')]
+        $defaultProperties,
+
         [string]
         $extraArgs,
 
@@ -202,6 +215,15 @@ function Invoke-MSBuild{
 
     begin{
         Add-Type -AssemblyName Microsoft.Build
+        if($defaultProperties){
+            $defaultProperties | PSBuildSet-TempVar
+        }
+    }
+
+    end{
+        if($defaultProperties){
+            PSBuildReset-TempEnvVars
+        }
     }
 
     process{
@@ -270,6 +292,42 @@ function Invoke-MSBuild{
             & ((Get-MSBuild).FullName) $msbuildArgs
 
             ">>>> Build completed you can use Get-PSBuildLastLogs to see the log files`n" | Write-BuildMessage -strong
+        }
+    }
+}
+
+$script:envVarToRestore = @{}
+function PSBuildSet-TempVar{
+    [cmdletbinding()]
+    param(
+        [Parameter(
+            Mandatory=$true,
+            ValueFromPipeline=$true)]
+        [hashtable]
+        $envVars
+    )
+    process{
+        foreach($key in $envVars.Keys){
+            $oldValue = [environment]::GetEnvironmentVariable("$key","Process")
+            $newValue = ($envVars[$key])
+            $script:envVarToRestore[$key]=($oldValue)
+            
+            'Setting temp env var [{0}={1}]`tPrevious value:[{2}]' -f $key, $newValue, $oldValue | Write-Verbose
+            [environment]::SetEnvironmentVariable("$key", $newValue,'Process')
+        }
+    }
+}
+
+function PSBuildReset-TempEnvVars{
+    [cmdletbinding()]
+    param()
+    process{
+        foreach($key in $script:envVarToRestore.Keys){
+            $oldValue = [environment]::GetEnvironmentVariable("$key","Process")
+            $newValue = ($script:envVarToRestore[$key])
+
+            'Resetting temp env var [{0}={1}]`tPrevious value:[{2}]' -f $key, $newValue, $oldValue | Write-Verbose
+            [environment]::SetEnvironmentVariable("$key",$newValue,'Process')
         }
     }
 }
@@ -1290,9 +1348,8 @@ function Add-Property{
 }
 
 
-Export-ModuleMember -function *
-Export-ModuleMember -Variable *
-Export-ModuleMember -Cmdlet *
+Export-ModuleMember -function Get-*,Set-*,Invoke-*,Save-*,Test-*,Find-*,Add-*,Remove-*,Test-*
+
 #################################################################
 # begin script portions
 #################################################################
