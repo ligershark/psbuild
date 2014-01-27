@@ -13,40 +13,40 @@ Currently psbuild is still a ***preview*** but should be stable enough for regul
 ```
 # download and install psbulid
 
-    (new-object Net.WebClient).DownloadString("https://raw.github.com/ligershark/psbuild/master/src/GetPSBuild.ps1") | iex
+(new-object Net.WebClient).DownloadString("https://raw.github.com/ligershark/psbuild/master/src/GetPSBuild.ps1") | iex
 
 # build an msbuild file
 
-    Invoke-MSBuild C:\temp\msbuild\msbuild.proj
+Invoke-MSBuild C:\temp\msbuild\msbuild.proj
 
 # build the file provided with the given parameters
 
-    Invoke-MSBuild C:\temp\msbuild\path.proj -properties (@{'Configuration'='Release';'visualstudioversion'='12.0'}) -extraArgs '/nologo'
+Invoke-MSBuild C:\temp\msbuild\path.proj -properties (@{'Configuration'='Release';'visualstudioversion'='12.0'}) -extraArgs '/nologo'
 
 # build an msbuild file and execute a specific target
 
-    Invoke-MSBuild C:\temp\msbuild\proj1.proj -targets Demo
+Invoke-MSBuild C:\temp\msbuild\proj1.proj -targets Demo
 
 # build an msbuild file and execute multiple targets
 
-    Invoke-MSBuild C:\temp\msbuild\proj1.proj -targets @('Demo';'Demo2')
+Invoke-MSBuild C:\temp\msbuild\proj1.proj -targets @('Demo';'Demo2')
 
 # how to get the log file for the last build
 
-    Invoke-MSBuild C:\temp\msbuild\proj1.proj
-	# returns the detailed log by default
-    Get-PSBuildLog
+Invoke-MSBuild C:\temp\msbuild\proj1.proj
+# returns the detailed log by default
+Get-PSBuildLog
 
-	# returns the diagnostic
-	Get-PSBuildLog -logIndex 1
+# returns the diagnostic
+Get-PSBuildLog -logIndex 1
 
 # You can also create a new MSBuild file with the following
 
-    New-Project | Save-Project -filePath .\new.proj
+New-Project | Save-Project -filePath .\new.proj
 
 # to see what commands are available
 
-    Get-Command -Module psbuild
+Get-Command -Module psbuild
 
 ```
 
