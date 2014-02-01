@@ -23,6 +23,10 @@ $global:PSBuildSettings = New-Object PSObject -Property @{
 
     BuildMessageStrongForegroundColor = [ConsoleColor]::Yellow
     BuildMessageStrongBackgroundColor = [ConsoleColor]::DarkGreen
+
+    LogDirectory = ('{0}\PSBuild\logs\' -f $env:LOCALAPPDATA)
+
+    DefaultClp = '/clp:v=m'
 }
 
 #####################################################################
@@ -211,6 +215,9 @@ function Invoke-MSBuild{
         [alias('dp')]
         $defaultProperties,
 
+        [alias('clp')]
+        $consoleLoggerParams = $global:PSBuildSettings.DefaultClp,
+
         [string]
         $extraArgs
     )
@@ -227,7 +234,7 @@ function Invoke-MSBuild{
             PSBuildReset-TempEnvVars
         }
 
-        ">>>> Build completed you can use Get-PSBuildLog to see the log files`n" | Write-BuildMessage -strong
+        ">>>> Build completed you can use Get-PSBuildLog to see the log files" | Write-BuildMessage -strong
     }
 
     process{
@@ -278,12 +285,16 @@ function Invoke-MSBuild{
                 $msbuildArgs += ('/m')
             }
 
+            if($consoleLoggerParams){
+                $msbuildArgs += $consoleLoggerParams
+            }
+
             if($extraArgs){
                 foreach($exArg in $extraArgs){
                     $msbuildArgs += $exArg
                 }
             }
-        
+
             if($global:PSBuildSettings.EnableBuildLogging){
                 $projObj = (Get-Project -projectFile $project)
                 $loggers = (Get-PSBuildLoggers -project $projObj)
@@ -291,7 +302,7 @@ function Invoke-MSBuild{
                     $msbuildArgs += $logger
                 }
 
-                $script:lastLogDirectory = (Get-PSBuildLogDirectory -project $projObj)
+                $global:PSBuildSettings.LogDirectory = (Get-PSBuildLogDirectory -project $projObj)
             }
 
             "Calling msbuild.exe with the following args: {0}" -f (($msbuildArgs -join ' ')) | Write-BuildMessage
@@ -368,9 +379,8 @@ function Write-BuildMessage{
 }
 
 # variables related to logging
-$script:logDirectory = ('{0}\PSBuild\logs\' -f $env:LOCALAPPDATA)
 $script:loggers = @()
-$script:lastLogDirectory
+$global:PSBuildSettings.LogDirectory
 <#
 .SYNOPSIS  
 	Will return the directory where psbuild will write msbuild log files to while invoking builds.
@@ -389,14 +399,14 @@ function Get-PSBuildLogDirectory{
             ValueFromPipeline=$true)]
         $project)
     process{
-        if($script:logDirectory){
-            $logDir = $script:logDirectory
+        if($global:PSBuildSettings.LogDirectory){
+            $logDir = $global:PSBuildSettings.LogDirectory
         
             if($project){
                 $itemResult = (Get-Item $project.Location.File)
 
                 $projFileName = ((Get-Item $project.Location.File).Name)
-                $logDir = (Join-Path -Path $script:logDirectory -ChildPath ('{0}\' -f $projFileName) )
+                $logDir = (Join-Path -Path ($global:PSBuildSettings.LogDirectory) -ChildPath ('{0}\' -f $projFileName) )
             }
 
             # before returning ensure the log directory is created on disk
@@ -436,11 +446,11 @@ function Set-PSBuildLogDirectory{
                 # add a trailing slash
                 $logDirectory += '\'
             }
-            $script:logDirectory = $logDirectory
+            $global:PSBuildSettings.LogDirectory = $logDirectory
         }
         else{
             # reset the log directory
-            $script:logDirectory = ('{0}\PSBuild\logs\' -f $env:LOCALAPPDATA)
+            $global:PSBuildSettings.LogDirectory = ('{0}\PSBuild\logs\' -f $env:LOCALAPPDATA)
         }
     }
 }
@@ -451,16 +461,22 @@ function Set-PSBuildLogDirectory{
 
 .EXAMPLE
     Get-PSBuildLastLogs
+
+.EXAMPLE
+    How to copy the files to another folder and rename them.
+    Get-PSBuildLastLogs | 
+    ForEach-Object { 
+        Copy-Item -Path $_.FullName -destination (Join-Path 'c:\temp\msbuild\sidewaffle\' ('sw-{0}' -f $_.Name)) }
 #>
 function Get-PSBuildLastLogs{
     [cmdletbinding()]
     param()
     process{
-        if($script:lastLogDirectory){
-            return (Get-ChildItem $script:lastLogDirectory | Sort-Object LastWriteTime)
+        if($global:PSBuildSettings.LogDirectory){
+            return (Get-ChildItem $global:PSBuildSettings.LogDirectory | Sort-Object LastWriteTime)
         }
         else{
-            '$script:lastLogDirectory is empty, no recent logs' | Write-Verbose
+            '$global:PSBuildSettings.LogDirectory is empty, no recent logs' | Write-Verbose
         }
     }
 }
