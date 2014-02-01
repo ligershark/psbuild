@@ -132,6 +132,10 @@ function Set-MSBuild{
     This is implemented by setting environment variables at the process level before
     msbuild.exe is invoked and re-setting them after it has completed.
 
+.PARAMETER maxcpucount
+    The value for the /maxcpucount (/m) parameter. If this is not provided '/m' will be used.
+    If you want to disable this then pass in the value 1 to execute on one core.
+
 .EXAMPLE
     Invoke-MSBuild C:\temp\msbuild\msbuild.proj
 
@@ -269,6 +273,9 @@ function Invoke-MSBuild{
 
             if($maxcpucount){
                 $msbuildArgs += ('/m:{0}' -f $maxcpucount)
+            }
+            else{
+                $msbuildArgs += ('/m')
             }
 
             if($extraArgs){
