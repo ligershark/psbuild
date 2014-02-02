@@ -219,7 +219,10 @@ function Invoke-MSBuild{
         $consoleLoggerParams = $global:PSBuildSettings.DefaultClp,
 
         [string]
-        $extraArgs
+        $extraArgs,
+
+        [switch]
+        $debugMode
     )
 
     begin{
@@ -308,9 +311,83 @@ function Invoke-MSBuild{
             "Calling msbuild.exe with the following args: {0}" -f ($msbuildArgs -join ' ') | Write-BuildMessage
             
             if($pscmdlet.ShouldProcess("`n`tmsbuild.exe {0}" -f ($msbuildArgs -join ' '))){
-                & ((Get-MSBuild).FullName) $msbuildArgs
+                
+                if(-not $debugMode){
+                    & ((Get-MSBuild).FullName) $msbuildArgs
+                }
+                else{
+                    # in debug mode we call msbuild using the APIs
+                    Add-Type -AssemblyName Microsoft.Build
+                    $globalProps = (PSBuild-ConverToDictionary -valueToConvert $properties)
+                    $pc = (New-Object -TypeName Microsoft.Build.Evaluation.ProjectCollection)
+
+                    $projectObj = $pc.LoadProject($project)
+                    # todo: add loggers
+                    $projectInstance = $projectObj.CreateProjectInstance()
+
+                    $brdArgs = @($projectInstance, ([string[]](@()+$targets)), [Microsoft.Build.Execution.HostServices]$null, [Microsoft.Build.Execution.BuildRequestDataFlags]::ProvideProjectStateAfterBuild)
+                    $brd = New-Object -TypeName Microsoft.Build.Execution.BuildRequestData -ArgumentList $brdArgs
+                    
+                    $buildResult = [Microsoft.Build.Execution.BuildManager]::DefaultBuildManager.Build(
+                        (New-Object -TypeName Microsoft.Build.Execution.BuildParameters -ArgumentList $pc),
+                        $brd)
+                    $psbuildResult = New-PSBuildResult -buildResult $buildResult -projectInstance $projectInstance
+                    
+                    return $psbuildResult
+                }
             }
         }
+    }
+}
+
+function New-PSBuildResult{
+    [cmdletbinding()]
+    param(
+        [Parameter(
+            Mandatory=$true,
+            ValueFromPipelineByPropertyName=$true)]
+        [Microsoft.Build.Execution.BuildResult]
+        $buildResult,
+
+        [Parameter(
+            Mandatory=$true,
+            ValueFromPipelineByPropertyName=$true)]
+        [Microsoft.Build.Execution.ProjectInstance]
+        $projectInstance
+    )
+    begin{
+        Add-Type -AssemblyName Microsoft.Build
+    }
+    process{
+        $result = New-Object PSObject -Property @{
+            BuildResult = $buildResult
+
+            ProjectInstance = $projectInstance
+        }
+
+        return $result
+    }
+}
+
+function PSBuild-ConverToDictionary{
+    [cmdletbinding()]
+    param(
+        [Parameter(
+            Mandatory=$true,
+            ValueFromPipeline=$true)]
+        [hashtable]
+        $valueToConvert
+    )
+    process{
+        $valueToReturn = New-Object 'system.collections.generic.dictionary[[string],[string]]'
+
+        if($valueToConvert){
+            $valueToConvert.Keys | ForEach-Object {
+                $valueToReturn.Add($_, ($valueToConvert[$_]))
+            }
+        }
+
+        return $valueToReturn
     }
 }
 
