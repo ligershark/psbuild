@@ -8,7 +8,7 @@ function Install-PSBuild {
         $Destination = $ModulePaths | Select-Object -Index 0
     }
 
-    $downloadUrl = 'https://raw.github.com/ligershark/psbuild/master/src/GetPSBuild.ps1'
+    $downloadUrl = 'https://raw.github.com/ligershark/psbuild/master/src/psbuild.psm1'
     New-Item ($Destination + "\psbuild\") -ItemType Directory -Force | out-null
     'Downloading PsGet from {0}' -f $downloadUrl | Write-Host
     $client = (New-Object Net.WebClient)
