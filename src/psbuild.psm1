@@ -490,12 +490,12 @@ function Get-PSBuildLastLogs{
 
 .EXAMPLE
     Open the last default log file (typically detailed verbosity)
-    Open-PSBuildLastLog
+    Open-PSBuildLog
 
 .EXAMPLE
-    Open-PSBuildLastLog -logIndex 1 (typically detailed verbosity)
+    Open-PSBuildLog -logIndex 1 (typically detailed verbosity)
 #>
-function Open-PSBuildLastLog{
+function Open-PSBuildLog{
     [cmdletbinding()]
     param(
         $logIndex = 0

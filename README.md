@@ -37,8 +37,13 @@ Currently psbuild is still a ***preview*** but should be stable enough for regul
     # returns the detailed log by default
     Get-PSBuildLog
 
+	# you can also open the log in the default editor
+	Open-PSBuildLog
+
     # returns the diagnostic
     Get-PSBuildLog -logIndex 1
+	
+	Open-PSBuildLog -logIndex 1
 
 #### show common msbuild escape characters
 	Get-MSBuildEscapeCharacters
