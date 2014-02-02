@@ -458,7 +458,7 @@ function Set-PSBuildLogDirectory{
 }
 
 <#
-.SYNOPSIS  
+.SYNOPSIS
 	You can use this to access the last set of log files created.
 
 .EXAMPLE
@@ -475,11 +475,33 @@ function Get-PSBuildLastLogs{
     param()
     process{
         if($global:PSBuildSettings.LogDirectory){
-            return (Get-ChildItem $global:PSBuildSettings.LogDirectory | Sort-Object LastWriteTime)
+            return (Get-ChildItem $global:PSBuildSettings.LogDirectory | Where-Object {$_.PSIsContainer -eq $false} | Sort-Object LastWriteTime | Sort-Object Name)
         }
         else{
             '$global:PSBuildSettings.LogDirectory is empty, no recent logs' | Write-Verbose
         }
+    }
+}
+<#
+.SYNOPSIS  
+	This will open the last log file in the default editor.
+    Typically log files are written with the .log extension so whatever application is associated
+    with the .log extension will open the log.
+
+.EXAMPLE
+    Open the last default log file (typically detailed verbosity)
+    Open-PSBuildLastLog
+
+.EXAMPLE
+    Open-PSBuildLastLog -logIndex 1 (typically detailed verbosity)
+#>
+function Open-PSBuildLastLog{
+    [cmdletbinding()]
+    param(
+        $logIndex = 0
+    )
+    process{
+        start ((Get-PSBuildLastLogs)[$logIndex].FullName)
     }
 }
 
@@ -1430,8 +1452,7 @@ function Add-Property{
     }
 }
 
-Export-ModuleMember -function Get-*,Set-*,Invoke-*,Save-*,Test-*,Find-*,Add-*,Remove-*,Test-*
-
+Export-ModuleMember -function Get-*,Set-*,Invoke-*,Save-*,Test-*,Find-*,Add-*,Remove-*,Test-*,Open-*
 #################################################################
 # begin script portions
 #################################################################
