@@ -40,6 +40,9 @@ Currently psbuild is still a ***preview*** but should be stable enough for regul
     # returns the diagnostic
     Get-PSBuildLog -logIndex 1
 
+#### show common msbuild escape characters
+	Get-MSBuildEscapeCharacters
+
 ##### You can also create a new MSBuild file with the following
 
     New-Project | Save-Project -filePath .\new.proj
@@ -47,7 +50,6 @@ Currently psbuild is still a ***preview*** but should be stable enough for regul
 ##### to see what commands are available
 
     Get-Command -Module psbuild
-
 
 Most functions have help defined so you can use ```get-help``` on most commands for more details.
 

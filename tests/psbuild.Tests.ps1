@@ -34,4 +34,9 @@ Describe "get and set msbuild test cases" {
 
         $valueBeforeSet | Should Not Be $valueAfterSet
     }
+
+    It "validate Get-MSBuildEscapeCharacters returns 10 values" {
+        $msbEscape = Get-MSBuildEscapeCharacters
+        $msbEscape.Length | Should Be 10
+    }
 }

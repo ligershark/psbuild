@@ -383,7 +383,6 @@ function Write-BuildMessage{
 
 # variables related to logging
 $script:loggers = @()
-$global:PSBuildSettings.LogDirectory
 <#
 .SYNOPSIS  
 	Will return the directory where psbuild will write msbuild log files to while invoking builds.
@@ -521,7 +520,6 @@ function Get-PSBuildLog{
     }
 }
 
-
 <#
 .SYNOPSIS  
     This will return the logger strings for the next build for the given project (optional).
@@ -617,12 +615,36 @@ function Set-PSBuildLoggers{
     }
 }
 
+<#
+.SYNOPSIS
+    This is a convience method to show the common MSBuild escape characters.
+#>
+function Get-MSBuildEscapeCharacters{
+    [cmdletbinding()]
+    param()
+    process{
+    $resultList = @()
+    $resultList += @{'%'='%25'}
+    $resultList += @{'$'='%24'}
+    $resultList += @{'@'='%40'}
+    $resultList += @{"'"='%27'}
+    $resultList += @{';'='%3B'}
+    $resultList += @{'?'='%3F'}
+    $resultList += @{'*'='%2A'}
+    $resultList += @{'('='%28'}
+    $resultList += @{')'='%29'}
+    $resultList += @{'"'='%22'}
+        
+    return $resultList
+    }
+}
+
 #####################################################################
 # Functions for interacting with MSBuild files.
 #####################################################################
 
 <#
-.SYNOPSIS  
+.SYNOPSIS
 	You can use this to create a new MSBuild project. If you specify a value for the
     $filePath parameter then the project file will saved to the specificed location.
     Otherwise an in-memory project file is created an returned to the caller.
@@ -1407,7 +1429,6 @@ function Add-Property{
         return $propToAdd
     }
 }
-
 
 Export-ModuleMember -function Get-*,Set-*,Invoke-*,Save-*,Test-*,Find-*,Add-*,Remove-*,Test-*
 
