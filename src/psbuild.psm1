@@ -42,7 +42,7 @@ function Get-MSBuild{
     [cmdletbinding()]
         param()
         process{
-	    $path = $defaultMSBuildPath
+	    $path = $script:defaultMSBuildPath
 
 	    if(!$path){
 	        $path =  Get-ChildItem "hklm:\SOFTWARE\Microsoft\MSBuild\ToolsVersions\" | 

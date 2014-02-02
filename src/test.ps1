@@ -1,4 +1,4 @@
-$VerbosePreference = "Continue"
+
 function Get-ScriptDirectory
 {
     $Invocation = (Get-Variable MyInvocation -Scope 1).Value
@@ -27,11 +27,11 @@ else{
 # Invoke-MSBuild C:\temp\msbuild\path.proj -properties (@{'foo'='bar';'visualstudioversion'='12.0'}) -extraArgs '/p:foo2=bar2'
 #Find-Import C:\temp\msbuild\proj1.proj -labelValue 'SlowCheetah'
 
-#$projFile = 'C:\temp\msbuild\new\new.proj'
-#$defProps = 'C:\temp\msbuild\defProps\defProps.proj'
+$projFile = 'C:\temp\msbuild\new\new.proj'
+$defProps = 'C:\temp\msbuild\defProps\defProps.proj'
 #[environment]::SetEnvironmentVariable("test","orig")
 
-#Invoke-MSBuild $defProps -defaultProperties @{'test'='over'}
+Invoke-MSBuild $defProps -defaultProperties @{'test'='over'}
 #$proj = (Get-Project $projFile)
 
 #Invoke-MSBuild -projectsToBuild C:\temp\msbuild\new\new.proj
