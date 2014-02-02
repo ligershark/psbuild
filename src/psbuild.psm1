@@ -175,7 +175,7 @@ function Set-MSBuild{
 
 #>
 function Invoke-MSBuild{
-    [cmdletbinding()]
+    [cmdletbinding(SupportsShouldProcess=$True)]
     param(
         [Parameter(
             Position=1,
@@ -305,8 +305,11 @@ function Invoke-MSBuild{
                 $global:PSBuildSettings.LogDirectory = (Get-PSBuildLogDirectory -project $projObj)
             }
 
-            "Calling msbuild.exe with the following args: {0}" -f (($msbuildArgs -join ' ')) | Write-BuildMessage
-            & ((Get-MSBuild).FullName) $msbuildArgs
+            "Calling msbuild.exe with the following args: {0}" -f ($msbuildArgs -join ' ') | Write-BuildMessage
+            
+            if($pscmdlet.ShouldProcess("`n`tmsbuild.exe {0}" -f ($msbuildArgs -join ' '))){
+                & ((Get-MSBuild).FullName) $msbuildArgs
+            }
         }
     }
 }
