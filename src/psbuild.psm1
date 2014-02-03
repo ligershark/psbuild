@@ -80,7 +80,7 @@ function Set-MSBuild{
 }
 
 <#
-.SYNOPSIS  
+.SYNOPSIS
 	Can be used to invoke MSBuild. If the msbuildPath parameter is not passed in
     the Get-MSBuild function will be called to determine the version of MSBuild
     which should be used.
@@ -333,10 +333,27 @@ function Invoke-MSBuild{
                         $brd)
                     $psbuildResult = New-PSBuildResult -buildResult $buildResult -projectInstance $projectInstance
                     
+                    $script:lastDebugBuildResult = $psbuildResult
                     return $psbuildResult
                 }
             }
         }
+    }
+}
+
+<#
+.SYNOPSIS
+    When you call Invoke-MSBuild with the -debugMode flag an object is returned that is the build result.
+    If you did not save this object you can use this method to reterive that last build result.
+
+.EXAMPLE
+    $lastResult = Get-PSBuildLastDebugBuildResult
+#>
+function Get-PSBuildLastDebugBuildResult{
+    [cmdletbinding()]
+    param()
+    process{
+        return $script:lastDebugBuildResult
     }
 }
 
@@ -363,6 +380,56 @@ function New-PSBuildResult{
             BuildResult = $buildResult
 
             ProjectInstance = $projectInstance
+        }
+
+        $result | Add-Member -MemberType ScriptMethod -Name EvalProperty -Value {
+            [cmdletbinding()]
+            param(
+                [Parameter(
+                    Mandatory=$true)]
+                [string]
+                $propName)
+            if($this.ProjectInstance){
+                $this.ProjectInstance.GetPropertyValue($propName)
+            }
+            else{
+                'project is null'
+            }
+        }
+
+        $result | Add-Member -MemberType ScriptMethod -Name EvalItem -Value {
+            [cmdletbinding()]
+            param(
+                [Parameter(
+                    Mandatory=$true)]
+                [string]
+                $propName)
+            if($this.ProjectInstance){
+                # todo: is there a better way to do this?
+                $expressionToEval = ('@({0})' -f $propName)
+                return $this.ProjectInstance.ExpandString($expressionToEval)
+            }
+            else{
+                'project is null'
+            }
+        }
+
+        $result | Add-Member -MemberType ScriptMethod ExpandString -Value {
+            [cmdletbinding()]
+            param(
+                [Parameter(
+                    Mandatory=$true)]
+                [string]
+                $unexpandedValue
+            )
+            process{
+                if($this.ProjectInstance){
+                    return $this.ProjectInstance.ExpandString($unexpandedValue)
+                }
+                else{
+                    'project is null'
+                }
+            }
         }
 
         return $result
