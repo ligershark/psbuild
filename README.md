@@ -63,9 +63,9 @@ We have not yet developed the NuGet package yet but will be working on it soon.
 ## Debug mode
 In many cases after a build it would be helpful to be able to answer questions like the following.
  
- - What is the value of x property?
- - What is the value of y property?
- - What would the expression '@(Compile->'%(FullPath)') be?
+ - What is the value of `x` property?
+ - What is the value of `y` property?
+ - What would the expression ```'@(Compile->'%(FullPath)')``` be?
 
 But when you call msbuild.exe the project that is built is created in memory and trashed at the end of the process. ```Invoke-MSBuild``` now has a way that you can invoke your build and then have a _"handle"_ to your project that was built. This allows you to ask questions like the following. To enable this you just need to pass in the ```-debugMode``` switch to ```Invoke-MSBuild``` (_Note: this is actively under development so if you run into an problems please open an issue_). Here are some examples of what you can do.
 
