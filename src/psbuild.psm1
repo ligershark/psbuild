@@ -436,95 +436,6 @@ function New-PSBuildResult{
     }
 }
 
-function PSBuild-ConverToDictionary{
-    [cmdletbinding()]
-    param(
-        [Parameter(
-            Mandatory=$true,
-            ValueFromPipeline=$true)]
-        [hashtable]
-        $valueToConvert
-    )
-    process{
-        $valueToReturn = New-Object 'system.collections.generic.dictionary[[string],[string]]'
-
-        if($valueToConvert){
-            $valueToConvert.Keys | ForEach-Object {
-                $valueToReturn.Add($_, ($valueToConvert[$_]))
-            }
-        }
-
-        return $valueToReturn
-    }
-}
-
-$script:envVarToRestore = @{}
-function PSBuildSet-TempVar{
-    [cmdletbinding()]
-    param(
-        [Parameter(
-            Mandatory=$true,
-            ValueFromPipeline=$true)]
-        [hashtable]
-        $envVars
-    )
-    process{
-        foreach($key in $envVars.Keys){
-            $oldValue = [environment]::GetEnvironmentVariable("$key","Process")
-            $newValue = ($envVars[$key])
-            $script:envVarToRestore[$key]=($oldValue)
-            
-            'Setting temp env var [{0}={1}]`tPrevious value:[{2}]' -f $key, $newValue, $oldValue | Write-Verbose
-            [environment]::SetEnvironmentVariable("$key", $newValue,'Process')
-        }
-    }
-}
-
-function PSBuildReset-TempEnvVars{
-    [cmdletbinding()]
-    param()
-    process{
-        foreach($key in $script:envVarToRestore.Keys){
-            $oldValue = [environment]::GetEnvironmentVariable("$key","Process")
-            $newValue = ($script:envVarToRestore[$key])
-
-            'Resetting temp env var [{0}={1}]`tPrevious value:[{2}]' -f $key, $newValue, $oldValue | Write-Verbose
-            [environment]::SetEnvironmentVariable("$key",$newValue,'Process')
-        }
-    }
-}
-
-<#
-.SYNOPSIS
-    Function that can be called to write a build message.
-    This is just a wrapper to Write-Host so that if we chose to replace that with something else
-    it will be easy later.    
-#>
-function Write-BuildMessage{
-    [cmdletbinding()]
-    param(
-        [Parameter(
-            Position=1,
-            ValueFromPipeline=$true)]
-        $message,
-
-        [switch]
-        $strong
-    )
-    process{
-        if($global:PSBuildSettings.BuildMessageEnabled -and $message){
-            $fgColor = $global:PSBuildSettings.BuildMessageForegroundColor
-            $bColor = $global:PSBuildSettings.BuildMessageBackgroundColor
-            if($strong){
-                $fgColor = $global:PSBuildSettings.BuildMessageStrongForegroundColor
-                $bColor = $global:PSBuildSettings.BuildMessageStrongBackgroundColor
-            }
-
-            $message | Write-Host -ForegroundColor $fgColor -BackgroundColor $bColor
-        }
-    }
-}
-
 # variables related to logging
 $script:loggers = @()
 <#
@@ -1596,6 +1507,99 @@ function Add-Property{
     }
 }
 
+#####################################################################
+# "Internal" functions
+#####################################################################
+
+function PSBuild-ConverToDictionary{
+    [cmdletbinding()]
+    param(
+        [Parameter(
+            Mandatory=$true,
+            ValueFromPipeline=$true)]
+        [hashtable]
+        $valueToConvert
+    )
+    process{
+        $valueToReturn = New-Object 'system.collections.generic.dictionary[[string],[string]]'
+
+        if($valueToConvert){
+            $valueToConvert.Keys | ForEach-Object {
+                $valueToReturn.Add($_, ($valueToConvert[$_]))
+            }
+        }
+
+        return $valueToReturn
+    }
+}
+
+$script:envVarToRestore = @{}
+function PSBuildSet-TempVar{
+    [cmdletbinding()]
+    param(
+        [Parameter(
+            Mandatory=$true,
+            ValueFromPipeline=$true)]
+        [hashtable]
+        $envVars
+    )
+    process{
+        foreach($key in $envVars.Keys){
+            $oldValue = [environment]::GetEnvironmentVariable("$key","Process")
+            $newValue = ($envVars[$key])
+            $script:envVarToRestore[$key]=($oldValue)
+            
+            'Setting temp env var [{0}={1}]`tPrevious value:[{2}]' -f $key, $newValue, $oldValue | Write-Verbose
+            [environment]::SetEnvironmentVariable("$key", $newValue,'Process')
+        }
+    }
+}
+
+function PSBuildReset-TempEnvVars{
+    [cmdletbinding()]
+    param()
+    process{
+        foreach($key in $script:envVarToRestore.Keys){
+            $oldValue = [environment]::GetEnvironmentVariable("$key","Process")
+            $newValue = ($script:envVarToRestore[$key])
+
+            'Resetting temp env var [{0}={1}]`tPrevious value:[{2}]' -f $key, $newValue, $oldValue | Write-Verbose
+            [environment]::SetEnvironmentVariable("$key",$newValue,'Process')
+        }
+    }
+}
+
+<#
+.SYNOPSIS
+    Function that can be called to write a build message.
+    This is just a wrapper to Write-Host so that if we chose to replace that with something else
+    it will be easy later.    
+#>
+function Write-BuildMessage{
+    [cmdletbinding()]
+    param(
+        [Parameter(
+            Position=1,
+            ValueFromPipeline=$true)]
+        $message,
+
+        [switch]
+        $strong
+    )
+    process{
+        if($global:PSBuildSettings.BuildMessageEnabled -and $message){
+            $fgColor = $global:PSBuildSettings.BuildMessageForegroundColor
+            $bColor = $global:PSBuildSettings.BuildMessageBackgroundColor
+            if($strong){
+                $fgColor = $global:PSBuildSettings.BuildMessageStrongForegroundColor
+                $bColor = $global:PSBuildSettings.BuildMessageStrongBackgroundColor
+            }
+
+            $message | Write-Host -ForegroundColor $fgColor -BackgroundColor $bColor
+        }
+    }
+}
+
 Export-ModuleMember -function Get-*,Set-*,Invoke-*,Save-*,Test-*,Find-*,Add-*,Remove-*,Test-*,Open-*
 #################################################################
 # begin script portions
@@ -1607,4 +1611,3 @@ Add-Type -AssemblyName Microsoft.Build
 [string]$script:VisualStudioVersion = $null
 # call this once to ensure the alias is set
 Get-MSBuild | Set-MSBuild
-
