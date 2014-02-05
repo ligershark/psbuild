@@ -549,14 +549,22 @@ function Get-PSBuildLastLogs{
 
 .EXAMPLE
     Open-PSBuildLog -logIndex 1 (typically detailed verbosity)
+
+.EXAMLPE
+    Open the log files by getting the input from pipeline
+    Get-PSBuildLog | Open-PSBuildLog
 #>
 function Open-PSBuildLog{
     [cmdletbinding()]
     param(
+        [Parameter(ValueFromPipeLine=$true,Position=0)]
+        [System.IO.FileSystemInfo[]]$logFiles = (Get-PSBuildLastLogs)[0],
         $logIndex = 0
     )
     process{
-        start ((Get-PSBuildLastLogs)[$logIndex].FullName)
+        foreach($file in $logFiles){
+            start $file.FullName
+        }
     }
 }
 
