@@ -558,7 +558,7 @@ function Open-PSBuildLog{
     [cmdletbinding()]
     param(
         [Parameter(ValueFromPipeLine=$true,Position=0)]
-        [System.IO.FileSystemInfo[]]$logFiles = (Get-PSBuildLastLogs)[0],
+        $logFiles = (Get-PSBuildLastLogs)[0],
         $logIndex = 0
     )
     process{
