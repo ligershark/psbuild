@@ -298,14 +298,14 @@ function Invoke-MSBuild{
                 }
             }
 
+            $projObj = (Get-Project -projectFile $project)
+            $logDir = (Get-PSBuildLogDirectory -project $projObj)
             if($global:PSBuildSettings.EnableBuildLogging){
-                $projObj = (Get-Project -projectFile $project)
+                
                 $loggers = (Get-PSBuildLoggers -project $projObj)
                 foreach($logger in $loggers){
                     $msbuildArgs += $logger
                 }
-
-                $global:PSBuildSettings.LogDirectory = (Get-PSBuildLogDirectory -project $projObj)
             }
 
             "Calling msbuild.exe with the following args: {0}" -f ($msbuildArgs -join ' ') | Write-BuildMessage
@@ -331,9 +331,15 @@ function Invoke-MSBuild{
                     $buildResult = [Microsoft.Build.Execution.BuildManager]::DefaultBuildManager.Build(
                         (New-Object -TypeName Microsoft.Build.Execution.BuildParameters -ArgumentList $pc),
                         $brd)
-                    $psbuildResult = New-PSBuildResult -buildResult $buildResult -projectInstance $projectInstance
+
+                    $postBuildProjFilePath = (Join-Path -Path $logDir -ChildPath (Get-Item $project).Name)
+                    'Saving post build project file to: [{0}]' -f $postBuildProjFilePath | Write-Verbose
+                    $projectInstance.ToProjectRootElement().Save($postBuildProjFilePath)
+
+                    $psbuildResult = New-PSBuildResult -buildResult $buildResult -projectInstance $projectInstance -postBuildProjectFile $postBuildProjFilePath
                     
                     $script:lastDebugBuildResult = $psbuildResult
+
                     return $psbuildResult
                 }
             }
@@ -357,6 +363,23 @@ function Get-PSBuildLastDebugBuildResult{
     }
 }
 
+<#
+.SYNOPSIS
+    If the last call to Invoke-MSBuild used the -debugMode then this can be used to get the "post build"
+    representation of the project file. This is essentially the representation of the project that MSBuild
+    has in memory for the project at the end of the build.
+
+.EXAMPLE
+    Get-PSBuildPostBuildResult
+#>
+function Get-PSBuildPostBuildResult{
+    [cmdletbinding()]
+    param()
+    process{
+        return ((Get-PSBuildLastDebugBuildResult).PostBuildProjectFile)
+    }
+}
+
 function New-PSBuildResult{
     [cmdletbinding()]
     param(
@@ -370,7 +393,10 @@ function New-PSBuildResult{
             Mandatory=$true,
             ValueFromPipelineByPropertyName=$true)]
         [Microsoft.Build.Execution.ProjectInstance]
-        $projectInstance
+        $projectInstance,
+
+        [Parameter(ValueFromPipelineByPropertyName=$true)]
+        $postBuildProjectFile
     )
     begin{
         Add-Type -AssemblyName Microsoft.Build
@@ -432,6 +458,8 @@ function New-PSBuildResult{
             }
         }
 
+        $result | Add-Member -MemberType NoteProperty -Name PostBuildProjectFile -Value $postBuildProjectFile
+
         return $result
     }
 }
@@ -463,7 +491,8 @@ function Get-PSBuildLogDirectory{
                 $itemResult = (Get-Item $project.Location.File)
 
                 $projFileName = ((Get-Item $project.Location.File).Name)
-                $logDir = (Join-Path -Path ($global:PSBuildSettings.LogDirectory) -ChildPath ('{0}\' -f $projFileName) )
+                
+                $logDir = (Join-Path -Path ($global:PSBuildSettings.LogDirectory) -ChildPath ('{0}-log\' -f $projFileName) )
             }
 
             # before returning ensure the log directory is created on disk
