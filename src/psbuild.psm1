@@ -237,7 +237,7 @@ function Invoke-MSBuild{
             PSBuildReset-TempEnvVars
         }
 
-        ">>>> Build completed you can use Get-PSBuildLog to see the log files" | Write-BuildMessage -strong
+        ">>>> Build completed you can use Open-PSBuildLog to open the log file" | Write-BuildMessage -strong
     }
 
     process{
