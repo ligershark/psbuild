@@ -33,7 +33,6 @@ Describe 'tests for Get-PSBuildLogDirectory' {
 
         $logdir = Get-PSBuildLogDirectory -projectPath $project.Location.File
 
-        'logdir: [{0}]' -f $logdir | Write-Host
         $expectedLogDirName = ('{0}\' -f $projFileInfo.Name)
         # logdir should end in the 'proj-file-name\'
         $logdir | Should Match ".*psbulidlog01.proj-log\\$"
