@@ -31,7 +31,8 @@ else{
 #$defProps = 'C:\temp\msbuild\defProps\defProps.proj'
 #[environment]::SetEnvironmentVariable("test","orig")
 
-#$bResult = Invoke-MSBuild $projFile -debugMode
+#$bResult = Invoke-MSBuild $projFile -defaultProperties @{'OutputType'='exe'} -properties @{'OutputType'='dll'} -debugMode
+#$foo = 'bar'
 #$proj = (Get-Project $projFile)
 
 #Invoke-MSBuild -projectsToBuild C:\temp\msbuild\new\new.proj
