@@ -319,11 +319,10 @@ function Invoke-MSBuild{
                 }
             }
 
-            $projObj = (Get-Project -projectFile $project)
             $logDir = (Get-PSBuildLogDirectory -projectPath $project)
             if($global:PSBuildSettings.EnableBuildLogging){
                 
-                $loggers = (Get-PSBuildLoggers -project $projObj)
+                $loggers = (Get-PSBuildLoggers -projectPath $project)
                 foreach($logger in $loggers){
                     $msbuildArgs += $logger
                 }
@@ -672,7 +671,7 @@ Here are the default loggers that psbuild will use.
     @('/flp1:v=d;logfile={0}msbuild.d.{1}.{2}.log';'/flp1:v=diag;logfile={0}msbuild.diag.{1}.{2}.log')
 
 .EXAMPLE
-    $loggers1 = (Get-PSBuildLoggers -project $proj)
+    $loggers1 = (Get-PSBuildLoggers -projectPath $project)
 #>
 function Get-PSBuildLoggers{
     [cmdletbinding()]
@@ -680,7 +679,7 @@ function Get-PSBuildLoggers{
         [Parameter(
             Position=1,
             ValueFromPipeline=$true)]
-        $project
+        $projectPath
     )
     begin{
         Add-Type -AssemblyName Microsoft.Build
@@ -695,8 +694,8 @@ function Get-PSBuildLoggers{
             # {2} is a timestamp property
         $loggersResult = @()
         foreach($loggerToAdd in $script:loggers){
-            [string]$logDir = (Get-PSBuildLogDirectory -projectPath $project.Location.File)
-            [string]$projName = if($project) {(get-item $project.Location.File).BaseName} else{''}
+            [string]$logDir = (Get-PSBuildLogDirectory -projectPath $projectPath)
+            [string]$projName = if($projectPath) {(get-item $projectPath).BaseName} else{''}
             [string]$dateStr = (Get-Date -format yyyy-MM-dd.h.m.s)
             $loggerStr = ($loggerToAdd -f $logDir, $projName,$dateStr)
             $loggersResult += $loggerStr
@@ -1590,7 +1589,6 @@ function PSBuild-ConverToDictionary{
         return $valueToReturn
     }
 }
-
 
 $script:envVarToRestore = @{}
 function PSBuildSet-TempVar{
