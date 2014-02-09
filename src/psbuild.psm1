@@ -28,7 +28,7 @@ $global:PSBuildSettings = New-Object PSObject -Property @{
 
     DefaultClp = '/clp:v=m'
 }
-
+$script:envVarTarget='Process'
 #####################################################################
 # Functions relating to msbuild.exe
 #####################################################################
@@ -299,7 +299,7 @@ function Invoke-MSBuild{
             }
 
             $projObj = (Get-Project -projectFile $project)
-            $logDir = (Get-PSBuildLogDirectory -project $projObj)
+            $logDir = (Get-PSBuildLogDirectory -projectPath $project)
             if($global:PSBuildSettings.EnableBuildLogging){
                 
                 $loggers = (Get-PSBuildLoggers -project $projObj)
@@ -319,7 +319,7 @@ function Invoke-MSBuild{
                     # in debug mode we call msbuild using the APIs
                     Add-Type -AssemblyName Microsoft.Build
                     $globalProps = (PSBuild-ConverToDictionary -valueToConvert $properties)
-                    $pc = (New-Object -TypeName Microsoft.Build.Evaluation.ProjectCollection)
+                    $pc = (New-Object -TypeName Microsoft.Build.Evaluation.ProjectCollection -ArgumentList $globalProps)
 
                     $projectObj = $pc.LoadProject($project)
                     # todo: add loggers
@@ -474,7 +474,7 @@ $script:loggers = @()
     $logDir1 = Get-PSBuildLogDirectory
 
 .EXAMPLE
-    Get-Project 'C:\temp\msbuild\new\new.proj' | Get-PSBuildLogDirectory
+    'C:\temp\msbuild\new\new.proj' | Get-PSBuildLogDirectory
 #>
 function Get-PSBuildLogDirectory{
     [cmdletbinding()]
@@ -482,15 +482,15 @@ function Get-PSBuildLogDirectory{
         [Parameter(
             Position=1,
             ValueFromPipeline=$true)]
-        $project)
+        $projectPath)
     process{
         if($global:PSBuildSettings.LogDirectory){
             $logDir = $global:PSBuildSettings.LogDirectory
         
-            if($project){
-                $itemResult = (Get-Item $project.Location.File)
+            if($projectPath){
+                $itemResult = (Get-Item $projectPath)
 
-                $projFileName = ((Get-Item $project.Location.File).Name)
+                $projFileName = ((Get-Item $projectPath).Name)
                 
                 $logDir = (Join-Path -Path ($global:PSBuildSettings.LogDirectory) -ChildPath ('{0}-log\' -f $projFileName) )
             }
@@ -674,7 +674,7 @@ function Get-PSBuildLoggers{
             # {2} is a timestamp property
         $loggersResult = @()
         foreach($loggerToAdd in $script:loggers){
-            [string]$logDir = (Get-PSBuildLogDirectory -project $project)
+            [string]$logDir = (Get-PSBuildLogDirectory -projectPath $project.Location.File)
             [string]$projName = if($project) {(get-item $project.Location.File).BaseName} else{''}
             [string]$dateStr = (Get-Date -format yyyy-MM-dd.h.m.s)
             $loggerStr = ($loggerToAdd -f $logDir, $projName,$dateStr)
@@ -1570,6 +1570,7 @@ function PSBuild-ConverToDictionary{
     }
 }
 
+
 $script:envVarToRestore = @{}
 function PSBuildSet-TempVar{
     [cmdletbinding()]
@@ -1582,12 +1583,12 @@ function PSBuildSet-TempVar{
     )
     process{
         foreach($key in $envVars.Keys){
-            $oldValue = [environment]::GetEnvironmentVariable("$key","Process")
+            $oldValue = [environment]::GetEnvironmentVariable("$key",$script:envVarTarget)
             $newValue = ($envVars[$key])
             $script:envVarToRestore[$key]=($oldValue)
             
             'Setting temp env var [{0}={1}]`tPrevious value:[{2}]' -f $key, $newValue, $oldValue | Write-Verbose
-            [environment]::SetEnvironmentVariable("$key", $newValue,'Process')
+            [environment]::SetEnvironmentVariable("$key", $newValue,$script:envVarTarget)
         }
     }
 }
@@ -1597,11 +1598,11 @@ function PSBuildReset-TempEnvVars{
     param()
     process{
         foreach($key in $script:envVarToRestore.Keys){
-            $oldValue = [environment]::GetEnvironmentVariable("$key","Process")
+            $oldValue = [environment]::GetEnvironmentVariable("$key",$script:envVarTarget)
             $newValue = ($script:envVarToRestore[$key])
 
             'Resetting temp env var [{0}={1}]`tPrevious value:[{2}]' -f $key, $newValue, $oldValue | Write-Verbose
-            [environment]::SetEnvironmentVariable("$key",$newValue,'Process')
+            [environment]::SetEnvironmentVariable("$key",$newValue,$script:envVarTarget)
         }
     }
 }

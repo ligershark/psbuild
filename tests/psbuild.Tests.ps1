@@ -6,7 +6,7 @@ Describe "get and set msbuild test cases" {
 
     Setup -File 'sayedha\fakemsbuildfile01.txt' 
     Setup -File 'sayedha\fakemsbuildfile02.txt' 
-
+    Add-Type -AssemblyName Microsoft.Build
     It "validate msbuild returns a file that exists" {
         $msbuildPath = Get-MSBuild
         $msbuildPath | Should Exist $msbuildPath

@@ -18,17 +18,89 @@ Describe 'invoke-msbuild test cases' {
 
 </Project>
 "@
+    Setup -File -Path $script:tempProj -Content $script:tempProjContent    
 
     $global:PSBuildSettings.BuildMessageEnabled = $false
-
-    Setup -File -Path 'invoke-msbuild\temp.proj' -Content $script:tempProjContent
-
+    Add-Type -AssemblyName Microsoft.Build
     It "ensure the project is invoked" {
         $path = ("$TestDrive\{0}" -f $script:tempProj)
 
-        Copy-Item $path 'c:\temp\msbuild\genproj.proj'
         $path | Should Exist
         Invoke-MSBuild $path
         "$TestDrive\$genPath" | Should Exist
+    }
+
+    It "ensure preprocess does not error" {
+        $sourceProj = ("$TestDrive\{0}" -f $script:tempProj)
+        
+        Invoke-MSBuild $sourceProj -preprocess
+    }
+}
+
+Describe 'default property tests' {
+    $script:envVarTarget = 'Process'
+    $script:tempDefaultPropsProj01Path = 'invoke-msbuild\defprops01.proj'
+    $script:tempDefaultPropsProj01Content = @'
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Demo" ToolsVersion="4.0">
+
+  <PropertyGroup>
+    <Configuration>Release</Configuration>
+  </PropertyGroup>
+
+  <Target Name="Demo">
+    <Message Text="Configuration: $(Configuration)" Importance="high"/>
+    <Message Text="OutputType: $(OutputType)" Importance="high"/>
+  </Target>
+  
+</Project>
+'@
+    Setup -File -Path $script:tempDefaultPropsProj01Path -Content $script:tempProjContent
+    Add-Type -AssemblyName Microsoft.Build
+    $global:PSBuildSettings.BuildMessageEnabled = $false
+
+    It 'confirm default property values are picked up' {
+        $path = ("$TestDrive\{0}" -f $script:tempDefaultPropsProj01Path)
+        
+        $buildResultNoDefault = Invoke-MSBuild -projectsToBuild $path -debugMode
+        $outputTypeNoDefault = $buildResultNoDefault.EvalProperty('OutputType')
+
+        $outputTypeNoDefault | Should BeNullOrEmpty
+
+        $buildResultWithDefault = Invoke-MSBuild -projectsToBuild $path -debugMode -defaultProperties @{'OutputType'='exe'}
+        $outputTypeWithDefault = $buildResultWithDefault.EvalProperty('OutputType')
+
+        $outputTypeWithDefault | Should Be 'exe'
+    }
+
+    It 'confirm cmd line param trumps default property' {
+        $path = ("$TestDrive\{0}" -f $script:tempDefaultPropsProj01Path)
+        
+        $buildResultWithDefault = Invoke-MSBuild -projectsToBuild $path -debugMode -defaultProperties @{'OutputType'='exe'} -properties @{'OutputType'='dll'}
+        $outputTypeWithDefault = $buildResultWithDefault.EvalProperty('OutputType')
+
+        $outputTypeWithDefault | Should Be 'dll'
+    }
+
+    It 'confirm env vars are not impacted after invocation' {
+        $info = New-Object psobject -Property @{
+            EnvVarToSet = 'psbuild-temp'
+            ValueBefore = 'default'
+            ValueDuringBuild = 'override'
+        }
+
+        $path = ("$TestDrive\{0}" -f $script:tempDefaultPropsProj01Path)
+
+        # set the env var before the build
+        [environment]::SetEnvironmentVariable($info.EnvVarToSet, $info.ValueBefore,$script:envVarTarget)
+
+        [environment]::GetEnvironmentVariable($info.EnvVarToSet,$script:envVarTarget) | 
+            Should Be $info.ValueBefore
+
+        $buildResultWithDefault = Invoke-MSBuild -projectsToBuild $path -debugMode -defaultProperties @{$info.EnvVarToSet=$info.ValueDuringBuild}
+        $outputTypeWithDefault = $buildResultWithDefault.EvalProperty('OutputType')
+
+        [environment]::GetEnvironmentVariable($info.EnvVarToSet,$script:envVarTarget) | 
+            Should Be $info.ValueBefore
     }
 }
