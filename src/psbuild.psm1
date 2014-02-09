@@ -175,52 +175,73 @@ function Set-MSBuild{
 
 #>
 function Invoke-MSBuild{
-    [cmdletbinding(SupportsShouldProcess=$True)]
+    [cmdletbinding(
+        SupportsShouldProcess=$true,
+        DefaultParameterSetName ='build')]
     param(
         [Parameter(
             Position=1,
-            Mandatory=$true,
             ValueFromPipeline=$true)]
+        [Parameter(ParameterSetName='build',Mandatory=$true)]
+        [Parameter(ParameterSetName='debugMode',Mandatory=$true)]
+        [Parameter(ParameterSetName='preprocess',Mandatory=$true)]
         [alias('proj')]
         $projectsToBuild,
         
+        [Parameter(ParameterSetName='build')]
         $msbuildPath = (Get-MSBuild),
         
+        [Parameter(ParameterSetName='build')]
+        [Parameter(ParameterSetName='debugMode')]
         [alias('p')]
         [Hashtable]
         $properties,
         
+        [Parameter(ParameterSetName='build')]
+        [Parameter(ParameterSetName='debugMode')]
         [alias('t')]
         $targets,
         
+        [Parameter(ParameterSetName='build')]
+        [Parameter(ParameterSetName='debugMode')]
         [alias('vsv')]
         $visualStudioVersion,
-     
+        
+        [Parameter(ParameterSetName='build')]
+        [Parameter(ParameterSetName='debugMode')]
         [alias("m")]
         [int]
         $maxcpucount,
         
+        [Parameter(ParameterSetName='build')]
         [alias('nl')]
         [switch]
         $nologo,
 
+        [Parameter(ParameterSetName='preprocess')]
         [alias('pp')]
         [switch]
         $preprocess,
 
+        [Parameter(ParameterSetName='build')]
         [alias('ds')]
         [switch]
         $detailedSummary,
 
+        [Parameter(ParameterSetName='build')]
+        [Parameter(ParameterSetName='debugMode')]
         [alias('dp')]
         $defaultProperties,
 
+        [Parameter(ParameterSetName='build')]
         [alias('clp')]
         $consoleLoggerParams = $global:PSBuildSettings.DefaultClp,
 
+        [Parameter(ParameterSetName='build')]
         [string]
         $extraArgs,
 
+        [Parameter(ParameterSetName='debugMode')]
         [switch]
         $debugMode
     )
@@ -334,7 +355,7 @@ function Invoke-MSBuild{
 
                     $postBuildProjFilePath = (Join-Path -Path $logDir -ChildPath (Get-Item $project).Name)
                     'Saving post build project file to: [{0}]' -f $postBuildProjFilePath | Write-Verbose
-                    $projectInstance.ToProjectRootElement().Save($postBuildProjFilePath)
+                    $projectInstance.ToProjectRootElement().Save($postBuildProjFilePath) | Out-Null
 
                     $psbuildResult = New-PSBuildResult -buildResult $buildResult -projectInstance $projectInstance -postBuildProjectFile $postBuildProjFilePath
                     
