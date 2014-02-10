@@ -121,6 +121,10 @@ function Set-MSBuild{
         11.0
         12.0
 
+.PARAMETER Configuration
+    This sets the MSBuild property Configuration to the value specified. This will override any value
+    in properties or defaultProperties.
+
 .PARAMETER nologo
     When set this passes the /nologo switch to msbuild.exe.
 
@@ -209,6 +213,10 @@ function Invoke-MSBuild{
         
         [Parameter(ParameterSetName='build')]
         [Parameter(ParameterSetName='debugMode')]
+        $configuration,
+
+        [Parameter(ParameterSetName='build')]
+        [Parameter(ParameterSetName='debugMode')]
         [alias("m")]
         [int]
         $maxcpucount,
@@ -272,6 +280,10 @@ function Invoke-MSBuild{
 
             if($visualStudioVersion){
                 $properties['VisualStudioVersion']=$visualStudioVersion
+            }
+
+            if($configuration){
+                $properties['Configuration']=$configuration
             }
 
             if($properties){
