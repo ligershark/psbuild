@@ -338,6 +338,8 @@ function Invoke-MSBuild{
                 foreach($logger in $loggers){
                     $msbuildArgs += $logger
                 }
+
+                $global:PSBuildSettings.LogDirectory = Get-PSBuildLogDirectory -projectPath $project
             }
 
             "Calling msbuild.exe with the following args: {0}" -f ($msbuildArgs -join ' ') | Write-BuildMessage
@@ -345,6 +347,7 @@ function Invoke-MSBuild{
             if($pscmdlet.ShouldProcess("`n`tmsbuild.exe {0}" -f ($msbuildArgs -join ' '))){
                 
                 if(-not $debugMode){
+                    "Using msbuild.exe from [{0}]. Use Set-MSBuild to change this." -f (Get-MSBuild).FullName | Write-BuildMessage
                     & ((Get-MSBuild).FullName) $msbuildArgs
                 }
                 else{
@@ -1669,7 +1672,7 @@ function Write-BuildMessage{
     }
 }
 
-Export-ModuleMember -function Get-*,Set-*,Invoke-*,Save-*,Test-*,Find-*,Add-*,Remove-*,Test-*,Open-*
+Export-ModuleMember -function Get-*,Set-*,Invoke-*,Save-*,Test-*,Find-*,Add-*,Remove-*,Test-*,Open-*,New-*
 #################################################################
 # begin script portions
 #################################################################
