@@ -622,10 +622,13 @@ function Open-PSBuildLog{
     [cmdletbinding()]
     param(
         [Parameter(ValueFromPipeLine=$true,Position=0)]
-        $logFiles = (Get-PSBuildLastLogs)[0],
+        $logFiles,
         $logIndex = 0
     )
     process{
+        if(-not $logFiles){
+            $logFiles = (Get-PSBuildLastLogs)[$logIndex]
+        }
         foreach($file in $logFiles){
             start $file.FullName
         }
