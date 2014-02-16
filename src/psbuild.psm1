@@ -361,7 +361,7 @@ function Invoke-MSBuild{
                     # 'Registering logger' | Write-Host
                     # $pc.RegisterLogger($conLogger)
 
-                    $projectObj = $pc.LoadProject($project)
+                    $projectObj = $pc.LoadProject((Resolve-Path $project))
                     # todo: add loggers
                     $projectInstance = $projectObj.CreateProjectInstance()
 
