@@ -356,6 +356,11 @@ function Invoke-MSBuild{
                     $globalProps = (PSBuild-ConverToDictionary -valueToConvert $properties)
                     $pc = (New-Object -TypeName Microsoft.Build.Evaluation.ProjectCollection -ArgumentList $globalProps)
 
+                    # $conLogger = New-Object -TypeName Microsoft.Build.Logging.ConsoleLogger
+                    # $conLogger.Verbosity = [Microsoft.Build.Framework.LoggerVerbosity]::Detailed
+                    # 'Registering logger' | Write-Host
+                    # $pc.RegisterLogger($conLogger)
+
                     $projectObj = $pc.LoadProject($project)
                     # todo: add loggers
                     $projectInstance = $projectObj.CreateProjectInstance()
