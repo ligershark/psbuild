@@ -339,7 +339,7 @@ function Invoke-MSBuild{
                     $msbuildArgs += $logger
                 }
 
-                $global:PSBuildSettings.LogDirectory = Get-PSBuildLogDirectory -projectPath $project
+                # $global:PSBuildSettings.LogDirectory = Get-PSBuildLogDirectory -projectPath $project
             }
 
             "Calling msbuild.exe with the following args: {0}" -f ($msbuildArgs -join ' ') | Write-BuildMessage
