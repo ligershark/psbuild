@@ -193,6 +193,7 @@ function Invoke-MSBuild{
         $projectsToBuild,
         
         [Parameter(ParameterSetName='build')]
+        [ValidateScript({Test-Path $_})]
         $msbuildPath = (Get-MSBuild),
         
         [Parameter(ParameterSetName='build')]
