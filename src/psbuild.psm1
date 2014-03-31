@@ -208,6 +208,7 @@ function Invoke-MSBuild{
         
         [Parameter(ParameterSetName='build')]
         [Parameter(ParameterSetName='debugMode')]
+        [ValidateSet('10.0','11.0','12.0')]
         [alias('vsv')]
         $visualStudioVersion,
         
