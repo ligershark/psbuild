@@ -46,7 +46,7 @@ function Get-MSBuild{
 
 	    if(!$path){
 	        $path =  Get-ChildItem "hklm:\SOFTWARE\Microsoft\MSBuild\ToolsVersions\" | 
-				        Sort-Object {$_.Name} | 
+				        Sort-Object {[double]$_.PSChildName} -Descending | 
 				        Select-Object -First 1 | 
 				        Get-ItemProperty -Name MSBuildToolsPath |
 				        Select -ExpandProperty MSBuildToolsPath
