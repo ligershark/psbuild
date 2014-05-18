@@ -25,6 +25,7 @@ $global:PSBuildSettings = New-Object PSObject -Property @{
     BuildMessageStrongBackgroundColor = [ConsoleColor]::DarkGreen
 
     LogDirectory = ('{0}\PSBuild\logs\' -f $env:LOCALAPPDATA)
+    LastLogDirectory = $null
 
     DefaultClp = '/clp:v=m'
 }
@@ -333,7 +334,7 @@ function Invoke-MSBuild{
                 }
             }
 
-            $logDir = (Get-PSBuildLogDirectory -projectPath $project)
+            $logDir = $global:PSBuildSettings.LastLogDirectory = (Get-PSBuildLogDirectory -projectPath $project)
             if($global:PSBuildSettings.EnableBuildLogging){
                 
                 $loggers = (Get-PSBuildLoggers -projectPath $project)
@@ -600,11 +601,13 @@ function Get-PSBuildLastLogs{
     [cmdletbinding()]
     param()
     process{
-        if($global:PSBuildSettings.LogDirectory){
-            return (Get-ChildItem $global:PSBuildSettings.LogDirectory | Where-Object {$_.PSIsContainer -eq $false} | Sort-Object LastWriteTime | Sort-Object Name)
+        $private:logDir = $global:PSBuildSettings.LastLogDirectory
+
+        if($private:logDir){
+            return (Get-ChildItem $private:logDir | Where-Object {$_.PSIsContainer -eq $false} | Sort-Object LastWriteTime | Sort-Object Name)
         }
         else{
-            '$global:PSBuildSettings.LogDirectory is empty, no recent logs' | Write-Verbose
+            '$global:PSBuildSettings.LastLogDirectory is empty, no recent logs' | Write-Verbose
         }
     }
 }
