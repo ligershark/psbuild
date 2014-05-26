@@ -39,7 +39,7 @@ Describe 'tests for Get-PSBuildLogDirectory' {
     It 'Get-PSBuildLoggers returns a list with 2 values' {
         # Get-PSBuildLoggers
         $projFilePath = ("$TestDrive\{0}" -f $script:tempPSBuildLogProj01Path)
-        $project = Get-Project $projFilePath
+        $project = Get-MSBuildProject $projFilePath
 
         $loggers = Get-PSBuildLoggers -projectPath $projFilePath
 
@@ -72,7 +72,7 @@ Describe 'tests for Get-PSBuildLoggers' {
     It 'Get-PSBuildLoggers returns a list with 2 values' {
         # Get-PSBuildLoggers
         $projFilePath = ("$TestDrive\{0}" -f $script:tempPSBuildLogProj01Path)
-        $project = Get-Project $projFilePath
+        $project = Get-MSBuildProject $projFilePath
 
         $loggers = Get-PSBuildLoggers -projectPath $projFilePath
 

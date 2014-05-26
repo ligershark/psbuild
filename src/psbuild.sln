@@ -1,12 +1,19 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.21005.1
+VisualStudioVersion = 12.0.30324.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PowerShell", "PowerShell", "{F17460F8-4080-433E-BC0F-B4A88AD7F1D5}"
 	ProjectSection(SolutionItems) = preProject
+		..\build.ps1 = ..\build.ps1
 		psbuild.psm1 = psbuild.psm1
 		test.ps1 = test.ps1
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NuGet", "NuGet", "{31D0B826-2A86-4A84-ABCD-40CDF54CAE7E}"
+	ProjectSection(SolutionItems) = preProject
+		..\psbuild.nuspec = ..\psbuild.nuspec
+		..\psbuild.proj = ..\psbuild.proj
 	EndProjectSection
 EndProject
 Global

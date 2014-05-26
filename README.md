@@ -50,7 +50,7 @@ Currently psbuild is still a ***preview*** but should be stable enough for regul
 
 ##### You can also create a new MSBuild file with the following
 
-    New-Project | Save-Project -filePath .\new.proj
+    New-MSBuildProject | Save-MSBuildProject -filePath .\new.proj
 
 ##### to see what commands are available
 

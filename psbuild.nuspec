@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- 
+  For more info on this file format visit http://docs.nuget.org/docs/reference/nuspec-reference.
+-->
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">  
+  <metadata>
+    <id>psbuild</id>
+    <version>0.0.1-beta</version>
+    <authors>Sayed Ibrahim Hashimi</authors>
+    <description>
+      NuGet package which installs a PS module on init that can be used by other packages in init.ps1/install.ps1.
+      It exposes some functionality to simplify manipulating MSBuild files.
+    </description>
+    
+    <language>en-US</language>
+    <projectUrl>https://github.com/ligershark/psbuild/</projectUrl>
+    <licenseUrl>https://github.com/ligershark/psbuild/blob/master/LICENSE</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <copyright>Copyright 2013 Sayed Ibrahim Hashimi</copyright>
+    <tags>msbuild</tags>
+    <!--<dependencies>
+      <dependency id="SampleDependency" version="1.0" />
+    </dependencies>-->
+    <frameworkAssemblies>
+      <frameworkAssembly assemblyName="System"  />
+    </frameworkAssemblies>
+  </metadata>
+</package>

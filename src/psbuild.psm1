@@ -815,7 +815,7 @@ function Get-MSBuildEscapeCharacters{
     An optional parameter. If passed in the project file will be saved to the given location.
 #>
 
-function New-Project{
+function New-MSBuildProject{
     [cmdletbinding()]
     param(
         [Parameter(
@@ -830,7 +830,7 @@ function New-Project{
         $newProj = [Microsoft.Build.Construction.ProjectRootElement]::Create()
 
         if($filePath){
-            Save-Project -project $newProj -filePath $filePath | Out-Null
+            Save-MSBuildProject -project $newProj -filePath $filePath | Out-Null
         }
 
         return $newProj
@@ -846,7 +846,7 @@ function New-Project{
     Microsoft.Build.Construction.ProjectRootElement. Returns the object
     passed in the $project parameter.
 #>
-function Save-Project{
+function Save-MSBuildProject{
     [cmdletbinding()]
     param(
         [Parameter(
@@ -922,16 +922,16 @@ function Get-Fullpath{
     [Microsoft.Build.Construction.ProjectRootElement]
 
 .EXAMPLE
-    Get-Project -projectFile 'C:\temp\msbuild\new\new.proj'
+    Get-MSBuildProject -projectFile 'C:\temp\msbuild\new\new.proj'
 
 .EXAMPLE
-    Get-Project -projectFile 'C:\temp\msbuild\new\new.proj' | 
+    Get-MSBuildProject -projectFile 'C:\temp\msbuild\new\new.proj' | 
         Find-PropertyGroup -labelValue second | 
         Remove-Property -name Configuration |
-        Get-Project | 
-        Save-Project -filePath $projFile
+        Get-MSBuildProject | 
+        Save-MSBuildProject -filePath $projFile
 #>
-function Get-Project{
+function Get-MSBuildProject{
     [cmdletbinding()]
     param(
         [Parameter(
@@ -1039,7 +1039,7 @@ function Find-Import{
             $realProject = $project
         }
         else{
-            $realProject = (Get-Project -projectFile ([string]$project))
+            $realProject = (Get-MSBuildProject -projectFile ([string]$project))
         }
         $foundImports = @()
         foreach($import in $realProject.Imports){
@@ -1084,14 +1084,14 @@ function Find-Import{
     passed in the $project parameter.
 
 .EXAMPLE
-    Get-Project C:\temp\build.proj | 
+    Get-MSBuildProject C:\temp\build.proj | 
         Add-Import -importProject 'c:\temp\import.targets' | 
-        Save-Project -filePath 'C:\temp\build.proj'
+        Save-MSBuildProject -filePath 'C:\temp\build.proj'
 
 .EXAMPLE
-    Get-Project C:\temp\build.proj | 
+    Get-MSBuildProject C:\temp\build.proj | 
         Add-Import -importProject 'c:\temp\import.targets'-importLabel 'Label' -importCondition ' ''$(VisualStudioVersion)''==''12.0'' ' | 
-        Save-Project -filePath 'C:\temp\build.proj'
+        Save-MSBuildProject -filePath 'C:\temp\build.proj'
 #>
 function Add-Import{
     [cmdletbinding()]
@@ -1173,15 +1173,15 @@ function Remove-Import{
     in then labelValue will take precedence.
 
 .EXAMPLE
-    Find-PropertyGroup -project (Get-Project 'C:\temp\msbuild\proj1.proj') -labelValue MyPropGroup
+    Find-PropertyGroup -project (Get-MSBuildProject 'C:\temp\msbuild\proj1.proj') -labelValue MyPropGroup
 
 .EXAMPLE
     $projFilePath = 'C:\temp\msbuild\proj1.proj'
-    $proj = (Get-Project $projFilePath)
+    $proj = (Get-MSBuildProject $projFilePath)
     $pgs = Find-PropertyGroup -project $proj -labelValue MyPropGroup
 
 .EXAMPLE
-    Get-Project C:\temp\msbuild\proj1.proj | Find-PropertyGroup -labelValue MyPropGroup
+    Get-MSBuildProject C:\temp\msbuild\proj1.proj | Find-PropertyGroup -labelValue MyPropGroup
 
 .EXAMPLE
     @('C:\temp\msbuild\proj1.proj';'C:\temp\msbuild\proj2.proj') | Find-PropertyGroup -labelValue MyPropGroup
@@ -1214,7 +1214,7 @@ function Find-PropertyGroup{
             $realProject = $project
         }
         else{
-            $realProject = (Get-Project -projectFile ([string]$project))
+            $realProject = (Get-MSBuildProject -projectFile ([string]$project))
         }
 
         $foundPgs = @()
@@ -1245,7 +1245,7 @@ function Find-PropertyGroup{
     passed in the $project parameter.
 
 .EXAMPLE
-    Get-Project 'C:\temp\msbuild\new\new.proj' | Remove-PropertyGroup -labelValue MyPropGroup | Save-Project -filePath 'C:\temp\msbuild\new\new.proj'
+    Get-MSBuildProject 'C:\temp\msbuild\new\new.proj' | Remove-PropertyGroup -labelValue MyPropGroup | Save-MSBuildProject -filePath 'C:\temp\msbuild\new\new.proj'
 #>
 function Remove-PropertyGroup{
     [cmdletbinding()]
@@ -1284,7 +1284,7 @@ function Remove-PropertyGroup{
     passed in the $project parameter.
 
 .EXAMPLE
-    Get-Project 'C:\temp\msbuild\new\new.proj' | Remove-PropertyGroup -labelValue MyPropGroup | Save-Project -filePath 'C:\temp\msbuild\new\new.proj'
+    Get-MSBuildProject 'C:\temp\msbuild\new\new.proj' | Remove-PropertyGroup -labelValue MyPropGroup | Save-MSBuildProject -filePath 'C:\temp\msbuild\new\new.proj'
 #>
 function Add-PropertyGroup{
     [cmdletbinding()]
@@ -1331,7 +1331,7 @@ function Add-PropertyGroup{
     [bool]
 
 .EXAMPLE
-    Get-Project 'C:\temp\msbuild\new\new.proj' | Test-PropertyGroup -label Label1
+    Get-MSBuildProject 'C:\temp\msbuild\new\new.proj' | Test-PropertyGroup -label Label1
 #>
 function Test-PropertyGroup{
     [cmdletbinding()]
@@ -1371,10 +1371,10 @@ function Test-PropertyGroup{
     by either Name or Label. If both are provided the function will just search using Name.
 
 .EXAMPLE
-    Get-Project 'C:\temp\msbuild\new\new.proj' | Find-Property -label Label1
+    Get-MSBuildProject 'C:\temp\msbuild\new\new.proj' | Find-Property -label Label1
 
 .EXAMPLE
-    Get-Project 'C:\temp\msbuild\new\new.proj' | Find-PropertyGroup -labelValue first | Find-Property -label Label1
+    Get-MSBuildProject 'C:\temp\msbuild\new\new.proj' | Find-PropertyGroup -labelValue first | Find-Property -label Label1
 #>
 function Find-Property{
     [cmdletbinding()]
@@ -1441,12 +1441,12 @@ function Find-Property{
 .EXAMPLE
     You can search through the entire project by passing it in as the propertyContainer parameter
     
-    Get-Project 'C:\temp\msbuild\new\new.proj' | Test-Property -label Label1
+    Get-MSBuildProject 'C:\temp\msbuild\new\new.proj' | Test-Property -label Label1
 
 .EXAMPLE
     You can search through a specific PropertyGroup element by passing it in as the propertyContainer parameter
 
-    Get-Project 'C:\temp\msbuild\new\new.proj' | Find-PropertyGroup -labelValue first | Test-Property -label Label1
+    Get-MSBuildProject 'C:\temp\msbuild\new\new.proj' | Find-PropertyGroup -labelValue first | Test-Property -label Label1
 #>
 function Test-Property{
     [cmdletbinding()]
@@ -1493,17 +1493,17 @@ function Test-Property{
     Will return $propertyContainer
 
 .EXAMPLE
-    Get-Project -projectFile 'C:\temp\msbuild\new\new.proj' | Remove-Property -Label label1 | Save-Project -filePath $projFile
+    Get-MSBuildProject -projectFile 'C:\temp\msbuild\new\new.proj' | Remove-Property -Label label1 | Save-MSBuildProject -filePath $projFile
 
 .EXAMPLE
-    Get-Project -projectFile 'C:\temp\msbuild\new\new.proj' | Remove-Property -name Configuration | Save-Project -filePath $projFile
+    Get-MSBuildProject -projectFile 'C:\temp\msbuild\new\new.proj' | Remove-Property -name Configuration | Save-MSBuildProject -filePath $projFile
 
 .EXAMPLE
-    Get-Project -projectFile 'C:\temp\msbuild\new\new.proj' | 
+    Get-MSBuildProject -projectFile 'C:\temp\msbuild\new\new.proj' | 
         Find-PropertyGroup -labelValue second | 
         Remove-Property -name Configuration |
-        Get-Project | 
-        Save-Project -filePath $projFile
+        Get-MSBuildProject | 
+        Save-MSBuildProject -filePath $projFile
 #>
 function Remove-Property{
     [cmdletbinding()]
@@ -1537,16 +1537,16 @@ function Remove-Property{
 .OUTPUTS
 
 .EXAMPLE
-    Get-Project 'C:\temp\msbuild\new\new.proj' | Add-Property -name Configuration -value Debug | Get-Project | Save-Project -filePath 'C:\temp\msbuild\new\new.proj'
+    Get-MSBuildProject 'C:\temp\msbuild\new\new.proj' | Add-Property -name Configuration -value Debug | Get-MSBuildProject | Save-MSBuildProject -filePath 'C:\temp\msbuild\new\new.proj'
 
 .EXAMPLE
-    Add-Property -propertyContainer (Get-Project 'C:\temp\msbuild\new\new.proj') -name Configuration -value Debug | Get-Project | Save-Project -filePath 'C:\temp\msbuild\new\new.proj'
+    Add-Property -propertyContainer (Get-MSBuildProject 'C:\temp\msbuild\new\new.proj') -name Configuration -value Debug | Get-MSBuildProject | Save-MSBuildProject -filePath 'C:\temp\msbuild\new\new.proj'
 
 .EXAMPLE
-    Add-Property -propertyContainer (Get-Project 'C:\temp\msbuild\new\new.proj') `
+    Add-Property -propertyContainer (Get-MSBuildProject 'C:\temp\msbuild\new\new.proj') `
          -name Configuration -value Debug -label Custom -condition' ''$(VSV)''==''12.0'' ' | 
-    Get-Project | 
-    Save-Project -filePath 'C:\temp\msbuild\new\new.proj'
+    Get-MSBuildProject | 
+    Save-MSBuildProject -filePath 'C:\temp\msbuild\new\new.proj'
 #>
 function Add-Property{
     [cmdletbinding()]

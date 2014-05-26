@@ -5,6 +5,8 @@
 *.suo
 *.user
 *.sln.docstates
+OutputRoot/
+
 
 # Build results
 

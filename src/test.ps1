@@ -33,26 +33,26 @@ else{
 
 #$bResult = Invoke-MSBuild $projFile -defaultProperties @{'OutputType'='exe'} -properties @{'OutputType'='dll'} -debugMode
 #$foo = 'bar'
-#$proj = (Get-Project $projFile)
+#$proj = (Get-MSBuildProject $projFile)
 
 #Invoke-MSBuild -projectsToBuild C:\temp\msbuild\new\new.proj
 #Invoke-MSBuild -projectsToBuild C:\temp\msbuild\new\new.proj
-#Get-Project $projFile | Save-Project -filePath $projFile
+#Get-MSBuildProject $projFile | Save-MSBuildProject -filePath $projFile
 #$pgs = (Find-PropertyGroup -project $proj -labelValue MyPropGroup)
-#$pgs = (Get-Project C:\temp\msbuild\proj1.proj | Find-PropertyGroup -labelValue MyPropGroup)
-#Get-Project $projFile | Remove-PropertyGroup -labelValue MyPropGroup | Save-Project -filePath $projFile
-#Get-Project $projFile | Add-PropertyGroup | Save-Project -filePath $projFile
+#$pgs = (Get-MSBuildProject C:\temp\msbuild\proj1.proj | Find-PropertyGroup -labelValue MyPropGroup)
+#Get-MSBuildProject $projFile | Remove-PropertyGroup -labelValue MyPropGroup | Save-MSBuildProject -filePath $projFile
+#Get-MSBuildProject $projFile | Add-PropertyGroup | Save-MSBuildProject -filePath $projFile
 #Test-PropertyGroup -project $proj -label Label1
 
-#Remove-Property -propertyContainer $proj -Label label1 | Save-Project -filePath $projFile
-#Add-Property -propertyContainer $proj -name Configuration -value Debug | Get-Project | Save-Project -filePath $projFile
+#Remove-Property -propertyContainer $proj -Label label1 | Save-MSBuildProject -filePath $projFile
+#Add-Property -propertyContainer $proj -name Configuration -value Debug | Get-MSBuildProject | Save-MSBuildProject -filePath $projFile
 #$logDir1 = Get-PSBuildLogDirectory
 #Set-PSBuildLogDirectory -logDirectory 'C:\Users\Sayed\AppData\Local\PSBuild\logs2'
 #$logDir2 = Get-PSBuildLogDirectory
 
 #######################################################################
 <#
-Get-Project 'C:\temp\msbuild\new\new.proj' | Get-PSBuildLogDirectory
+Get-MSBuildProject 'C:\temp\msbuild\new\new.proj' | Get-PSBuildLogDirectory
 
 
 $loggers1 = (Get-PSBuildLoggers -project $proj)
