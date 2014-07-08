@@ -45,6 +45,9 @@ Currently psbuild is still a ***preview*** but should be stable enough for regul
 	
 	Open-PSBuildLog -logIndex 1
 
+#### show msbuild reserved properties
+    Get-MSBuildReservedProperties
+
 #### show common msbuild escape characters
 	Get-MSBuildEscapeCharacters
 
