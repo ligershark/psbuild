@@ -27,6 +27,8 @@ $global:PSBuildSettings = New-Object PSObject -Property @{
     LogDirectory = ('{0}\PSBuild\logs\' -f $env:LOCALAPPDATA)
     LastLogDirectory = $null
 
+    TempDirectory = ('{0}\PSBuild\temp\' -f $env:LOCALAPPDATA)
+
     DefaultClp = '/clp:v=m'
 }
 $script:envVarTarget='Process'
@@ -786,18 +788,81 @@ function Get-MSBuildEscapeCharacters{
     param()
     process{
     $resultList = @()
-    $resultList += @{'%'='%25'}
-    $resultList += @{'$'='%24'}
-    $resultList += @{'@'='%40'}
-    $resultList += @{"'"='%27'}
-    $resultList += @{';'='%3B'}
-    $resultList += @{'?'='%3F'}
-    $resultList += @{'*'='%2A'}
-    $resultList += @{'('='%28'}
-    $resultList += @{')'='%29'}
-    $resultList += @{'"'='%22'}
+    $resultList += @{'  %'='%25'}
+    $resultList += @{'  $'='%24'}
+    $resultList += @{'  @'='%40'}
+    $resultList += @{"  '"='%27'}
+    $resultList += @{'  ;'='%3B'}
+    $resultList += @{'  ?'='%3F'}
+    $resultList += @{'  *'='%2A'}
+    $resultList += @{'  ('='%28'}
+    $resultList += @{'  )'='%29'}
+    $resultList += @{'  "'='%22'}
         
     return $resultList
+    }
+}
+
+function Get-MSBuildReservedProperties{
+    [cmdletbinding()]
+    param()
+    process{
+        # see if the file exists in the temp directory
+        $reservedPropsProjFile = ('{0}reservedprops-v1.proj' -f $global:PSBuildSettings.TempDirectory)
+        if(!(Test-Path $reservedPropsProjFile)){
+            Create-MSBuildReservedPropertiesFile -filePath $reservedPropsProjFile
+        }
+
+        # call it
+        Invoke-MSBuild $reservedPropsProjFile -consoleLoggerParams '/clp:v=n' -nologo
+    }
+}
+
+function Create-MSBuildReservedPropertiesFile{
+    [cmdletbinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        $filePath
+    )
+    process{
+
+    if(!(Test-Path $global:PSBuildSettings.TempDirectory)){
+        New-Item $global:PSBuildSettings.TempDirectory -ItemType Directory
+    }
+
+@'
+<Project ToolsVersion="4.0" DefaultTargets="PrintValues" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <Target Name="PrintValues">
+    <Message Text="MSBuild:                        $(MSBuild)"/>
+    <Message Text="MSBuildBinPath:                 $(MSBuildBinPath)"/>
+    <Message Text="MSBuildExtensionsPath:          $(MSBuildExtensionsPath)"/>
+    <Message Text="MSBuildExtensionsPath32:        $(MSBuildExtensionsPath32)"/>
+    <Message Text="MSBuildExtensionsPath64:        $(MSBuildExtensionsPath64)"/>
+    <Message Text="MSBuildLastTaskResult:          $(MSBuildLastTaskResult)"/>
+    <Message Text="MSBuildNodeCount:               $(MSBuildNodeCount)"/>
+    <Message Text="MSBuildOverrideTasksPath:       $(MSBuildOverrideTasksPath)"/>
+    <Message Text="MSBuildProgramFiles32:          $(MSBuildProgramFiles32)"/>
+    <Message Text="MSBuildProjectDefaultTargets:   $(MSBuildProjectDefaultTargets)"/>
+    <Message Text="MSBuildProjectDirectory:        $(MSBuildProjectDirectory)"/>
+    <Message Text="MSBuildProjectDirectoryNoRoot:  $(MSBuildProjectDirectoryNoRoot)"/>
+    <Message Text="MSBuildProjectExtension:        $(MSBuildProjectExtension)"/>
+    <Message Text="MSBuildProjectFile:             $(MSBuildProjectFile)"/>
+    <Message Text="MSBuildProjectFullPath:         $(MSBuildProjectFullPath)"/>
+    <Message Text="MSBuildProjectName:             $(MSBuildProjectName)"/>
+    <Message Text="MSBuildStartupDirectory:        $(MSBuildStartupDirectory)"/>
+    <Message Text="MSBuildThisFile:                $(MSBuildThisFile)"/>
+    <Message Text="MSBuildThisFileDirectory:       $(MSBuildThisFileDirectory)"/>
+    <Message Text="MSBuildThisFileDirectoryNoRoot: $(MSBuildThisFileDirectoryNoRoot)"/>
+    <Message Text="MSBuildThisFileExtension:       $(MSBuildThisFileExtension)"/>
+    <Message Text="MSBuildThisFileFullPath:        $(MSBuildThisFileFullPath)"/>
+    <Message Text="MSBuildThisFileName:            $(MSBuildThisFileName)"/>
+    <Message Text="MSBuildToolsPath:               $(MSBuildToolsPath)"/>
+    <Message Text="MSBuildToolsVersion:            $(MSBuildToolsVersion)"/>
+  </Target>
+
+</Project>
+'@ | Set-Content -Path $filePath
     }
 }
 
