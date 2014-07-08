@@ -10,7 +10,7 @@ function Install-PSBuild {
 
     $downloadUrl = 'https://raw.github.com/ligershark/psbuild/master/src/psbuild.psm1'
     New-Item ($Destination + "\psbuild\") -ItemType Directory -Force | out-null
-    'Downloading PsGet from {0}' -f $downloadUrl | Write-Host
+    'Downloading psbuild from {0}' -f $downloadUrl | Write-Host
     $client = (New-Object Net.WebClient)
     $client.Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
     $client.DownloadFile($downloadUrl, $Destination + "\psbuild\psbuild.psm1")
@@ -32,7 +32,7 @@ For more information execute:
     }
 
     if (!$executionRestricted){
-        # ensure PsGet is imported from the location it was just installed to
+        # ensure psbuild is imported from the location it was just installed to
         Import-Module -Name $Destination\psbuild
     }    
     Write-Host "psbuild is installed and ready to use" -Foreground Green
