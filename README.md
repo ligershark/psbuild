@@ -21,7 +21,7 @@ Currently psbuild is still a ***preview*** but should be stable enough for regul
 
 ##### build the file provided with the given parameters
 
-    Invoke-MSBuild C:\temp\msbuild\path.proj -properties (@{'Configuration'='Release';'visualstudioversion'='12.0'}) -extraArgs '/nologo'
+    Invoke-MSBuild C:\temp\msbuild\path.proj -properties @{'Configuration'='Release';'visualstudioversion'='12.0'} -extraArgs '/nologo'
 
 ##### build an msbuild file and execute a specific target
 
