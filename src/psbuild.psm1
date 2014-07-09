@@ -205,8 +205,11 @@ function Invoke-MSBuild{
         [Hashtable]
         $properties,
         
+        # I'm having an issue with how the call is handled if
+        # -debugMode is passed and this is null.
+        # for now i'll have to require this parameter
         [Parameter(ParameterSetName='build')]
-        [Parameter(ParameterSetName='debugMode')]
+        [Parameter(ParameterSetName='debugMode',Mandatory=$true)]
         [alias('t')]
         $targets,
         
