@@ -149,12 +149,15 @@ function Set-MSBuild{
 
 .EXAMPLE
     Invoke-MSBuild C:\temp\msbuild\msbuild.proj
+    Shows how you can build a project.
 
 .EXAMPLE
-    Invoke-MSBuild 'C:\temp\msbuild\msbuild.proj'
+    Invoke-MSBuild C:\temp\msbuild\msbuild.proj -configuration Release -visualStudioVersion 12.0
+    You can easily pass in the value for the Configuraiton and VisualStudioVersion MSBuild properties.
 
 .EXAMPLE
     Invoke-MSBuild @('C:\temp\msbuild\proj1.proj';'C:\temp\msbuild\proj2.proj')
+    Shows how you can easily build more than one project.
 
 .EXAMPLE
     @('C:\temp\msbuild\proj1.proj';'C:\temp\msbuild\proj2.proj') | Invoke-MSBuild
@@ -186,12 +189,9 @@ function Invoke-MSBuild{
         SupportsShouldProcess=$true,
         DefaultParameterSetName ='build')]
     param(
-        [Parameter(
-            Position=1,
-            ValueFromPipeline=$true)]
-        [Parameter(ParameterSetName='build',Mandatory=$true)]
-        [Parameter(ParameterSetName='debugMode',Mandatory=$true)]
-        [Parameter(ParameterSetName='preprocess',Mandatory=$true)]
+        [Parameter(ParameterSetName='build',Mandatory=$true,Position=1,ValueFromPipeline=$true)]
+        [Parameter(ParameterSetName='debugMode',Mandatory=$true,Position=1,ValueFromPipeline=$true)]
+        [Parameter(ParameterSetName='preprocess',Mandatory=$true,Position=1,ValueFromPipeline=$true)]
         [alias('proj')]
         $projectsToBuild,
         
