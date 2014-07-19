@@ -29,7 +29,7 @@ $global:PSBuildSettings = New-Object PSObject -Property @{
 
     TempDirectory = ('{0}\PSBuild\temp\' -f $env:LOCALAPPDATA)
 
-    DefaultClp = '/clp:v=m'
+    DefaultClp = '/clp:v=m;ShowCommandLine'
 }
 $script:envVarTarget='Process'
 #####################################################################
@@ -225,6 +225,22 @@ function Invoke-MSBuild{
 
         [Parameter(ParameterSetName='build')]
         [Parameter(ParameterSetName='debugMode')]
+        $outputPath,
+
+        [Parameter(ParameterSetName='build')]
+        [Parameter(ParameterSetName='debugMode')]
+        [string]$deployOnBuild,
+
+        [Parameter(ParameterSetName='build')]
+        [Parameter(ParameterSetName='debugMode')]
+        $publishProfile,
+
+        [Parameter(ParameterSetName='build')]
+        [Parameter(ParameterSetName='debugMode')]
+        $password,
+
+        [Parameter(ParameterSetName='build')]
+        [Parameter(ParameterSetName='debugMode')]
         [alias("m")]
         [int]
         $maxcpucount,
@@ -289,9 +305,20 @@ function Invoke-MSBuild{
             if($visualStudioVersion){
                 $properties['VisualStudioVersion']=$visualStudioVersion
             }
-
             if($configuration){
                 $properties['Configuration']=$configuration
+            }
+            if($outputPath){
+                $properties['OutputPath']=$outputPath
+            }
+            if($deployOnBuild){
+                $properties['DeployOnBuild']=$deployOnBuild.ToString()
+            }
+            if($publishProfile){
+                $properties['PublishProfile']=$publishProfile
+            }
+            if($password){
+                $properties['Password']=$password
             }
 
             if($properties){
