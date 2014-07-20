@@ -7,9 +7,7 @@
     <SourceRoot Condition=" '$(SourceRoot)'=='' ">$(Root)src\</SourceRoot>
     <OutputRootNoTrailingSlash Condition=" '$(OutputRoot)'=='' ">$(Root)OutputRoot</OutputRootNoTrailingSlash>
     <OutputRoot Condition=" '$(OutputRoot)'=='' ">$(OutputRootNoTrailingSlash)\</OutputRoot>
-    <!--<PackageRoot Condition=" '$(PackageRoot)'=='' ">$(OutputRoot)Nugetpkg\</PackageRoot>-->
     <ToolsRoot Condition=" ''=='' ">$(Root)build-tools\</ToolsRoot>
-    <NugetExe Condition=" '$(NugetExe)'=='' ">$(ToolsRoot)NuGet.exe</NugetExe>
     <NugetLocalRepo Condition=" '$(NugetLocalRepo)'=='' ">C:\Temp\Nuget\LocalRepo\</NugetLocalRepo>
     <RestorePackages Condition=" '$(RestorePackages)'=='' ">true</RestorePackages>
     <Configuration Condition=" '$(Configuration)'=='' ">Release</Configuration>
@@ -47,20 +45,21 @@
   
   <PropertyGroup>
     <CreateNugetPackageDependsOn>
+      GetNuget;
       PrepareAndPopulateNugetFolder;
       CoreCreateNugetPackage;
     </CreateNugetPackageDependsOn>
   </PropertyGroup>
   <Target Name="CreateNugetPackage" DependsOnTargets="$(CreateNugetPackageDependsOn)" />
 
-  <Target Name="CoreCreateNugetPackage">
+  <Target Name="CoreCreateNugetPackage" DependsOnTargets="GetNuget">
     <Message Text="
 OutputRoot: $(OutputRoot)
 NugetSourceRoot: $(NugetSourceRoot)" Importance="low"/>
 
     <PropertyGroup>
       <_NugetSpecFile>%(_NugetSpecOutputFile.FullPath)</_NugetSpecFile>
-      <_Cmd>"$(NugetExe)" pack "$(_NugetSpecFile)" -NoPackageAnalysis -OutputDirectory "$(OutputRootNoTrailingSlash)" </_Cmd>
+      <_Cmd>"$(NuGetExePath)" pack "$(_NugetSpecFile)" -NoPackageAnalysis -OutputDirectory "$(OutputRootNoTrailingSlash)" </_Cmd>
     </PropertyGroup>
 
     <Message Text="_Cmd: $(_Cmd)" Importance="low" />
@@ -97,4 +96,6 @@ NuGetRootItems : [@(NuGetRootItems)]" Importance="low"/>
           DestinationFiles="@(NuGetRootItems->'$(PackageRoot)%(DestDir)%(Filename)%(Extension)')" />
 
   </Target>
+
+  <Import Project="getnuget.targets"/>
 </Project>

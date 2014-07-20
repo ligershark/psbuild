@@ -37,11 +37,33 @@ function Get-MSBuild{
     }
 }
 
-function Get-NugetExe{
+<#
+.SYNOPSIS
+    If nuget is in the tools
+    folder then it will be downloaded there.
+#>
+function Get-Nuget(){
     [cmdletbinding()]
-    param()
+    param(
+        $toolsDir = ("$env:LOCALAPPDATA\LigerShark\tools\"),
+
+        $nugetDownloadUrl = 'http://nuget.org/nuget.exe'
+    )
     process{
-        return (get-item (Join-Path $scriptDir '\build-tools\NuGet.exe'))
+        $nugetDestPath = Join-Path -Path $toolsDir -ChildPath nuget.exe
+        
+        if(!(Test-Path $nugetDestPath)){
+            'Downloading nuget.exe' | Write-Verbose
+            (New-Object System.Net.WebClient).DownloadFile($nugetDownloadUrl, $nugetDestPath)
+
+            # double check that is was written to disk
+            if(!(Test-Path $nugetDestPath)){
+                throw 'unable to download nuget'
+            }
+        }
+
+        # return the path of the file
+        $nugetDestPath
     }
 }
 
