@@ -78,14 +78,12 @@
 
         }
         public override void Shutdown() {
-            File.WriteAllText(Filename, _messages.ToString());
-            File.WriteAllText(@"c:\temp\from-debug.md", MdContainer.ToMarkdown());
+            File.WriteAllText(Filename, MdContainer.ToMarkdown());
         }
         #endregion
         #region Logging handlers
 
         void BuildStarted(object sender, BuildStartedEventArgs e) {           
-            AppendLine(string.Format("#Build Started {0}", e.Timestamp));
             AppendLine(string.Format("#Build Started {0}", e.Timestamp).ToMarkdownRawMarkdown());
 
             if (IsVerbosityAtLeast(LoggerVerbosity.Detailed)) {
@@ -95,68 +93,55 @@
                             Value = e.BuildEnvironment[be]
                         };
 
-                AppendLine(r.ToMarkdownTable().ToMarkdown());
                 AppendLine(r.ToMarkdownTable());
 
-                AppendLine(e.ToPropertyValues().ToMarkdownTable().ToMarkdown());
                 AppendLine(e.ToPropertyValues().ToMarkdownTable());
             }
 
         }
         void BuildFinished(object sender, BuildFinishedEventArgs e) {
-            AppendLine(string.Format("#Build Finished"));
+            AppendLine(string.Format("#Build Finished").ToMarkdownRawMarkdown());
             if (IsVerbosityAtLeast(LoggerVerbosity.Detailed)) {
-                AppendLine(e.ToPropertyValues().ToMarkdownTable().ToMarkdown());
+                AppendLine(e.ToPropertyValues().ToMarkdownTable().ToMarkdown().ToMarkdownRawMarkdown());
             }
 
-            AppendLine("Target summary".ToMarkdownSubHeader().ToMarkdown());
+            AppendLine("Target summary".ToMarkdownSubHeader());
             var targetSummary = from t in this._targetsExecuted
                                 orderby t.Value.TimeSpent descending
                                 select new Tuple<string, int>(t.Value.Name, t.Value.TimeSpent.Milliseconds);
 
-            AppendLine(targetSummary.ToList().ToMarkdownBarChart().ToMarkdown());
+            AppendLine(targetSummary.ToList().ToMarkdownBarChart());
 
-            AppendLine("Task summary".ToMarkdownSubHeader().ToMarkdown());
+            AppendLine("Task summary".ToMarkdownSubHeader());
             var taskSummary = from t in this._taskExecuted
                               orderby t.Value.TimeSpent descending
                               select new Tuple<string, int>(t.Value.Name, t.Value.TimeSpent.Milliseconds);
 
-            AppendLine(taskSummary.ToList().ToMarkdownBarChart().ToMarkdown());
+            AppendLine(taskSummary.ToList().ToMarkdownBarChart());
         }
         void ProjectStarted(object sender, ProjectStartedEventArgs e) {
             this._projectsStarted.Push(e);
-
-            AppendLine(string.Format("##Project Started:{0}\r\n", e.ProjectFile));
-            AppendLine(string.Format("_{0}_\r\n", e.Message.EscapeMarkdownCharacters()));
-            AppendLine(string.Format("```{0} | targets=({1}) | {2}```\r\n", e.Timestamp, e.TargetNames, e.ProjectFile));
-
             AppendLine(string.Format("##Project Started:{0}\r\n", e.ProjectFile).ToMarkdownRawMarkdown());
             AppendLine(string.Format("_{0}_\r\n", e.Message.EscapeMarkdownCharacters()).ToMarkdownRawMarkdown());
             AppendLine(string.Format("```{0} | targets=({1}) | {2}```\r\n", e.Timestamp, e.TargetNames, e.ProjectFile).ToMarkdownRawMarkdown());
 
             if (IsVerbosityAtLeast(LoggerVerbosity.Detailed)) {
-                AppendLine("###Global properties");
-                AppendLine(e.GlobalProperties.ToMarkdownTable().ToMarkdown());
                 AppendLine("###Global properties".ToMarkdownRawMarkdown());
                 AppendLine(e.GlobalProperties.ToMarkdownTable());
 
-                AppendLine("####Initial Properties");
                 AppendLine("####Initial Properties".ToMarkdownRawMarkdown());
 
                 List<Tuple<string, string>> propsToDisplay = new List<Tuple<string, string>>();
                 foreach (DictionaryEntry p in e.Properties) {
                     propsToDisplay.Add(new Tuple<string, string>(p.Key.ToString(), p.Value.ToString()));
                 }
-                AppendLine(propsToDisplay.ToMarkdownTable().WithHeaders(new string[]{"Name","Value"}).ToMarkdown());
                 AppendLine(propsToDisplay.ToMarkdownTable().WithHeaders(new string[] { "Name", "Value" }));
             }
         }
         void ProjectFinished(object sender, ProjectFinishedEventArgs e) {
-            AppendLine(string.Format("##Project Finished:{0}", e.Message.EscapeMarkdownCharacters()));
             AppendLine(string.Format("##Project Finished:{0}", e.Message.EscapeMarkdownCharacters()).ToMarkdownRawMarkdown());
 
             if (IsVerbosityAtLeast(LoggerVerbosity.Detailed)) {
-                AppendLine(e.ToPropertyValues().ToMarkdownTable().ToMarkdown());
                 AppendLine(e.ToPropertyValues().ToMarkdownTable());
             }
 
@@ -172,11 +157,9 @@
 
         void TargetStarted(object sender, TargetStartedEventArgs e) {
             _targetsStarted.Push(e);
-            AppendLine(string.Format("####{0}", e.TargetName));
             AppendLine(string.Format("####{0}", e.TargetName).ToMarkdownRawMarkdown());
 
             if (IsVerbosityAtLeast(LoggerVerbosity.Detailed)) {
-                AppendLine(e.ToPropertyValues().ToMarkdownTable().ToMarkdown());
                 AppendLine(e.ToPropertyValues().ToMarkdownTable());
             }
         }
@@ -198,17 +181,10 @@
             AppendLine(string.Format(
                 "####<font color='{0}'>{1}</font> Target Finished",
                 color,
-                e.TargetName));
-            AppendLine(e.Message.ToMarkdownParagraph().ToMarkdown());
-
-            AppendLine(string.Format(
-                "####<font color='{0}'>{1}</font> Target Finished",
-                color,
                 e.TargetName).ToMarkdownRawMarkdown());
             AppendLine(e.Message.ToMarkdownParagraph());
 
             if (IsVerbosityAtLeast(LoggerVerbosity.Detailed)) {
-                AppendLine(e.ToPropertyValues().ToMarkdownTable().ToMarkdown());
                 AppendLine(e.ToPropertyValues().ToMarkdownTable());
             }
         }
@@ -216,27 +192,22 @@
             _tasksStarted.Push(e);
             
             if (IsVerbosityAtLeast(LoggerVerbosity.Detailed)) {
-                AppendLine(string.Format("######Task Started:{0}", e.Message.EscapeMarkdownCharacters()));
                 AppendLine(string.Format("######Task Started:{0}", e.Message.EscapeMarkdownCharacters()).ToMarkdownRawMarkdown());
             }
 
             if (IsVerbosityAtLeast(LoggerVerbosity.Diagnostic)) {
-                AppendLine(e.ToPropertyValues().ToMarkdownTable().ToMarkdown());
                 AppendLine(e.ToPropertyValues().ToMarkdownTable());
             }
         }
 
         void TaskFinished(object sender, TaskFinishedEventArgs e) {
-            AppendLine(string.Format("######Task Finished:{0}", e.Message.EscapeMarkdownCharacters()));
             AppendLine(string.Format("######Task Finished:{0}", e.Message.EscapeMarkdownCharacters()).ToMarkdownRawMarkdown());
 
             if (!e.Succeeded) {
-                AppendLine(string.Format("<font color='red'>{0}</font> task failed.\r\n{1}", e.Message));
                 AppendLine(string.Format("<font color='red'>{0}</font> task failed.\r\n{1}", e.Message).ToMarkdownRawMarkdown());
             }
 
             if (IsVerbosityAtLeast(LoggerVerbosity.Detailed)) {
-                AppendLine(e.ToPropertyValues().ToMarkdownTable().ToMarkdown());
                 AppendLine(e.ToPropertyValues().ToMarkdownTable().ToMarkdown().ToMarkdownRawMarkdown());
             }
             var startInfo = _tasksStarted.Pop();
@@ -252,16 +223,10 @@
             this._taskExecuted[execInfo.Name] = execInfo;
         }
         void BuildError(object sender, BuildErrorEventArgs e) {
-            AppendLine(string.Format("###ERROR:<font color='red'>{0}</font>", e.Message.EscapeMarkdownCharacters()));
-            AppendLine(e.ToPropertyValues().ToMarkdownTable().ToMarkdown());
-
             AppendLine(string.Format("###ERROR:<font color='red'>{0}</font>", e.Message.EscapeMarkdownCharacters()).ToMarkdownRawMarkdown());
             AppendLine(e.ToPropertyValues().ToMarkdownTable());
         }
         void BuildWarning(object sender, BuildWarningEventArgs e) {
-            AppendLine(string.Format("###Warning:<font color='orange'>{0}</font>", e.Message.EscapeMarkdownCharacters()));
-            AppendLine(e.ToPropertyValues().ToMarkdownTable().ToMarkdown());
-
             AppendLine(string.Format("###Warning:<font color='orange'>{0}</font>", e.Message.EscapeMarkdownCharacters()).ToMarkdownRawMarkdown());
             AppendLine(e.ToPropertyValues().ToMarkdownTable());
         }
@@ -282,15 +247,11 @@
             string msg = string.Format(formatStr, e.Message.EscapeMarkdownCharacters(), e.Timestamp.ToString().EscapeMarkdownCharacters());
 
             if (e.Importance != MessageImportance.Low || IsVerbosityAtLeast(LoggerVerbosity.Detailed)) {
-                AppendLine(msg);
                 AppendLine(msg.ToMarkdownRawMarkdown());
             }
             
         }
         #endregion
-        protected void AppendLine(string line) {
-            _messages.AppendLine(line);
-        }
         protected void AppendLine(MarkdownElement element) {
             MdContainer.Append(element);
         }
