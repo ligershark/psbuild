@@ -20,8 +20,10 @@
     public class MarkdownLogger : BaseLogger {
         #region Fields
         private StringBuilder _messages;
-        private Dictionary<string, ExecutionInfo> _projectsExecuted;
+        private List<ExecutionInfo> _projectsExecuted;
+        private Dictionary<string, ExecutionInfo> _projectsExecutedMap;
         private Stack<BuildStatusEventArgs> _projectsStarted;
+        private List<IMarkdownElement> _projectSummary;
 
         private Dictionary<string, ExecutionInfo> _targetsExecuted;
         private Stack<TargetStartedEventArgs> _targetsStarted;
@@ -38,7 +40,9 @@
             this._taskExecuted = new Dictionary<string, ExecutionInfo>();
             this._tasksStarted = new Stack<TaskStartedEventArgs>();
 
-            this._projectsExecuted = new Dictionary<string, ExecutionInfo>();
+            this._projectSummary = new List<IMarkdownElement>();
+            this._projectsExecuted = new List<ExecutionInfo>();
+            this._projectsExecutedMap = new Dictionary<string, ExecutionInfo>();
             this._projectsStarted = new Stack<BuildStatusEventArgs>();
         }
 
@@ -76,7 +80,7 @@
                 new BuildMessageEventHandler(this.BuildMessage);
 
         }
-        public override void Shutdown() {            
+        public override void Shutdown() {
             File.WriteAllText(Filename, MdElements.ToMarkdown());
         }
         #endregion
@@ -102,6 +106,10 @@
             AppendLine(string.Format("#Build Finished").ToMarkdownRawMarkdown());
             if (IsVerbosityAtLeast(LoggerVerbosity.Detailed)) {
                 AppendLine(e.ToPropertyValues().ToMarkdownTable().ToMarkdown().ToMarkdownRawMarkdown());
+
+                if (e.BuildEventContext != null) {
+                    AppendLine(e.BuildEventContext.ToPropertyValues().ToMarkdownTable().ToMarkdown().ToMarkdownRawMarkdown());
+                }
             }
 
             AppendLine("Target summary".ToMarkdownSubHeader());
@@ -117,6 +125,71 @@
                               select new Tuple<string, int>(t.Value.Name, t.Value.TimeSpent.Milliseconds);
 
             AppendLine(taskSummary.ToList().ToMarkdownBarChart());
+
+            // add the TOC to the list of items to be logged
+            // e.Succeeded
+            // e.Message
+            List<IMarkdownElement> toc = new List<IMarkdownElement>();
+            toc.Add("Build Summary".ToMarkdownHeader());
+
+            foreach (var project in this._projectsExecuted.OrderBy(p=>p.StartedArgs.Timestamp)) {
+                string formatStr = @" - [{0}]({1}) | {2} | ```time={3} targets={4}```";
+
+                ProjectFinishedEventArgs finishedArgs = project.FinishedArgs as ProjectFinishedEventArgs;
+                string failStr = finishedArgs.Succeeded ? string.Empty : @"<font color=""red"">Failed</font>";
+
+                string color = finishedArgs.Succeeded ? "green" : "red";
+
+                string statusString = string.Format(
+                    @"<font color=""{0}"">{1}</font>",
+                    color,
+                    finishedArgs.Succeeded ? "Succeeded" : "Failed");
+
+                string targetNames = (project.StartedArgs as ProjectStartedEventArgs).TargetNames;
+                if (string.IsNullOrEmpty(targetNames)) {
+                    targetNames = "(default targets)";
+                }
+
+                string md = string.Format(
+                                formatStr,                                
+                                Path.GetFileName(project.Name),
+                                this.GetLinkNameFor(project.StartedArgs as ProjectStartedEventArgs),
+                                statusString,
+                                string.Format("{0}s",project.TimeSpent.TotalSeconds),
+                                targetNames
+                                );
+
+                toc.Add(md.ToMarkdownRawMarkdown());
+            }
+            toc.AddRange(MdElements);
+            MdElements = toc;
+        }
+        private IMarkdownElement CreateProjectSummaryElement(ProjectStartedEventArgs startedArgs,ProjectFinishedEventArgs finishedArgs){
+            string formatStr = @" - [{0}]({1}) | {2} | ```time={3} targets={4}```";
+
+            string failStr = finishedArgs.Succeeded ? string.Empty : @"<font color=""red"">Failed</font>";
+
+            string color = finishedArgs.Succeeded ? "green" : "red";
+
+            string statusString = string.Format(
+                @"<font color=""{0}"">{1}</font>",
+                color,
+                finishedArgs.Succeeded ? "Succeeded" : "Failed");
+
+            string targetNames = (startedArgs as ProjectStartedEventArgs).TargetNames;
+            if (string.IsNullOrEmpty(targetNames)) {
+                targetNames = "(default targets)";
+            }
+
+            string md = string.Format(
+                            formatStr,
+                            Path.GetFileName(finishedArgs.ProjectFile),
+                            this.GetLinkNameFor(startedArgs),
+                            statusString,
+                            string.Format("{0}s", finishedArgs.Timestamp),
+                            targetNames
+                            );
+            return md.ToMarkdownRawMarkdown();
         }
         void ProjectStarted(object sender, ProjectStartedEventArgs e) {
             this._projectsStarted.Push(e);
@@ -145,15 +218,26 @@
             if (IsVerbosityAtLeast(LoggerVerbosity.Detailed)) {
                 AppendLine(e.ToPropertyValues().ToMarkdownTable());
             }
-
+            
             var startInfo = _projectsStarted.Pop();
             var execInfo = new ExecutionInfo(e.ProjectFile, startInfo, e);
             ExecutionInfo prevExecInfo;
-            this._projectsExecuted.TryGetValue(e.ProjectFile, out prevExecInfo);
+            this._projectsExecutedMap.TryGetValue(e.ProjectFile, out prevExecInfo);
             if (prevExecInfo != null) {
-                // shouldn't be found for projects
+                // shouldn't be found for projects but we can handle in either case
                 execInfo.TimeSpent = execInfo.TimeSpent.Add(prevExecInfo.TimeSpent);
+
+                var projToRemove = (from p in _projectsExecuted
+                                    where p.Name.Equals(execInfo.Name)
+                                    select p).ToList();
+
+                foreach (var p in projToRemove) {
+                    _projectsExecuted.Remove(p);
+                }
             }
+
+            _projectsExecutedMap[execInfo.Name] = execInfo;            
+            _projectsExecuted.Add(execInfo);
         }
 
         void TargetStarted(object sender, TargetStartedEventArgs e) {
@@ -180,7 +264,7 @@
             string color = e.Succeeded ? "green" : "red";
 
             AppendLine(string.Format(
-                "####<font color='{0}'>{1}</font> Target Finished",
+                "####<font color='{0}'>{1}</font> target finished",
                 color,
                 e.TargetName).ToMarkdownRawMarkdown());
             AppendLine(e.Message.ToMarkdownParagraph());
@@ -202,13 +286,11 @@
         }
 
         void TaskFinished(object sender, TaskFinishedEventArgs e) {
-            AppendLine(string.Format("######Task Finished:{0}", e.Message.EscapeMarkdownCharacters()).ToMarkdownRawMarkdown());
-
             if (!e.Succeeded) {
-                AppendLine(string.Format("<font color='red'>{0}</font> task failed.\r\n{1}", e.Message).ToMarkdownRawMarkdown());
+                AppendLine(string.Format("<font color='red'>{0}</font> task failed.\r\n{1}",e.TaskName, e.Message).ToMarkdownRawMarkdown());
             }
-
             if (IsVerbosityAtLeast(LoggerVerbosity.Detailed)) {
+                AppendLine(string.Format("######Task Finished:{0}", e.Message.EscapeMarkdownCharacters()).ToMarkdownRawMarkdown());
                 AppendLine(e.ToPropertyValues().ToMarkdownTable().ToMarkdown().ToMarkdownRawMarkdown());
             }
             var startInfo = _tasksStarted.Pop();
@@ -260,12 +342,12 @@
         protected string GetLinkNameFor(ProjectStartedEventArgs startedEventArgs) {
             if (startedEventArgs == null) { throw new ArgumentNullException("startedEventArgs"); }
 
-            List<int> hashCodes = new List<int> {
+            List<long> hashCodes = new List<long> {
                 startedEventArgs.ProjectFile.GetHashCode(),
                 startedEventArgs.Timestamp.GetHashCode()
             };
 
-            int code = hashCodes.Sum();
+            long code = hashCodes.Sum();
             
             return string.Format("{0}-{1}",Path.GetFileNameWithoutExtension(startedEventArgs.ProjectFile),code);
         }
