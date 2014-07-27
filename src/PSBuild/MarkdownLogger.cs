@@ -18,7 +18,7 @@
     /// copyright Sayed Ibrahim Hashimi 2005
     /// </summary>
     public class MarkdownLogger : BaseLogger {
-        #region Fields        
+        #region Fields
         private StringBuilder _messages;
         private Dictionary<string, ExecutionInfo> _projectsExecuted;
         private Stack<BuildStatusEventArgs> _projectsStarted;
@@ -31,7 +31,7 @@
         #endregion
 
         public MarkdownLogger() {
-            MdContainer = new MarkdownContainer();
+            MdElements = new List<IMarkdownElement>();
             this._targetsExecuted = new Dictionary<string, ExecutionInfo>();
             this._targetsStarted = new Stack<TargetStartedEventArgs>();
 
@@ -42,8 +42,7 @@
             this._projectsStarted = new Stack<BuildStatusEventArgs>();
         }
 
-        private MarkdownContainer MdContainer { get; set; }
-
+        private List<IMarkdownElement> MdElements { get; set; }
         #region ILogger Members
         public override void Initialize(IEventSource eventSource) {
             base.Initialize(eventSource);
@@ -77,8 +76,8 @@
                 new BuildMessageEventHandler(this.BuildMessage);
 
         }
-        public override void Shutdown() {
-            File.WriteAllText(Filename, MdContainer.ToMarkdown());
+        public override void Shutdown() {            
+            File.WriteAllText(Filename, MdElements.ToMarkdown());
         }
         #endregion
         #region Logging handlers
@@ -121,6 +120,8 @@
         }
         void ProjectStarted(object sender, ProjectStartedEventArgs e) {
             this._projectsStarted.Push(e);
+
+            AppendLine(string.Format(@"<a name=""{0}"">&nbsp;</a>", this.GetLinkNameFor(e)).ToMarkdownRawMarkdown());
             AppendLine(string.Format("##Project Started:{0}\r\n", e.ProjectFile).ToMarkdownRawMarkdown());
             AppendLine(string.Format("_{0}_\r\n", e.Message.EscapeMarkdownCharacters()).ToMarkdownRawMarkdown());
             AppendLine(string.Format("```{0} | targets=({1}) | {2}```\r\n", e.Timestamp, e.TargetNames, e.ProjectFile).ToMarkdownRawMarkdown());
@@ -253,7 +254,20 @@
         }
         #endregion
         protected void AppendLine(MarkdownElement element) {
-            MdContainer.Append(element);
+            MdElements.Add(element);
+        }
+
+        protected string GetLinkNameFor(ProjectStartedEventArgs startedEventArgs) {
+            if (startedEventArgs == null) { throw new ArgumentNullException("startedEventArgs"); }
+
+            List<int> hashCodes = new List<int> {
+                startedEventArgs.ProjectFile.GetHashCode(),
+                startedEventArgs.Timestamp.GetHashCode()
+            };
+
+            int code = hashCodes.Sum();
+            
+            return string.Format("{0}-{1}",Path.GetFileNameWithoutExtension(startedEventArgs.ProjectFile),code);
         }
     }
 }
