@@ -46,7 +46,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BaseLogger.cs" />
     <Compile Include="ExecutionInfo.cs" />
+    <Compile Include="Extensions\MdExtensions.cs" />
     <Compile Include="MarkdownLogger.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
