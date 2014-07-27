@@ -21,18 +21,18 @@
         private StringBuilder _messages;
         private IDictionary<string, string> _paramaterBag;
 
-        private Dictionary<string, TargetExecutionInfo> _targetsExecuted;
-        private Stack<TargetStartedInfo> _targetsStarted;
+        private Dictionary<string, ExecutionInfo> _targetsExecuted;
+        private Stack<TargetStartedEventArgs> _targetsStarted;
 
-        private Dictionary<string, TaskExecutionInfo> _taskExecuted;
+        private Dictionary<string, ExecutionInfo> _taskExecuted;
         private Stack<TaskStartedEventArgs> _tasksStarted;
         #endregion
 
         public MarkdownLogger() {
-            this._targetsExecuted = new Dictionary<string, TargetExecutionInfo>();
-            this._targetsStarted = new Stack<TargetStartedInfo>();
+            this._targetsExecuted = new Dictionary<string, ExecutionInfo>();
+            this._targetsStarted = new Stack<TargetStartedEventArgs>();
 
-            this._taskExecuted = new Dictionary<string, TaskExecutionInfo>();
+            this._taskExecuted = new Dictionary<string, ExecutionInfo>();
             this._tasksStarted = new Stack<TaskStartedEventArgs>();
         }
 
@@ -135,7 +135,7 @@
         }
 
         void TargetStarted(object sender, TargetStartedEventArgs e) {
-            _targetsStarted.Push(new TargetStartedInfo { TargetStartedArgs = e });
+            _targetsStarted.Push(e);
             AppendLine(string.Format("####{0}", e.TargetName));
 
             if (IsVerbosityAtLeast(LoggerVerbosity.Detailed)) {
@@ -144,10 +144,10 @@
         }
         void TargetFinished(object sender, TargetFinishedEventArgs e) {
             var startInfo = _targetsStarted.Pop();
-            
-            var execInfo = new TargetExecutionInfo(startInfo.TargetStartedArgs, e);
+
+            var execInfo = new ExecutionInfo(startInfo.TargetName, startInfo, e);
             // see if the target is already in the executed list
-            TargetExecutionInfo previoudExecInfo;
+            ExecutionInfo previoudExecInfo;
             this._targetsExecuted.TryGetValue(e.TargetName, out previoudExecInfo);
 
             if (previoudExecInfo != null) {
@@ -191,9 +191,9 @@
                 AppendLine(e.ToPropertyValues().ToMarkdownTable().ToMarkdown());
             }
             var startInfo = _tasksStarted.Pop();
-            var execInfo = new TaskExecutionInfo(startInfo, e);
+            var execInfo = new ExecutionInfo(startInfo.TaskName,startInfo, e);
 
-            TaskExecutionInfo previousExecInfo;
+            ExecutionInfo previousExecInfo;
             this._taskExecuted.TryGetValue(e.TaskName, out previousExecInfo);
 
             if (previousExecInfo != null) {
@@ -370,29 +370,5 @@
 
             return value;
         }
-    }
-    public class TargetExecutionInfo {
-        public TargetExecutionInfo() {
-
-        }
-        public TargetExecutionInfo(TargetStartedEventArgs startedArgs, TargetFinishedEventArgs finishedArgs)
-            : this() {
-            this.Name = startedArgs.TargetName;
-            this.TimeSpent = finishedArgs.Timestamp.Subtract(startedArgs.Timestamp);
-        }
-        public string Name { get; set; }
-        public TimeSpan TimeSpent { get; set; }
-    }
-    public class TargetStartedInfo {
-        public TargetStartedEventArgs TargetStartedArgs { get; set; }
-    }
-    public class TaskExecutionInfo {
-        public TaskExecutionInfo() { }
-        public TaskExecutionInfo(TaskStartedEventArgs startedArgs, TaskFinishedEventArgs finishedArgs) {
-            this.Name = startedArgs.TaskName;
-            this.TimeSpent = finishedArgs.Timestamp.Subtract(startedArgs.Timestamp);
-        }
-        public string Name { get; set; }
-        public TimeSpan TimeSpent { get; set; }
     }
 }
