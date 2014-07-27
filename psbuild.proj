@@ -1,4 +1,4 @@
-﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="12.0" DefaultTargets="CreateNugetPackage">
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="12.0" DefaultTargets="FullBuild">
 
   <!-- This file is designed to be executed from the OutputRoot\ directory not the source directory -->
 
@@ -13,7 +13,7 @@
     <Configuration Condition=" '$(Configuration)'=='' ">Release</Configuration>
 
     <PsbuildSourceRoot Condition=" '$(PsbuildSourceRoot)'=='' ">$(SourceRoot)</PsbuildSourceRoot>
-    
+    <PSBuildOutputRoot Condition=" '$(PSBuildOutputRoot)'=='' ">$(OutputRoot)PSBuild\</PSBuildOutputRoot>
     <!--<ImgCompSourceRoot Condition=" '$(ImgCompSourceRoot)'=='' ">$(SourceRoot)ImageCompressor.Job\</ImgCompSourceRoot>
     <TextMinSourceRoot Condition=" '$(TextMinSourceRoot)'=='' ">$(SourceRoot)TextMinifier.Job\</TextMinSourceRoot>
     <SharedSourceRoot Condition=" '$(SharedSourceRoot)'=='' ">$(SourceRoot)AzureJobs.NuGet.Shared\</SharedSourceRoot>
@@ -31,25 +31,49 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- This item should never have more than 1 value -->
-    <_NugetSpecFile Include="$(NuspecFile)" />
-
-    <!-- Standard declarations -->
-    <LibItems Include="$(NugetSourceRoot)NuGet\lib\**\*" />
-    <ContentItems Include="$(NugetSourceRoot)NuGet\content\**\*"/>
-    <ToolsItems Include="$(NugetSourceRoot)NuGet\tools\**\*" />
-
-    <ToolsItems Include="$(NugetSourceRoot)init.ps1"/>
-    <ToolsItems Include="$(NugetSourceRoot)psbuild.psm1"/>    
+    <ProjectsToBuild Include="$(SourceRoot)PSBuild\PSBuild.csproj"/>
   </ItemGroup>
   
+
+  
   <PropertyGroup>
+    <FullBuildDependsOn>
+      BuildProjects;
+      CreateNugetPackage
+    </FullBuildDependsOn>
+    <BuildProjectsDependsOn>
+      CoreBuildProjects;
+    </BuildProjectsDependsOn>
     <CreateNugetPackageDependsOn>
       GetNuget;
+      GatherNuGetFiles;
       PrepareAndPopulateNugetFolder;
       CoreCreateNugetPackage;
     </CreateNugetPackageDependsOn>
   </PropertyGroup>
+  <Target Name="FullBuild" DependsOnTargets="$(FullBuildDependsOn)"/>
+  <Target Name="BuildProjects" DependsOnTargets="$(BuildProjectsDependsOn)"/>
+  <Target Name="CoreBuildProjects">
+    <Message Text="Building projects now [@(ProjectsToBuild)]" Importance="high"/>
+    <MSBuild Projects="@(ProjectsToBuild)" Properties="Configuration=$(Configuration);OutputPath=$(PSBuildOutputRoot)"/>
+  </Target>
+
+  <Target Name="GatherNuGetFiles">
+    <ItemGroup>
+      <!-- This item should never have more than 1 value -->
+      <_NugetSpecFile Include="$(NuspecFile)" />
+
+      <!-- Standard declarations -->
+      <LibItems Include="$(NugetSourceRoot)NuGet\lib\**\*" />
+      <ContentItems Include="$(NugetSourceRoot)NuGet\content\**\*"/>
+      <ToolsItems Include="$(NugetSourceRoot)NuGet\tools\**\*" />
+
+      <ToolsItems Include="$(NugetSourceRoot)init.ps1"/>
+      <ToolsItems Include="$(NugetSourceRoot)psbuild.psm1"/>
+      <ToolsItems Include="$(PSBuildOutputRoot)*.dll"/>
+    </ItemGroup>
+  </Target>
+  
   <Target Name="CreateNugetPackage" DependsOnTargets="$(CreateNugetPackageDependsOn)" />
 
   <Target Name="CoreCreateNugetPackage" DependsOnTargets="GetNuget">
