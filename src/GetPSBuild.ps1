@@ -130,9 +130,8 @@ function GetPsBuildPsm1{
     }
 }
 
+<#
 $path = GetPsBuildPsm1 -toolsDir $toolsDir -nugetDownloadUrl $nugetDownloadUrl
+#>
 
-$foo = 'bar'
-# Install-PSBuild
-
-#Install-PSBuild
+Install-PSBuild
