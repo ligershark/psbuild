@@ -8,12 +8,18 @@ function Install-PSBuild {
         $Destination = $ModulePaths | Select-Object -Index 0
     }
 
+    $destFile = (join-path $Destination "\psbuild\psbuild.psm1")
+    $destFolder = ([System.IO.Path]::GetDirectoryName($destFile))
+    if(!(test-path $destFolder)){
+        new-item -path $destFolder -ItemType Directory | out-null
+    }
+
     $downloadUrl = 'https://raw.github.com/ligershark/psbuild/master/src/psbuild.psm1'
     New-Item ($Destination + "\psbuild\") -ItemType Directory -Force | out-null
     'Downloading psbuild from {0}' -f $downloadUrl | Write-Host
     $client = (New-Object Net.WebClient)
     $client.Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
-    $client.DownloadFile($downloadUrl, $Destination + "\psbuild\psbuild.psm1")
+    $client.DownloadFile($downloadUrl, $destFile)
 
     $executionPolicy  = (Get-ExecutionPolicy)
     $executionRestricted = ($executionPolicy -eq "Restricted")
