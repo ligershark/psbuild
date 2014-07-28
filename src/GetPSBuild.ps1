@@ -1,4 +1,11 @@
-﻿# based off of the scrit at http://psget.net/GetPsGet.ps1
+﻿[cmdletbinding()]
+param(
+    $toolsDir = ("$env:LOCALAPPDATA\LigerShark\tools\"),
+
+    $nugetDownloadUrl = 'http://nuget.org/nuget.exe'
+)
+
+# based off of the scrit at http://psget.net/GetPsGet.ps1
 function Install-PSBuild {
     $ModulePaths = @($Env:PSModulePath -split ';')
     
@@ -53,4 +60,79 @@ Or visit http://msbuildbook.com/psbuild
 "@
 }
 
-Install-PSBuild
+<#
+.SYNOPSIS
+    If nuget is in the tools
+    folder then it will be downloaded there.
+#>
+function Get-Nuget(){
+    [cmdletbinding()]
+    param(
+        $toolsDir = ("$env:LOCALAPPDATA\LigerShark\tools\"),
+        $nugetDownloadUrl = 'http://nuget.org/nuget.exe'
+    )
+    process{
+        $nugetDestPath = Join-Path -Path $toolsDir -ChildPath nuget.exe
+        
+        if(!(Test-Path $nugetDestPath)){
+            $nugetDir = ([System.IO.Path]::GetDirectoryName($nugetDestPath))
+            if(!(Test-Path $nugetDir)){
+                New-Item -Path $nugetDir -ItemType Directory | Out-Null
+            }
+
+            'Downloading nuget.exe' | Write-Verbose
+            (New-Object System.Net.WebClient).DownloadFile($nugetDownloadUrl, $nugetDestPath)
+
+            # double check that is was written to disk
+            if(!(Test-Path $nugetDestPath)){
+                throw 'unable to download nuget'
+            }
+        }
+
+        # return the path of the file
+        $nugetDestPath
+    }
+}
+
+$nugetExe = (Get-Nuget -toolsDir $toolsDir -nugetDownloadUrl $nugetDownloadUrl)
+
+# see if there is a package installed into %localappdata%
+function GetPsBuildPsm1{
+    [cmdletbinding()]
+    param(
+        $toolsDir = ("$env:LOCALAPPDATA\LigerShark\tools\"),
+        $nugetDownloadUrl = 'http://nuget.org/nuget.exe'
+    )
+    process{
+        if(!(Test-Path $toolsDir)){
+            New-Item -Path $toolsDir -ItemType Directory | out-null
+        }
+
+        $psbuildPsm1 = (Get-ChildItem -Path $toolsDir -Include 'psbuild.psm1' -Recurse | select -first 1)
+
+        if(!$psbuildPsm1){
+            'Downloading psbuild to the toolsDir' | Write-Verbose
+            # nuget install psbuild -Prerelease -OutputDirectory C:\temp\nuget\out\
+            $cmdArgs = @('install','psbuild','-Prerelease','-OutputDirectory',(Resolve-Path $toolsDir).ToString())
+
+            $nugetPath = (Get-Nuget -toolsDir $toolsDir -nugetDownloadUrl $nugetDownloadUrl)
+            'Calling nuget to install psbuild with the following args. [{0}{1}]' -f $nugetPath, ($cmdArgs -join ' ') | Write-Verbose
+            &$nugetPath $cmdArgs | Out-Null
+
+            $psbuildPsm1 = (Get-ChildItem -Path $toolsDir -Include 'psbuild.psm1' -Recurse | select -first 1)
+        }
+
+        if(!$psbuildPsm1){ 
+            throw 'psbuild not found, and was not downloaded successfully. sorry.' 
+        }
+
+        $psbuildPsm1
+    }
+}
+
+$path = GetPsBuildPsm1 -toolsDir $toolsDir -nugetDownloadUrl $nugetDownloadUrl
+
+$foo = 'bar'
+# Install-PSBuild
+
+#Install-PSBuild
