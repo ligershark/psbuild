@@ -33,9 +33,7 @@
   <ItemGroup>
     <ProjectsToBuild Include="$(SourceRoot)PSBuild\PSBuild.csproj"/>
   </ItemGroup>
-  
-
-  
+ 
   <PropertyGroup>
     <FullBuildDependsOn>
       BuildProjects;

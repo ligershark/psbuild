@@ -47,7 +47,6 @@
         }
 
         private List<IMarkdownElement> MdElements { get; set; }
-        #region ILogger Members
         public override void Initialize(IEventSource eventSource) {
             base.Initialize(eventSource);
             Filename = "build.log.md";
@@ -83,8 +82,6 @@
         public override void Shutdown() {
             File.WriteAllText(Filename, MdElements.ToMarkdown());
         }
-        #endregion
-        #region Logging handlers
 
         void BuildStarted(object sender, BuildStartedEventArgs e) {           
             AppendLine(string.Format("#Build Started {0}", e.Timestamp).ToMarkdownRawMarkdown());
@@ -193,7 +190,7 @@
         }
         void ProjectStarted(object sender, ProjectStartedEventArgs e) {
             this._projectsStarted.Push(e);
-
+            
             AppendLine(string.Format(@"<a name=""{0}"">&nbsp;</a>", this.GetLinkNameFor(e)).ToMarkdownRawMarkdown());
             AppendLine(string.Format("##Project Started:{0}\r\n", e.ProjectFile).ToMarkdownRawMarkdown());
             AppendLine(string.Format("_{0}_\r\n", e.Message.EscapeMarkdownCharacters()).ToMarkdownRawMarkdown());
@@ -203,13 +200,24 @@
                 AppendLine("###Global properties".ToMarkdownRawMarkdown());
                 AppendLine(e.GlobalProperties.ToMarkdownTable());
 
-                AppendLine("####Initial Properties".ToMarkdownRawMarkdown());
+                AppendLine("####Initial properties".ToMarkdownRawMarkdown());
 
                 List<Tuple<string, string>> propsToDisplay = new List<Tuple<string, string>>();
                 foreach (DictionaryEntry p in e.Properties) {
                     propsToDisplay.Add(new Tuple<string, string>(p.Key.ToString(), p.Value.ToString()));
                 }
                 AppendLine(propsToDisplay.ToMarkdownTable().WithHeaders(new string[] { "Name", "Value" }));
+            }
+
+            if (IsVerbosityAtLeast(LoggerVerbosity.Diagnostic)) {
+                AppendLine(e.ToPropertyValues().ToMarkdownTable());
+                var itemsObj = from DictionaryEntry r in e.Items
+                          select new {
+                              Name = r.Key,
+                              Value = r.Value
+                          };
+                AppendLine(string.Format("#### Initial items").ToMarkdownRawMarkdown());
+                AppendLine(itemsObj.ToMarkdownTable().WithHeaders(new string[] { "Item name", "Path" }));
             }
         }
         void ProjectFinished(object sender, ProjectFinishedEventArgs e) {
@@ -218,7 +226,11 @@
             if (IsVerbosityAtLeast(LoggerVerbosity.Detailed)) {
                 AppendLine(e.ToPropertyValues().ToMarkdownTable());
             }
-            
+
+            if (IsVerbosityAtLeast(LoggerVerbosity.Diagnostic)) {
+                //e.it
+            }
+
             var startInfo = _projectsStarted.Pop();
             var execInfo = new ExecutionInfo(e.ProjectFile, startInfo, e);
             ExecutionInfo prevExecInfo;
@@ -317,24 +329,26 @@
             string formatStr = null;
             switch (e.Importance) {
                 case MessageImportance.High:
-                    formatStr = "\r\n{0} *{1}*";
+                    formatStr = "\r\n - {0} *{1}*";
                     break;
                 case MessageImportance.Normal:
                 case MessageImportance.Low:
-                    formatStr = "\r\n{0} {1}";
+                    formatStr = "\r\n - {0} {1}";
                     break;
                 default:
                     throw new LoggerException(string.Format("Unknown message importance {0}", e.Importance));
             }
 
-            string msg = string.Format(formatStr, e.Message.EscapeMarkdownCharacters(), e.Timestamp.ToString().EscapeMarkdownCharacters());
+            string msg = string.Format(
+                formatStr, 
+                e.Message.EscapeMarkdownCharacters(), 
+                e.Timestamp.ToString().EscapeMarkdownCharacters());
 
             if (e.Importance != MessageImportance.Low || IsVerbosityAtLeast(LoggerVerbosity.Detailed)) {
                 AppendLine(msg.ToMarkdownRawMarkdown());
             }
             
         }
-        #endregion
         protected void AppendLine(MarkdownElement element) {
             MdElements.Add(element);
         }
