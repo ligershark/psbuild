@@ -4,6 +4,7 @@ param(
 
     $nugetDownloadUrl = 'http://nuget.org/nuget.exe'
 )
+
 # based off of the scrit at http://psget.net/GetPsGet.ps1
 function Install-PSBuild {
     $ModulePaths = @($Env:PSModulePath -split ';')
@@ -133,3 +134,5 @@ $path = GetPsBuildPsm1 -toolsDir $toolsDir -nugetDownloadUrl $nugetDownloadUrl
 
 $foo = 'bar'
 # Install-PSBuild
+
+#Install-PSBuild
