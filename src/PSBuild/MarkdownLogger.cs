@@ -81,10 +81,50 @@
         }
         public override void Shutdown() {
             File.WriteAllText(Filename, MdElements.ToMarkdown());
+
+            var sb = new StringBuilder();
+            using (var sw = new StreamWriter(Filename)) {
+                foreach (var element in MdElements) {
+                    var md = element.ToMarkdown();
+                    sw.WriteLine(md);
+                    sb.AppendLine(md);
+                }
+
+                sw.Flush();
+            }
+
+            // these techniques result is poor performance in md->html conversion
+            // string htmlFilepath = string.Format("{0}.html", Path.GetFullPath(Filename));
+            // string mdText = sb.ToString();
+
+            // try 1: use MarkdownToHtml()
+            // string htmlText = MdElements.ToMarkdown().MarkdownToHtml();
+
+            // try 2: use converter with custom options
+            //var converter = new MarkdownToHtmlConverter(new MarkdownOptions {
+            //    AutoHyperlink =false,
+            //    AutoNewlines=false,
+            //    EncodeProblemUrlCharacters=false,
+            //    LinkEmails=false,
+            //});
+            // string htmlText = converter.Transform(htmlText);
+            
+            // try 3: convert md->html on elements
+            //string htmlFilepath = string.Format("{0}.html", Path.GetFullPath(Filename));
+            //using (var writer = new StreamWriter(htmlFilepath)) {
+            //    writer.Write(@"<!doctype html> <html><body>");
+
+            //    foreach (var element in MdElements) {
+            //        writer.Write(element.ToMarkdown().MarkdownToHtml());
+            //    }
+
+            //    writer.Write("</body></html>");
+            //    writer.Flush();
+            //}
         }
 
         void BuildStarted(object sender, BuildStartedEventArgs e) {           
-            AppendLine(string.Format("#Build Started {0}", e.Timestamp).ToMarkdownRawMarkdown());
+            AppendLine(string.Format("####Build Started {0}", e.Timestamp).ToMarkdownRawMarkdown());
 
             if (IsVerbosityAtLeast(LoggerVerbosity.Detailed)) {
                 var r = from be in e.BuildEnvironment.Keys
@@ -100,7 +140,7 @@
 
         }
         void BuildFinished(object sender, BuildFinishedEventArgs e) {
-            AppendLine(string.Format("#Build Finished").ToMarkdownRawMarkdown());
+            AppendLine(string.Format("####Build Finished").ToMarkdownRawMarkdown());
             if (IsVerbosityAtLeast(LoggerVerbosity.Detailed)) {
                 AppendLine(e.ToPropertyValues().ToMarkdownTable().ToMarkdown().ToMarkdownRawMarkdown());
 
@@ -123,11 +163,9 @@
 
             AppendLine(taskSummary.ToList().ToMarkdownBarChart());
 
-            // add the TOC to the list of items to be logged
-            // e.Succeeded
-            // e.Message
             List<IMarkdownElement> toc = new List<IMarkdownElement>();
-            toc.Add("Build Summary".ToMarkdownHeader());
+            toc.Add("#### Build Summary\r\n".ToMarkdownRawMarkdown());
+            // toc.Add(new HorizontalRule());
 
             foreach (var project in this._projectsExecuted.OrderBy(p=>p.StartedArgs.Timestamp)) {
                 string formatStr = @" - [{0}]({1}) | {2} | ```time={3} targets={4}```";
@@ -190,17 +228,21 @@
         }
         void ProjectStarted(object sender, ProjectStartedEventArgs e) {
             this._projectsStarted.Push(e);
-            
-            AppendLine(string.Format(@"<a name=""{0}"">&nbsp;</a>", this.GetLinkNameFor(e)).ToMarkdownRawMarkdown());
-            AppendLine(string.Format("##Project Started:{0}\r\n", e.ProjectFile).ToMarkdownRawMarkdown());
+
+            var sb = new StringBuilder();
+            sb.AppendFormat(@"<a name=""{0}"">&nbsp;</a>", this.GetLinkNameFor(e));
+            sb.AppendFormat("#####Project Started:{0}\r\n", e.ProjectFile);
+
+            //AppendLine();
+            //AppendLine(string.Format("#####Project Started:{0}\r\n", e.ProjectFile).ToMarkdownRawMarkdown());
             AppendLine(string.Format("_{0}_\r\n", e.Message.EscapeMarkdownCharacters()).ToMarkdownRawMarkdown());
             AppendLine(string.Format("```{0} | targets=({1}) | {2}```\r\n", e.Timestamp, e.TargetNames, e.ProjectFile).ToMarkdownRawMarkdown());
 
             if (IsVerbosityAtLeast(LoggerVerbosity.Detailed)) {
-                AppendLine("###Global properties".ToMarkdownRawMarkdown());
+                AppendLine("######Global properties".ToMarkdownRawMarkdown());
                 AppendLine(e.GlobalProperties.ToMarkdownTable());
 
-                AppendLine("####Initial properties".ToMarkdownRawMarkdown());
+                AppendLine("#######Initial properties".ToMarkdownRawMarkdown());
 
                 List<Tuple<string, string>> propsToDisplay = new List<Tuple<string, string>>();
                 foreach (DictionaryEntry p in e.Properties) {
@@ -216,12 +258,12 @@
                               Name = r.Key,
                               Value = r.Value
                           };
-                AppendLine(string.Format("#### Initial items").ToMarkdownRawMarkdown());
+                AppendLine(string.Format("###### Initial items").ToMarkdownRawMarkdown());
                 AppendLine(itemsObj.ToMarkdownTable().WithHeaders(new string[] { "Item name", "Path" }));
             }
         }
         void ProjectFinished(object sender, ProjectFinishedEventArgs e) {
-            AppendLine(string.Format("##Project Finished:{0}", e.Message.EscapeMarkdownCharacters()).ToMarkdownRawMarkdown());
+            AppendLine(string.Format("#####Project Finished:{0}", e.Message.EscapeMarkdownCharacters()).ToMarkdownRawMarkdown());
 
             if (IsVerbosityAtLeast(LoggerVerbosity.Detailed)) {
                 AppendLine(e.ToPropertyValues().ToMarkdownTable());
@@ -254,9 +296,9 @@
 
         void TargetStarted(object sender, TargetStartedEventArgs e) {
             _targetsStarted.Push(e);
-            AppendLine(string.Format("####{0}", e.TargetName).ToMarkdownRawMarkdown());
-
+            
             if (IsVerbosityAtLeast(LoggerVerbosity.Detailed)) {
+                AppendLine(string.Format("####{0}", e.TargetName).ToMarkdownRawMarkdown());
                 AppendLine(e.ToPropertyValues().ToMarkdownTable());
             }
         }
@@ -272,14 +314,16 @@
                 execInfo.TimeSpent = execInfo.TimeSpent.Add(prevExecInfo.TimeSpent);
             }
 
-            this._targetsExecuted[execInfo.Name] = execInfo;
-            string color = e.Succeeded ? "green" : "red";
-
-            AppendLine(string.Format(
-                "####<font color='{0}'>{1}</font> target finished",
-                color,
-                e.TargetName).ToMarkdownRawMarkdown());
-            AppendLine(e.Message.ToMarkdownParagraph());
+            if (!e.Succeeded || IsVerbosityAtLeast(LoggerVerbosity.Detailed)) {
+                this._targetsExecuted[execInfo.Name] = execInfo;
+                string color = e.Succeeded ? "green" : "red";
+                AppendLine(string.Format(
+                    "######<font color='{0}'>{1}</font> target finished",
+                    color,
+                    e.TargetName).ToMarkdownRawMarkdown());
+                AppendLine(e.Message.ToMarkdownParagraph());
+            }
+            
 
             if (IsVerbosityAtLeast(LoggerVerbosity.Detailed)) {
                 AppendLine(e.ToPropertyValues().ToMarkdownTable());
