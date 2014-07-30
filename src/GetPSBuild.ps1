@@ -1,32 +1,54 @@
 ﻿[cmdletbinding()]
 param(
+    $versionToInstall = '0.0.2-beta',
+
     $toolsDir = ("$env:LOCALAPPDATA\LigerShark\tools\"),
 
     $nugetDownloadUrl = 'http://nuget.org/nuget.exe'
 )
 
+function GetPsModulesPath{
+    [cmdletbinding()]
+    param()
+    process{
+            $ModulePaths = @($Env:PSModulePath -split ';')
+    
+        $ExpectedUserModulePath = Join-Path -Path ([Environment]::GetFolderPath('MyDocuments')) -ChildPath WindowsPowerShell\Modules
+        $Destination = $ModulePaths | Where-Object { $_ -eq $ExpectedUserModulePath}
+        if (-not $Destination) {
+            $Destination = $ModulePaths | Select-Object -Index 0
+        }
+
+        $Destination
+    }
+}
+
+
+
 # based off of the scrit at http://psget.net/GetPsGet.ps1
 function Install-PSBuild {
-    $ModulePaths = @($Env:PSModulePath -split ';')
+    $Destination = GetPsModulesPath
+    $destFolder = (join-path $Destination 'psbuild\')
+    $destFile = (join-path $destFolder 'psbuild.psm1')
     
-    $ExpectedUserModulePath = Join-Path -Path ([Environment]::GetFolderPath('MyDocuments')) -ChildPath WindowsPowerShell\Modules
-    $Destination = $ModulePaths | Where-Object { $_ -eq $ExpectedUserModulePath}
-    if (-not $Destination) {
-        $Destination = $ModulePaths | Select-Object -Index 0
-    }
-
-    $destFile = (join-path $Destination "\psbuild\psbuild.psm1")
-    $destFolder = ([System.IO.Path]::GetDirectoryName($destFile))
     if(!(test-path $destFolder)){
-        new-item -path $destFolder -ItemType Directory | out-null
+        new-item -path $destFolder -ItemType Directory -Force | out-null
     }
 
+    <#
     $downloadUrl = 'https://raw.github.com/ligershark/psbuild/master/src/psbuild.psm1'
-    New-Item ($Destination + "\psbuild\") -ItemType Directory -Force | out-null
     'Downloading psbuild from {0}' -f $downloadUrl | Write-Host
     $client = (New-Object Net.WebClient)
     $client.Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
     $client.DownloadFile($downloadUrl, $destFile)
+    #>
+
+    # this will download using nuget if its not in localappdata
+    $psbPsm1File = GetPsBuildPsm1
+
+    # copy the folder to the modules folder
+
+    Copy-Item -Path  "$($psbPsm1File.Directory.FullName)\*"  -Destination $destFolder -Recurse
 
     $executionPolicy  = (Get-ExecutionPolicy)
     $executionRestricted = ($executionPolicy -eq "Restricted")
@@ -108,18 +130,18 @@ function GetPsBuildPsm1{
             New-Item -Path $toolsDir -ItemType Directory | out-null
         }
 
-        $psbuildPsm1 = (Get-ChildItem -Path $toolsDir -Include 'psbuild.psm1' -Recurse | select -first 1)
+        $psbuildPsm1 = (Get-ChildItem -Path "$toolsDir\psbuild.$versionToInstall" -Include 'psbuild.psm1' -Recurse -ErrorAction SilentlyContinue | Sort-Object -Descending -ErrorAction SilentlyContinue | Select-Object -First 1 -ErrorAction SilentlyContinue)
 
         if(!$psbuildPsm1){
             'Downloading psbuild to the toolsDir' | Write-Verbose
-            # nuget install psbuild -Prerelease -OutputDirectory C:\temp\nuget\out\
-            $cmdArgs = @('install','psbuild','-Prerelease','-OutputDirectory',(Resolve-Path $toolsDir).ToString())
+            # nuget install psbuild -Version 0.0.2-beta -Prerelease -OutputDirectory C:\temp\nuget\out\
+            $cmdArgs = @('install','psbuild','-Version',$versionToInstall,'-Prerelease','-OutputDirectory',(Resolve-Path $toolsDir).ToString())
 
             $nugetPath = (Get-Nuget -toolsDir $toolsDir -nugetDownloadUrl $nugetDownloadUrl)
             'Calling nuget to install psbuild with the following args. [{0}{1}]' -f $nugetPath, ($cmdArgs -join ' ') | Write-Verbose
             &$nugetPath $cmdArgs | Out-Null
 
-            $psbuildPsm1 = (Get-ChildItem -Path $toolsDir -Include 'psbuild.psm1' -Recurse | select -first 1)
+            $psbuildPsm1 = (Get-ChildItem -Path "$toolsDir\psbuild.$versionToInstall" -Include 'psbuild.psm1' -Recurse | Sort-Object -Descending | Select-Object -First 1)
         }
 
         if(!$psbuildPsm1){ 
@@ -130,8 +152,5 @@ function GetPsBuildPsm1{
     }
 }
 
-<#
-$path = GetPsBuildPsm1 -toolsDir $toolsDir -nugetDownloadUrl $nugetDownloadUrl
-#>
 
 Install-PSBuild
