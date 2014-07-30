@@ -38,7 +38,7 @@ function Install-PSBuild {
 
     # copy the folder to the modules folder
 
-    Copy-Item -Path  "$($psbPsm1File.Directory.FullName)\*"  -Destination $destFolder -Recurse
+    Copy-Item -Path "$($psbPsm1File.Directory.FullName)\*"  -Destination $destFolder -Recurse
 
     if ((Get-ExecutionPolicy) -eq "Restricted"){
         Write-Warning @"
@@ -54,14 +54,14 @@ For more information execute:
 "@
     }
     else{
-        Import-Module -Name $Destination\psbuild
+        Import-Module -Name $modsFolder\psbuild
     }
 
     Write-Host "psbuild is installed and ready to use" -Foreground Green
     Write-Host @"
 USAGE:
     PS> Invoke-MSBuild 'C:\temp\msbuild\msbuild.proj'
-    PS> Invoke-MSBuild C:\temp\msbuild\path.proj -properties (@{'foo'='bar';'visualstudioversion'='12.0'}) -extraArgs '/nologo'
+    PS> Invoke-MSBuild C:\temp\msbuild\path.proj -properties (@{'OutputPath'='c:\ouput\';'visualstudioversion'='12.0'}) -extraArgs '/nologo'
 
 For more details:
     get-help Invoke-MSBuild
@@ -123,7 +123,7 @@ function GetPsBuildPsm1{
             $cmdArgs = @('install','psbuild','-Version',$versionToInstall,'-Prerelease','-OutputDirectory',(Resolve-Path $toolsDir).ToString())
 
             $nugetPath = (Get-Nuget -toolsDir $toolsDir -nugetDownloadUrl $nugetDownloadUrl)
-            'Calling nuget to install psbuild with the following args. [{0}{1}]' -f $nugetPath, ($cmdArgs -join ' ') | Write-Verbose
+            'Calling nuget to install psbuild with the following args. [{0} {1}]' -f $nugetPath, ($cmdArgs -join ' ') | Write-Verbose
             &$nugetPath $cmdArgs | Out-Null
 
             $psbuildPsm1 = (Get-ChildItem -Path "$toolsDir\psbuild.$versionToInstall" -Include 'psbuild.psm1' -Recurse | Sort-Object -Descending | Select-Object -First 1)
