@@ -1,6 +1,8 @@
 psbuild
 =======
 
+[![Build status](https://ci.appveyor.com/api/projects/status/k7p2m9b6h5m9w2q3)](https://ci.appveyor.com/project/sayedihashimi/psbuild)
+
 This project aims to make using MSBuild easier from powershell. The project has two main purposes
 
 1. To make interacting with MSBuild files in PowerShell much easier
