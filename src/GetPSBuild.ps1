@@ -11,7 +11,7 @@ function GetPsModulesPath{
     [cmdletbinding()]
     param()
     process{
-            $ModulePaths = @($Env:PSModulePath -split ';')
+        $ModulePaths = @($Env:PSModulePath -split ';')
     
         $ExpectedUserModulePath = Join-Path -Path ([Environment]::GetFolderPath('MyDocuments')) -ChildPath WindowsPowerShell\Modules
         $Destination = $ModulePaths | Where-Object { $_ -eq $ExpectedUserModulePath}
@@ -23,25 +23,15 @@ function GetPsModulesPath{
     }
 }
 
-
-
-# based off of the scrit at http://psget.net/GetPsGet.ps1
+# originally based off of the scrit at http://psget.net/GetPsGet.ps1
 function Install-PSBuild {
-    $Destination = GetPsModulesPath
-    $destFolder = (join-path $Destination 'psbuild\')
+    $modsFolder= GetPsModulesPath
+    $destFolder = (join-path $modsFolder 'psbuild\')
     $destFile = (join-path $destFolder 'psbuild.psm1')
     
     if(!(test-path $destFolder)){
         new-item -path $destFolder -ItemType Directory -Force | out-null
     }
-
-    <#
-    $downloadUrl = 'https://raw.github.com/ligershark/psbuild/master/src/psbuild.psm1'
-    'Downloading psbuild from {0}' -f $downloadUrl | Write-Host
-    $client = (New-Object Net.WebClient)
-    $client.Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
-    $client.DownloadFile($downloadUrl, $destFile)
-    #>
 
     # this will download using nuget if its not in localappdata
     $psbPsm1File = GetPsBuildPsm1
@@ -50,9 +40,7 @@ function Install-PSBuild {
 
     Copy-Item -Path  "$($psbPsm1File.Directory.FullName)\*"  -Destination $destFolder -Recurse
 
-    $executionPolicy  = (Get-ExecutionPolicy)
-    $executionRestricted = ($executionPolicy -eq "Restricted")
-    if ($executionRestricted){
+    if ((Get-ExecutionPolicy) -eq "Restricted"){
         Write-Warning @"
 Your execution policy is $executionPolicy, this means you will not be able import or use any scripts including modules.
 To fix this change your execution policy to something like RemoteSigned.
@@ -65,11 +53,10 @@ For more information execute:
 
 "@
     }
-
-    if (!$executionRestricted){
-        # ensure psbuild is imported from the location it was just installed to
+    else{
         Import-Module -Name $Destination\psbuild
-    }    
+    }
+
     Write-Host "psbuild is installed and ready to use" -Foreground Green
     Write-Host @"
 USAGE:
@@ -116,9 +103,7 @@ function Get-Nuget(){
     }
 }
 
-$nugetExe = (Get-Nuget -toolsDir $toolsDir -nugetDownloadUrl $nugetDownloadUrl)
-
-# see if there is a package installed into %localappdata%
+# see if the particular version is installed under localappdata
 function GetPsBuildPsm1{
     [cmdletbinding()]
     param(
