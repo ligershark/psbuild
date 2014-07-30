@@ -137,5 +137,4 @@ function GetPsBuildPsm1{
     }
 }
 
-
 Install-PSBuild
