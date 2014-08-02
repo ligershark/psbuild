@@ -696,18 +696,30 @@ function Open-PSBuildLog{
     param(
         [Parameter(ValueFromPipeLine=$true,Position=0)]
         $logFiles,
+        [ValidateSet('markdown','detailed','diagnostic')]
+        $format,
         $logIndex = 0
     )
     process{
         if(-not $logFiles){
             $private:logDir = $global:PSBuildSettings.LastLogDirectory
 
-            if($private:logDir){
-                $allFiles =  (Get-ChildItem $private:logDir | Where-Object {$_.PSIsContainer -eq $false} | Sort-Object LastWriteTime | Sort-Object Name)
-                $logFiles = $allFiles[$logIndex]
+            if(![string]::IsNullOrEmpty($format)){
+                $private:filename = ('msbuild.{0}.log' -f $format)
+                
+                if($format -eq 'markdown'){
+                    $private:filename = ('msbuild.{0}.log.md' -f $format)
+                }
+                $logFiles = (get-item (join-path $private:logDir $private:filename))
             }
             else{
-                '$global:PSBuildSettings.LastLogDirectory is empty, no recent logs' | Write-Verbose
+                if($private:logDir){
+                    $allFiles =  (Get-ChildItem $private:logDir | Where-Object {$_.PSIsContainer -eq $false} | Sort-Object LastWriteTime | Sort-Object Name)
+                    $logFiles = $allFiles[$logIndex]
+                }
+                else{
+                    '$global:PSBuildSettings.LastLogDirectory is empty, no recent logs' | Write-Verbose
+                }
             }
         }
 
