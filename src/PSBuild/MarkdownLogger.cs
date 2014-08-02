@@ -141,13 +141,15 @@
         }
         void BuildFinished(object sender, BuildFinishedEventArgs e) {
             AppendLine(string.Format("####Build Finished").ToMarkdownRawMarkdown());
-            if (IsVerbosityAtLeast(LoggerVerbosity.Detailed)) {
+            AppendLine(e.Message.ToMarkdownParagraph());
+
+            if (IsVerbosityAtLeast(LoggerVerbosity.Diagnostic)) {
                 AppendLine(e.ToPropertyValues().ToMarkdownTable().ToMarkdown().ToMarkdownRawMarkdown());
 
                 if (e.BuildEventContext != null) {
                     AppendLine(e.BuildEventContext.ToPropertyValues().ToMarkdownTable().ToMarkdown().ToMarkdownRawMarkdown());
                 }
-            }
+            
 
             AppendLine("Target summary".ToMarkdownSubHeader());
             var targetSummary = from t in this._targetsExecuted
@@ -162,6 +164,7 @@
                               select new Tuple<string, int>(t.Value.Name, t.Value.TimeSpent.Milliseconds);
 
             AppendLine(taskSummary.ToList().ToMarkdownBarChart());
+            }
 
             List<IMarkdownElement> toc = new List<IMarkdownElement>();
             toc.Add("#### Build Summary\r\n".ToMarkdownRawMarkdown());
@@ -263,7 +266,11 @@
             }
         }
         void ProjectFinished(object sender, ProjectFinishedEventArgs e) {
-            AppendLine(string.Format("#####Project Finished:{0}", e.Message.EscapeMarkdownCharacters()).ToMarkdownRawMarkdown());
+            AppendLine("#####Project Finished".ToMarkdownRawMarkdown());
+
+            if (IsVerbosityAtLeast(LoggerVerbosity.Normal)) {
+                AppendLine(e.Message.ToMarkdownParagraph());
+            }
 
             if (IsVerbosityAtLeast(LoggerVerbosity.Detailed)) {
                 AppendLine(e.ToPropertyValues().ToMarkdownTable());
@@ -314,6 +321,10 @@
                 execInfo.TimeSpent = execInfo.TimeSpent.Add(prevExecInfo.TimeSpent);
             }
 
+            if (IsVerbosityAtLeast(LoggerVerbosity.Normal)) {
+                AppendLine(e.Message.ToMarkdownParagraph());
+            }
+
             if (!e.Succeeded || IsVerbosityAtLeast(LoggerVerbosity.Detailed)) {
                 this._targetsExecuted[execInfo.Name] = execInfo;
                 string color = e.Succeeded ? "green" : "red";
@@ -324,7 +335,6 @@
                 AppendLine(e.Message.ToMarkdownParagraph());
             }
             
-
             if (IsVerbosityAtLeast(LoggerVerbosity.Detailed)) {
                 AppendLine(e.ToPropertyValues().ToMarkdownTable());
             }
@@ -373,11 +383,11 @@
             string formatStr = null;
             switch (e.Importance) {
                 case MessageImportance.High:
-                    formatStr = "\r\n - {0} *{1}*";
+                    formatStr = "{0} *{1}*";
                     break;
                 case MessageImportance.Normal:
                 case MessageImportance.Low:
-                    formatStr = "\r\n - {0} {1}";
+                    formatStr = "{0} {1}";
                     break;
                 default:
                     throw new LoggerException(string.Format("Unknown message importance {0}", e.Importance));
@@ -389,7 +399,7 @@
                 e.Timestamp.ToString().EscapeMarkdownCharacters());
 
             if (e.Importance != MessageImportance.Low || IsVerbosityAtLeast(LoggerVerbosity.Detailed)) {
-                AppendLine(msg.ToMarkdownRawMarkdown());
+                AppendLine(msg.ToMarkdownParagraph());
             }
             
         }

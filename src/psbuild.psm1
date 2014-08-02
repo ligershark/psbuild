@@ -12,6 +12,14 @@
 [cmdletbinding()]
 param()
 
+function Get-ScriptDirectory
+{
+    $Invocation = (Get-Variable MyInvocation -Scope 1).Value
+    Split-Path $Invocation.MyCommand.Path
+}
+
+$scriptDir = ((Get-ScriptDirectory) + "\")
+
 # User settings can override these
 $global:PSBuildSettings = New-Object PSObject -Property @{
     EnableBuildLogging = $true
@@ -30,9 +38,62 @@ $global:PSBuildSettings = New-Object PSObject -Property @{
     TempDirectory = ('{0}\PSBuild\temp\' -f $env:LOCALAPPDATA)
 
     DefaultClp = '/clp:v=m;ShowCommandLine'
+    ToolsDir = ''
+    MarkdownLoggerVerbosity = 'n'
+}
+
+<#
+.SYNOPSIS  
+	This returns the path to the tools folder. The tools folder is where you can find
+    the following files psbuild.dll and it's dependencies. This method will define
+    the value in the following sequence.
+
+     1. see if tools dir is defined in $env:PSBuildToolsDir
+     2. see if psbuild.dll exists in the same folder
+     3. look for the latest version in localappdata
+#>
+function InternalGet-PSBuildToolsDir{
+    [cmdletbinding()]
+    param()
+    process{
+        [string]$private:toolsDir = $null
+
+        $private:toolsDir = $global:PSBuildSettings.ToolsDir
+
+        # 1 see if tools dir is defined in $env:PSBuildToolsDir
+        if( [string]::IsNullOrWhiteSpace($private:toolsDir) -and $env:PSBuildToolsDir){
+            $private:toolsDir = $env:PSBuildToolsDir
+            'Assigned ToolsDir based on $env:PSBuildToolsDir to [{0}]' -f ($global:PSBuildSettings.ToolDir) | Write-Verbose
+        }
+        # 2 see if psbuild.dll exists in the same folder
+        if([string]::IsNullOrWhiteSpace($private:toolsDir)){
+            # look for a file named psbuild.dll in the same folder if it's there use that
+            $private:filePath = join-path $scriptDir 'psbuild.dll'
+            if(test-path $private:filePath){                
+                $global:PSBuildSettings.ToolDir = $private:filePath
+                'Assigned ToolsDir to the script folder [{0}]' -f ($global:PSBuildSettings.ToolDir) | Write-Verbose
+            }
+        }
+        # 3 look for the latest version in localappdata
+        if([string]::IsNullOrWhiteSpace($private:toolsDir)){
+            $lsToolsPath = ('{0}\LigerShark\tools\' -f $env:LOCALAPPDATA)
+            $psbuildDllUnderAppData = (Get-ChildItem -Path "$lsToolsPath" -Include 'psbuild.dll' -Recurse -ErrorAction SilentlyContinue | Sort-Object -Descending -ErrorAction SilentlyContinue | Select-Object -First 1 -ErrorAction SilentlyContinue)
+            if(test-path $psbuildDllUnderAppData){
+                $global:PSBuildSettings.ToolsDir = ((get-item ($psbuildDllUnderAppData)).Directory.FullName)
+                'Assigned ToolsDir to localappdata [{0}]' -f ($global:PSBuildSettings.ToolDir) | Write-Verbose
+            }
+        }
+        # warning
+        if([string]::IsNullOrWhiteSpace($global:PSBuildSettings.ToolsDir)){
+            'psbuild tools directory not found'  | Write-Error
+        }
+
+        $private:toolsDir
+    }
 }
 
 $script:envVarTarget='Process'
+
 #####################################################################
 # Functions relating to msbuild.exe
 #####################################################################
@@ -370,7 +431,7 @@ function Invoke-MSBuild{
             $logDir = $global:PSBuildSettings.LastLogDirectory = (Get-PSBuildLogDirectory -projectPath $project)
             if($global:PSBuildSettings.EnableBuildLogging){
                 
-                $loggers = (Get-PSBuildLoggers -projectPath $project)
+                $loggers = (InternalGet-PSBuildLoggers -projectPath $project)
                 foreach($logger in $loggers){
                     $msbuildArgs += $logger
                 }
@@ -540,14 +601,12 @@ function New-PSBuildResult{
     }
 }
 
-# variables related to logging
-$script:loggers = @()
 <#
 .SYNOPSIS  
 	Will return the directory where psbuild will write msbuild log files to while invoking builds.
 
 .EXAMPLE
-    $logDir1 = Get-PSBuildLogDirectory
+    $logDir = Get-PSBuildLogDirectory
 
 .EXAMPLE
     'C:\temp\msbuild\new\new.proj' | Get-PSBuildLogDirectory
@@ -660,24 +719,22 @@ function Open-PSBuildLog{
 
 <#
 .SYNOPSIS  
-    This will return the logger strings for the next build for the given project (optional).
-    The strings will have all place holders replaced with final values. You can pass the
-    result of this call directly to msbuild.exe as parameters
+    Method used to get the logger strings that should be appened to the bulid process.
 
 .DESCRIPTION
-    This will return the collection of logger strings fully expanded. The logger strings will
-    be called with a string format with the following tokens.
-        # {0} is the log directory
-        # {1} is the name of the file being built
-        # {2} is a timestamp property
+This will return an array of strings for loggers that should be added to the build process.
+
+    There will be up to 3 values in the result, which are the following.
+     - $result[0] = Detailed log
+     - $result[1] = Diagnostic log
+     - $result[2] = Markdown log
 
 Here are the default loggers that psbuild will use.
-    @('/flp1:v=d;logfile={0}msbuild.d.{1}.{2}.log';'/flp1:v=diag;logfile={0}msbuild.diag.{1}.{2}.log')
-
-.EXAMPLE
-    $loggers1 = (Get-PSBuildLoggers -projectPath $project)
+    /flp1:v=d;logfile=C:\Users\Sayed\AppData\Local\PSBuild\logs\proj1.proj-log\msbuild.detailed.log 
+    /flp2:v=diag;logfile=C:\Users\Sayed\AppData\Local\PSBuild\logs\proj1.proj-log\msbuild.diagnostic.log
+    /logger:MarkdownLog,C:\Users\Sayed\AppData\Local\LigerShark\tools\psbuild.0.0.2-beta\tools\MarkdownLog.dll;v=d;logfile=C:\Users\Sayed\AppData\Local\PSBuild\logs\proj1.proj-log\msbuild.markdown.log
 #>
-function Get-PSBuildLoggers{
+function InternalGet-PSBuildLoggers{
     [cmdletbinding()]
     param(
         [Parameter(
@@ -688,26 +745,36 @@ function Get-PSBuildLoggers{
     begin{
         Add-Type -AssemblyName Microsoft.Build
     }
-    process{
+    process{  
+        [string]$logDir = (Get-PSBuildLogDirectory -projectPath $projectPath)
+        [string]$toolsDir = InternalGet-PSBuildToolsDir
+        [string]$projName = if($projectPath) {(get-item $projectPath).BaseName} else{''}
 
-        if(!($script:loggers)){
-            $script:loggers = @()
-            # {0} is the log directory
-            # {1} is the name of the file being built
-            # {2} is a timestamp property
-            $script:loggers += '/flp1:v=d;logfile={0}msbuild.detailed.log'
-            $script:loggers += '/flp2:v=diag;logfile={0}msbuild.diagnostic.log'
+        $private:loggers = @()
+
+        # {0} log directory
+        # {1} name of the file being built
+        # {2} timestamp property
+        # {3} tools directory
+        $private:loggers += '/flp1:v=d;logfile={0}msbuild.detailed.log'
+        $private:loggers += '/flp2:v=diag;logfile={0}msbuild.diagnostic.log'
+        
+        $mdLoggerBinaryPath = join-path $toolsDir 'psbuild.dll'
+        if(test-path $mdLoggerBinaryPath){
+            $private:loggers += ('/logger:MarkdownLogger,{3}\psbuild.dll;logfile={0}msbuild.markdown.log.md;v=' + $global:PSBuildSettings.MarkdownLoggerVerbosity + ';')
+            'Adding markdown logger to the build' | write-verbose
         }
-        # we need to expand the logger strings before returning
-            # {0} is the log directory
-            # {1} is the name of the file being built
-            # {2} is a timestamp property
+        else{
+            'Not adding markdown logger because it was not found in the expected location [{0}]' -f $mdLoggerBinaryPath | write-verbose
+        }
+        
+               
         $loggersResult = @()
-        foreach($loggerToAdd in $script:loggers){
-            [string]$logDir = (Get-PSBuildLogDirectory -projectPath $projectPath)
-            [string]$projName = if($projectPath) {(get-item $projectPath).BaseName} else{''}
-            [string]$dateStr = (Get-Date -format yyyy-MM-dd.h.m.s)
-            $loggerStr = ($loggerToAdd -f $logDir, $projName,$dateStr)
+
+        foreach($loggerToAdd in $private:loggers){            
+            [string]$dateStr = (Get-Date -format yyyy-MM-dd.h.m.s)            
+
+            $loggerStr = ($loggerToAdd -f $logDir, $projName,$dateStr,$toolsDir)
             $loggersResult += $loggerStr
         }
 
@@ -1687,6 +1754,11 @@ function Write-BuildMessage{
 }
 
 Export-ModuleMember -function Get-*,Set-*,Invoke-*,Save-*,Test-*,Find-*,Add-*,Remove-*,Test-*,Open-*,New-*
+if($env:IsDeveloperMachine){
+    # you can set the env var to expose all functions to importer. easy for development.
+    Export-ModuleMember -function *    
+}
+
 #################################################################
 # begin script portions
 #################################################################
