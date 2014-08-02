@@ -689,8 +689,14 @@ function Get-PSBuildLoggers{
         Add-Type -AssemblyName Microsoft.Build
     }
     process{
+
         if(!($script:loggers)){
-            InternalSet-PSBuildLoggers
+            $script:loggers = @()
+            # {0} is the log directory
+            # {1} is the name of the file being built
+            # {2} is a timestamp property
+            $script:loggers += '/flp1:v=d;logfile={0}msbuild.detailed.log'
+            $script:loggers += '/flp2:v=diag;logfile={0}msbuild.diagnostic.log'
         }
         # we need to expand the logger strings before returning
             # {0} is the log directory
@@ -706,50 +712,6 @@ function Get-PSBuildLoggers{
         }
 
         return $loggersResult
-    }
-}
-
-<#
-.SYNOPSIS  
-    This will return the logger strings for the next build for the given project (optional).
-    The strings will have all place holders replaced with final values. You can pass the
-    result of this call directly to msbuild.exe as parameters
-
-.DESCRIPTION
-    This will return the collection of logger strings fully expanded. The logger strings will
-    be called with a string format with the following tokens.
-        # {0} is the log directory
-        # {1} is the name of the file being built
-        # {2} is a timestamp property
-
-.EXAMPLE
-    $customLoggers = @()
-    $customLoggers += '/flp1:v=d;logfile={0}custom.d.{2}.log'
-    $customLoggers += '/flp2:v=diag;logfile={0}custom.diag.{2}.log'
-
-    InternalSet-PSBuildLoggers -loggers $customLoggers
-#>
-function InternalSet-PSBuildLoggers{
-    [cmdletbinding()]
-    param(
-        [Parameter(
-            Position=1,
-            ValueFromPipeline=$true)]
-        $loggers
-    )
-    process{
-        if($loggers){
-            $script:loggers = $loggers
-        }
-        else{
-            # reset loggers to the default value
-            $script:loggers = @()
-            # {0} is the log directory
-            # {1} is the name of the file being built
-            # {2} is a timestamp property
-            $script:loggers += '/flp1:v=d;logfile={0}msbuild.detailed.log'
-            $script:loggers += '/flp2:v=diag;logfile={0}msbuild.diagnostic.log'
-        }
     }
 }
 

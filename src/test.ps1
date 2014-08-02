@@ -23,6 +23,9 @@ else{
 	return
 }
 
+$env:IsDeveloperMachine = $true
+
+#$result = InternalGet-PSBuildToolsDir
 
 # Invoke-MSBuild C:\temp\msbuild\path.proj -properties (@{'foo'='bar';'visualstudioversion'='12.0'}) -extraArgs '/p:foo2=bar2'
 #Find-Import C:\temp\msbuild\proj1.proj -labelValue 'SlowCheetah'
