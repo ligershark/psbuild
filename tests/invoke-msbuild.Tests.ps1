@@ -62,12 +62,12 @@ Describe 'default property tests' {
     It 'confirm default property values are picked up' {
         $path = ("$TestDrive\{0}" -f $script:tempDefaultPropsProj01Path)
         
-        $buildResultNoDefault = Invoke-MSBuild -projectsToBuild $path -debugMode
+        $buildResultNoDefault = Invoke-MSBuild -projectsToBuild $path -debugMode -targets Build
         $outputTypeNoDefault = $buildResultNoDefault.EvalProperty('OutputType')
 
         $outputTypeNoDefault | Should BeNullOrEmpty
 
-        $buildResultWithDefault = Invoke-MSBuild -projectsToBuild $path -debugMode -defaultProperties @{'OutputType'='exe'}
+        $buildResultWithDefault = Invoke-MSBuild -projectsToBuild $path -debugMode -defaultProperties @{'OutputType'='exe'} -targets Build
         $outputTypeWithDefault = $buildResultWithDefault.EvalProperty('OutputType')
 
         $outputTypeWithDefault | Should Be 'exe'
@@ -76,7 +76,7 @@ Describe 'default property tests' {
     It 'confirm cmd line param trumps default property' {
         $path = ("$TestDrive\{0}" -f $script:tempDefaultPropsProj01Path)
         
-        $buildResultWithDefault = Invoke-MSBuild -projectsToBuild $path -debugMode -defaultProperties @{'OutputType'='exe'} -properties @{'OutputType'='dll'}
+        $buildResultWithDefault = Invoke-MSBuild -projectsToBuild $path -debugMode -defaultProperties @{'OutputType'='exe'} -properties @{'OutputType'='dll'} -targets Build
         $outputTypeWithDefault = $buildResultWithDefault.EvalProperty('OutputType')
 
         $outputTypeWithDefault | Should Be 'dll'
@@ -97,7 +97,7 @@ Describe 'default property tests' {
         [environment]::GetEnvironmentVariable($info.EnvVarToSet,$script:envVarTarget) | 
             Should Be $info.ValueBefore
 
-        $buildResultWithDefault = Invoke-MSBuild -projectsToBuild $path -debugMode -defaultProperties @{$info.EnvVarToSet=$info.ValueDuringBuild}
+        $buildResultWithDefault = Invoke-MSBuild -projectsToBuild $path -debugMode -defaultProperties @{$info.EnvVarToSet=$info.ValueDuringBuild} -targets Build
         $outputTypeWithDefault = $buildResultWithDefault.EvalProperty('OutputType')
 
         [environment]::GetEnvironmentVariable($info.EnvVarToSet,$script:envVarTarget) | 

@@ -12,7 +12,7 @@
 [cmdletbinding()]
 param()
 
-# User settings go here
+# User settings can override these
 $global:PSBuildSettings = New-Object PSObject -Property @{
     EnableBuildLogging = $true
     # set this to false to prevent any messages being output from here via Write-Host
@@ -31,6 +31,7 @@ $global:PSBuildSettings = New-Object PSObject -Property @{
 
     DefaultClp = '/clp:v=m;ShowCommandLine'
 }
+
 $script:envVarTarget='Process'
 #####################################################################
 # Functions relating to msbuild.exe
@@ -617,48 +618,19 @@ function Set-PSBuildLogDirectory{
 }
 
 <#
-.SYNOPSIS
-	You can use this to access the last set of log files created.
-
-.EXAMPLE
-    Get-PSBuildLastLogs
-
-.EXAMPLE
-    How to copy the files to another folder and rename them.
-    Get-PSBuildLastLogs | 
-    ForEach-Object { 
-        Copy-Item -Path $_.FullName -destination (Join-Path 'c:\temp\msbuild\sidewaffle\' ('sw-{0}' -f $_.Name)) }
-#>
-function Get-PSBuildLastLogs{
-    [cmdletbinding()]
-    param()
-    process{
-        $private:logDir = $global:PSBuildSettings.LastLogDirectory
-
-        if($private:logDir){
-            return (Get-ChildItem $private:logDir | Where-Object {$_.PSIsContainer -eq $false} | Sort-Object LastWriteTime | Sort-Object Name)
-        }
-        else{
-            '$global:PSBuildSettings.LastLogDirectory is empty, no recent logs' | Write-Verbose
-        }
-    }
-}
-<#
 .SYNOPSIS  
 	This will open the last log file in the default editor.
     Typically log files are written with the .log extension so whatever application is associated
     with the .log extension will open the log.
 
 .EXAMPLE
-    Open the last default log file (typically detailed verbosity)
     Open-PSBuildLog
+    Open the last default log file (typically detailed verbosity)    
 
 .EXAMPLE
-    Open-PSBuildLog -logIndex 1 (typically detailed verbosity)
+    Open-PSBuildLog -logIndex 1 
+    Opens a specific log file
 
-.EXAMLPE
-    Open the log files by getting the input from pipeline
-    Get-PSBuildLog | Open-PSBuildLog
 #>
 function Open-PSBuildLog{
     [cmdletbinding()]
@@ -669,48 +641,20 @@ function Open-PSBuildLog{
     )
     process{
         if(-not $logFiles){
-            $logFiles = (Get-PSBuildLastLogs)[$logIndex]
+            $private:logDir = $global:PSBuildSettings.LastLogDirectory
+
+            if($private:logDir){
+                $allFiles =  (Get-ChildItem $private:logDir | Where-Object {$_.PSIsContainer -eq $false} | Sort-Object LastWriteTime | Sort-Object Name)
+                $logFiles = $allFiles[$logIndex]
+            }
+            else{
+                '$global:PSBuildSettings.LastLogDirectory is empty, no recent logs' | Write-Verbose
+            }
         }
+
         foreach($file in $logFiles){
             start $file.FullName
         }
-    }
-}
-
-<#
-.SYNOPSIS  
-	This will return the last log file. Typically there are two loggers attached
-    a detailed logger and a diagnostic logger. By default this will return the 
-    detailed log (0 index). You can use the logIndex parameter to access any log
-    other than the default.
-
-.OUTPUTS
-    System.IO.FileInfo.
-    Returns the FileInfo object for the log file specified.
-
-.EXAMPLE
-    Get-PSBuildLog
-
-.EXAMPLE
-    You can use this to see the last few lines of the log file easily.
-    Get-PSBuildLog | Get-Content -Tail 100
-
-.EXAMPLE
-    If you want to open the log file in the default editor you can use this.
-    Get-PSBuildLog | start
-
-.EXAMPLE
-    Get-PSBuildLog -logIndex 0 | Get-Content -Tail 50
-#>
-function Get-PSBuildLog{
-    [cmdletbinding()]
-    param(
-        [Parameter(
-            ValueFromPipeline=$true)]
-        $logIndex = 0
-    )
-    process{
-        return (Get-PSBuildLastLogs)[$logIndex]
     }
 }
 
@@ -746,7 +690,7 @@ function Get-PSBuildLoggers{
     }
     process{
         if(!($script:loggers)){
-            Set-PSBuildLoggers
+            InternalSet-PSBuildLoggers
         }
         # we need to expand the logger strings before returning
             # {0} is the log directory
@@ -783,9 +727,9 @@ function Get-PSBuildLoggers{
     $customLoggers += '/flp1:v=d;logfile={0}custom.d.{2}.log'
     $customLoggers += '/flp2:v=diag;logfile={0}custom.diag.{2}.log'
 
-    Set-PSBuildLoggers -loggers $customLoggers
+    InternalSet-PSBuildLoggers -loggers $customLoggers
 #>
-function Set-PSBuildLoggers{
+function InternalSet-PSBuildLoggers{
     [cmdletbinding()]
     param(
         [Parameter(
