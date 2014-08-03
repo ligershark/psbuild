@@ -1,0 +1,23 @@
+os: Windows Server 2012
+
+environment:
+  VisualStudioVersion: 12.0
+
+configuration: Release
+
+build:
+  psbuild.proj
+  publish_wap: false
+  publish_wap_xcopy: false
+  publish_azure: false
+  publish_nuget: false
+
+  verbosity: detailed
+
+before_build:
+  - nuget restore src\psbuild.sln
+
+artifacts:
+  - path: OutputRoot\**\*.psm1
+  - path: OutputRoot\**\*.dll
+  - path: OutputRoot\**\*.pdb
