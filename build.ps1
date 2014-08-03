@@ -81,6 +81,20 @@ function Clean-OutputFolder{
     }
 }
 
+function Run-Tests{
+    [cmdletbinding()]
+    param(
+        $testDirectory = (join-path $scriptDir tests)
+    )
+    process{
+        # go to the tests directory and run pester
+        push-location
+        set-location $testDirectory
+        Invoke-Pester
+        pop-location
+    }
+}
+
 if($CleanOutputFolder){
     Clean-OutputFolder
 }
@@ -96,3 +110,5 @@ $msbuildArgs += '/flp2:v=diag;logfile=build.diag.log'
 $msbuildArgs += '/m'
 
 & ((Get-MSBuild).FullName) $msbuildArgs
+
+# Run-Tests
