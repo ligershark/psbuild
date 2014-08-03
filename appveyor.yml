@@ -6,7 +6,7 @@ environment:
 configuration: Release
 
 build:
-  psbuild.proj
+  project: psbuild.proj
   publish_wap: false
   publish_wap_xcopy: false
   publish_azure: false
