@@ -19,6 +19,6 @@ before_build:
 
 artifacts:
   - path: OutputRoot\**\*.psm1
-  - path: OutputRoot\**\*.dll
-  - path: OutputRoot\**\*.pdb
+  - path: OutputRoot\PSBuild\**\*.dll
+  - path: OutputRoot\PSBuild\**\*.pdb
   - path: OutputRoot\**\*.nupkg
