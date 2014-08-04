@@ -21,3 +21,4 @@ artifacts:
   - path: OutputRoot\**\*.psm1
   - path: OutputRoot\**\*.dll
   - path: OutputRoot\**\*.pdb
+  - path: OutputRoot\**\*.nupkg
