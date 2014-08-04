@@ -2,6 +2,8 @@
 $importPsbuild = (Join-Path -Path $here -ChildPath 'import-psbuild.ps1')
 . $importPsbuild
 
+# todo: should set this some other way
+$env:PSBuildToolsDir = (join-path -Path (resolve-path '..\src\psbuild\bin\Debug') $here)
 
 Describe 'invoke-msbuild test cases' {
     

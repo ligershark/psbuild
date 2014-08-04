@@ -1,6 +1,6 @@
 ﻿[cmdletbinding()]
 param(
-    $versionToInstall = '0.0.2-beta',
+    $versionToInstall = '0.0.3-beta',
 
     $toolsDir = ("$env:LOCALAPPDATA\LigerShark\tools\"),
 
@@ -119,7 +119,7 @@ function GetPsBuildPsm1{
 
         if(!$psbuildPsm1){
             'Downloading psbuild to the toolsDir' | Write-Verbose
-            # nuget install psbuild -Version 0.0.2-beta -Prerelease -OutputDirectory C:\temp\nuget\out\
+            # nuget install psbuild -Version 0.0.3-beta -Prerelease -OutputDirectory C:\temp\nuget\out\
             $cmdArgs = @('install','psbuild','-Version',$versionToInstall,'-Prerelease','-OutputDirectory',(Resolve-Path $toolsDir).ToString())
 
             $nugetPath = (Get-Nuget -toolsDir $toolsDir -nugetDownloadUrl $nugetDownloadUrl)

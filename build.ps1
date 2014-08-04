@@ -1,7 +1,7 @@
 ﻿[cmdletbinding()]
 param(
     [switch]
-    $CleanOutputFolder
+    $CleanOutputFolder = $true
 )
  
  function Get-ScriptDirectory

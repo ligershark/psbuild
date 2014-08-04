@@ -20,9 +20,6 @@ function Get-ScriptDirectory
 
 $scriptDir = ((Get-ScriptDirectory) + "\")
 
-# todo: should set this some other way
-$env:PSBuildToolsDir = (join-path -Path (resolve-path '..\src\psbuild\bin\Debug') $here)
-
 if(!(test-path ($env:PSBuildToolsDir))){
     'Tools dir not found at [{0}]' -f $env:PSBuildToolsDir | Write-Warning
 }
