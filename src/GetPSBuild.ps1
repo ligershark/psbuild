@@ -54,7 +54,7 @@ For more information execute:
 "@
     }
     else{
-        Import-Module -Name $modsFolder\psbuild
+        Import-Module -Name $modsFolder\psbuild -DisableNameChecking -Force
     }
 
     Write-Host "psbuild is installed and ready to use" -Foreground Green

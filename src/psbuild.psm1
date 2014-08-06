@@ -63,24 +63,24 @@ function InternalGet-PSBuildToolsDir{
         # 1 see if tools dir is defined in $env:PSBuildToolsDir
         if( [string]::IsNullOrWhiteSpace($private:toolsDir) -and $env:PSBuildToolsDir){
             $private:toolsDir = $env:PSBuildToolsDir
-            'Assigned ToolsDir based on $env:PSBuildToolsDir to [{0}]' -f ($global:PSBuildSettings.ToolDir) | Write-Verbose
+            'Assigned ToolsDir based on $env:PSBuildToolsDir to [{0}]' -f ($global:PSBuildSettings.ToolsDir) | Write-Verbose
         }
         # 2 see if psbuild.dll exists in the same folder
         if([string]::IsNullOrWhiteSpace($private:toolsDir)){
             # look for a file named psbuild.dll in the same folder if it's there use that
             $private:filePath = join-path $scriptDir 'psbuild.dll'
             if(test-path $private:filePath){                
-                $global:PSBuildSettings.ToolDir = $private:filePath
-                'Assigned ToolsDir to the script folder [{0}]' -f ($global:PSBuildSettings.ToolDir) | Write-Verbose
+                $global:PSBuildSettings.ToolsDir = $private:filePath
+                'Assigned ToolsDir to the script folder [{0}]' -f ($global:PSBuildSettings.ToolsDir) | Write-Verbose
             }
         }
         # 3 look for the latest version in localappdata
         if([string]::IsNullOrWhiteSpace($private:toolsDir)){
             $lsToolsPath = ('{0}\LigerShark\tools\' -f $env:LOCALAPPDATA)
             $psbuildDllUnderAppData = (Get-ChildItem -Path "$lsToolsPath" -Include 'psbuild.dll' -Recurse -ErrorAction SilentlyContinue | Sort-Object -Descending -ErrorAction SilentlyContinue | Select-Object -First 1 -ErrorAction SilentlyContinue)
-            if(test-path $psbuildDllUnderAppData){
+            if($psbuildDllUnderAppData -and (test-path $psbuildDllUnderAppData)){
                 $global:PSBuildSettings.ToolsDir = ((get-item ($psbuildDllUnderAppData)).Directory.FullName)
-                'Assigned ToolsDir to localappdata [{0}]' -f ($global:PSBuildSettings.ToolDir) | Write-Verbose
+                'Assigned ToolsDir to localappdata [{0}]' -f ($global:PSBuildSettings.ToolsDir) | Write-Verbose
             }
         }
         # warning
