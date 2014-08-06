@@ -20,11 +20,6 @@ function Get-ScriptDirectory
 
 $scriptDir = ((Get-ScriptDirectory) + "\")
 
-if(!(test-path ($env:PSBuildToolsDir))){
-    'Tools dir not found at [{0}]' -f $env:PSBuildToolsDir | Write-Warning
-}
-
-
 # User settings can override these
 $global:PSBuildSettings = New-Object PSObject -Property @{
     EnableBuildLogging = $true
