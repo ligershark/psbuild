@@ -70,8 +70,8 @@ function InternalGet-PSBuildToolsDir{
             # look for a file named psbuild.dll in the same folder if it's there use that
             $private:filePath = join-path $scriptDir 'psbuild.dll'
             if(test-path $private:filePath){                
-                $global:PSBuildSettings.ToolsDir = $private:filePath
-                'Assigned ToolsDir to the script folder [{0}]' -f ($global:PSBuildSettings.ToolsDir) | Write-Verbose
+                $private:toolsDir = $private:filePath
+                'Assigned ToolsDir to the script folder [{0}]' -f ($private:toolsDir) | Write-Verbose
             }
         }
         # 3 look for the latest version in localappdata
@@ -79,8 +79,8 @@ function InternalGet-PSBuildToolsDir{
             $lsToolsPath = ('{0}\LigerShark\tools\' -f $env:LOCALAPPDATA)
             $psbuildDllUnderAppData = (Get-ChildItem -Path "$lsToolsPath" -Include 'psbuild.dll' -Recurse -ErrorAction SilentlyContinue | Sort-Object -Descending -ErrorAction SilentlyContinue | Select-Object -First 1 -ErrorAction SilentlyContinue)
             if($psbuildDllUnderAppData -and (test-path $psbuildDllUnderAppData)){
-                $global:PSBuildSettings.ToolsDir = ((get-item ($psbuildDllUnderAppData)).Directory.FullName)
-                'Assigned ToolsDir to localappdata [{0}]' -f ($global:PSBuildSettings.ToolsDir) | Write-Verbose
+                $private:toolsDir = ((get-item ($psbuildDllUnderAppData)).Directory.FullName)
+                'Assigned ToolsDir to localappdata [{0}]' -f ($private:toolsDir) | Write-Verbose
             }
         }
         # warning
