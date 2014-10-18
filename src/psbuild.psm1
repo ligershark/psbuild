@@ -197,7 +197,7 @@ function Invoke-MSBuild{
         DefaultParameterSetName ='build')]
     param(
         [Parameter(ParameterSetName='build',Position=1,ValueFromPipeline=$true)]
-        [Parameter(ParameterSetName='debugMode',Position=1,ValueFromPipeline=$true)]
+        [Parameter(ParameterSetName='debugMode',Mandatory=$true,Position=1,ValueFromPipeline=$true)]
         [Parameter(ParameterSetName='preprocess',Position=1,ValueFromPipeline=$true)]
         [alias('proj')]
         $projectsToBuild,
