@@ -32,10 +32,10 @@ $global:PSBuildSettings = New-Object PSObject -Property @{
     BuildMessageStrongForegroundColor = [ConsoleColor]::Yellow
     BuildMessageStrongBackgroundColor = [ConsoleColor]::DarkGreen
 
-    LogDirectory = ('{0}\PSBuild\logs\' -f $env:LOCALAPPDATA)
+    LogDirectory = ('{0}\LigerShark\PSBuild\logs\' -f $env:LOCALAPPDATA)
     LastLogDirectory = $null
 
-    TempDirectory = ('{0}\PSBuild\temp\' -f $env:LOCALAPPDATA)
+    TempDirectory = ('{0}\LigerShark\PSBuild\temp\' -f $env:LOCALAPPDATA)
 
     DefaultClp = '/clp:v=m;ShowCommandLine'
     ToolsDir = ''
@@ -683,7 +683,7 @@ function Set-PSBuildLogDirectory{
         }
         else{
             # reset the log directory
-            $global:PSBuildSettings.LogDirectory = ('{0}\PSBuild\logs\' -f $env:LOCALAPPDATA)
+            $global:PSBuildSettings.LogDirectory = ('{0}\LigerShark\PSBuild\logs\' -f $env:LOCALAPPDATA)
         }
     }
 }
