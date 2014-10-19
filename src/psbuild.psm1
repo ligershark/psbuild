@@ -70,7 +70,7 @@ function InternalGet-PSBuildToolsDir{
             # look for a file named psbuild.dll in the same folder if it's there use that
             $private:filePath = join-path $scriptDir 'psbuild.dll'
             if(test-path $private:filePath){                
-                $private:toolsDir = $private:filePath
+                $private:toolsDir = ((Get-Item $private:filePath).Directory.FullName)
                 'Assigned ToolsDir to the script folder [{0}]' -f ($private:toolsDir) | Write-Verbose
             }
         }
