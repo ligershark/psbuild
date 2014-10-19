@@ -151,9 +151,10 @@ function Set-MSBuild{
     which should be used.
 
 .PARAMETER $projectsToBuild
-    This is the parameter which determines which file(s) will be built. If a single
-    value is passed in only that item will be processed. If multiple values are passed
-    in then all the values will be processed.
+    This is the parameter which determines which file(s) will be built. If no value is
+    provided then msbuild will look in the current directory for a single solution to
+    build. If a a single value is passed in only that item will be processed. If multiple
+    values are passed in then all the values will be processed.
 
     This will accept the pipeline value as well.
 
@@ -257,9 +258,9 @@ function Invoke-MSBuild{
         SupportsShouldProcess=$true,
         DefaultParameterSetName ='build')]
     param(
-        [Parameter(ParameterSetName='build',Mandatory=$true,Position=1,ValueFromPipeline=$true)]
+        [Parameter(ParameterSetName='build',Position=1,ValueFromPipeline=$true)]
         [Parameter(ParameterSetName='debugMode',Mandatory=$true,Position=1,ValueFromPipeline=$true)]
-        [Parameter(ParameterSetName='preprocess',Mandatory=$true,Position=1,ValueFromPipeline=$true)]
+        [Parameter(ParameterSetName='preprocess',Position=1,ValueFromPipeline=$true)]
         [alias('proj')]
         $projectsToBuild,
         
@@ -362,6 +363,11 @@ function Invoke-MSBuild{
     }
 
     process{
+        # If we weren't provided a project to build, insert a dummy entry into the array
+        # to fall back to msbuild default behaviour.
+        if ($projectsToBuild -eq $null){
+            $projectsToBuild = @($null)
+        }
         foreach($project in $projectsToBuild){
             $msbuildArgs = @()
             $msbuildArgs += ([string]$project)
