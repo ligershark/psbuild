@@ -157,6 +157,8 @@ function Set-MSBuild{
 
     This will accept the pipeline value as well.
 
+    This will accept either a Visual Studio Project File, or a Visual Studio Solution File (*.sln)
+
 .PARAMETER extraArgs
     You can use this to pass in additional parameters to msbuild.exe. This can be
     one of these types:
@@ -212,6 +214,10 @@ function Set-MSBuild{
 .EXAMPLE
     Invoke-MSBuild C:\temp\msbuild\msbuild.proj
     Shows how you can build a project.
+
+.EXAMPLE
+    Invoke-MSBuild C:\temp\msbuild\msbuild.sln
+    Shows how you can build a solution.
 
 .EXAMPLE
     Invoke-MSBuild C:\temp\msbuild\msbuild.proj -configuration Release -visualStudioVersion 12.0
