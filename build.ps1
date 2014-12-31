@@ -191,8 +191,8 @@ function Build{
         $msbuildArgs += $projFilePath.FullName
         $msbuildArgs += '/p:Configuration=Release'
         $msbuildArgs += '/p:VisualStudioVersion=12.0'
-        $msbuildArgs += '/flp1:v=d;logfile=build.d.log'
-        $msbuildArgs += '/flp2:v=diag;logfile=build.diag.log'
+        $msbuildArgs += '/flp1:v=d;logfile=msbuild.d.log'
+        $msbuildArgs += '/flp2:v=diag;logfile=msbuild.diag.log'
         $msbuildArgs += '/m'
 
         & ((Get-MSBuild).FullName) $msbuildArgs
