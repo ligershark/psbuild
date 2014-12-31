@@ -1,7 +1,21 @@
 ﻿[cmdletbinding()]
 param(
-    [switch]
-    $CleanOutputFolder = $true
+    [Parameter(ParameterSetName='build',Position=0)]
+    [switch]$build,
+    
+    [Parameter(ParameterSetName='updateversion',Position=0)]
+    [switch]$updateversion,
+
+    # build parameters
+    [Parameter(ParameterSetName='build',Position=1)]
+    [switch]$CleanOutputFolder,
+
+    # updateversion parameters
+    [Parameter(ParameterSetName='updateversion',Position=1,Mandatory=$true)]
+    [string]$newversion,
+
+    [Parameter(ParameterSetName='updateversion',Position=2)]
+    [string]$oldversion
 )
  
  function Get-ScriptDirectory
@@ -67,6 +81,74 @@ function Get-Nuget(){
     }
 }
 
+function Enable-GetNuGet{
+    [cmdletbinding()]
+    param($toolsDir = "$env:LOCALAPPDATA\LigerShark\tools\getnuget\",
+        $getNuGetDownloadUrl = 'https://raw.githubusercontent.com/sayedihashimi/publish-module/master/getnuget.psm1')
+    process{
+        if(!(get-module 'getnuget')){
+            if(!(Test-Path $toolsDir)){ New-Item -Path $toolsDir -ItemType Directory -WhatIf:$false }
+
+            $expectedPath = (Join-Path ($toolsDir) 'getnuget.psm1')
+            if(!(Test-Path $expectedPath)){
+                'Downloading [{0}] to [{1}]' -f $getNuGetDownloadUrl,$expectedPath | Write-Verbose
+                (New-Object System.Net.WebClient).DownloadFile($getNuGetDownloadUrl, $expectedPath)
+                if(!$expectedPath){throw ('Unable to download getnuget.psm1')}
+            }
+
+            'importing module [{0}]' -f $expectedPath | Write-Verbose
+            Import-Module $expectedPath -DisableNameChecking -Force -Scope Global
+        }
+    }
+}
+
+<#
+.SYNOPSIS 
+This will inspect the publsish nuspec file and return the value for the Version element.
+#>
+function GetExistingVersion{
+    [cmdletbinding()]
+    param(
+        [ValidateScript({test-path $_ -PathType Leaf})]
+        $nuspecFile = (Join-Path $scriptDir 'psbuild.nuspec')
+    )
+    process{
+        ([xml](Get-Content $nuspecFile)).package.metadata.version
+    }
+}
+
+function UpdateVersion{
+    [cmdletbinding()]
+    param(
+        [Parameter(Position=0,Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$newversion,
+
+        [Parameter(Position=1)]
+        [ValidateNotNullOrEmpty()]
+        [string]$oldversion = (GetExistingVersion),
+
+        [Parameter(Position=2)]
+        [string]$filereplacerVersion = '0.2.0-beta'
+    )
+    process{
+        'Updating version from [{0}] to [{1}]' -f $oldversion,$newversion | Write-Verbose
+        Enable-GetNuGet
+        'trying to load file replacer' | Write-Verbose
+        Enable-NuGetModule -name 'file-replacer' -version $filereplacerVersion
+
+        $folder = $scriptDir
+        $include = '*.nuspec;*.ps*1'
+        # In case the script is in the same folder as the files you are replacing add it to the exclude list
+        $exclude = "$($MyInvocation.MyCommand.Name);"
+        $replacements = @{
+            "$oldversion"="$newversion"
+        }
+        Replace-TextInFolder -folder $folder -include $include -exclude $exclude -replacements $replacements | Write-Verbose
+        'Replacement complete' | Write-Verbose
+    }
+}
+
 function Clean-OutputFolder{
     [cmdletbinding()]
     param()
@@ -95,20 +177,37 @@ function Run-Tests{
     }
 }
 
-if($CleanOutputFolder){
-    Clean-OutputFolder
+function Build{
+    [cmdletbinding()]
+    param()
+    process{
+        if($CleanOutputFolder){
+            Clean-OutputFolder
+        }
+
+        $projFilePath = get-item (Join-Path $scriptDir 'psbuild.proj')
+
+        $msbuildArgs = @()
+        $msbuildArgs += $projFilePath.FullName
+        $msbuildArgs += '/p:Configuration=Release'
+        $msbuildArgs += '/p:VisualStudioVersion=12.0'
+        $msbuildArgs += '/flp1:v=d;logfile=build.d.log'
+        $msbuildArgs += '/flp2:v=diag;logfile=build.diag.log'
+        $msbuildArgs += '/m'
+
+        & ((Get-MSBuild).FullName) $msbuildArgs
+
+        # Run-Tests
+    }
 }
 
-$projFilePath = get-item (Join-Path $scriptDir 'psbuild.proj')
+if(!$build -and !$updateversion){
+    $build = $true
+}
 
-$msbuildArgs = @()
-$msbuildArgs += $projFilePath.FullName
-$msbuildArgs += '/p:Configuration=Release'
-$msbuildArgs += '/p:VisualStudioVersion=12.0'
-$msbuildArgs += '/flp1:v=d;logfile=build.d.log'
-$msbuildArgs += '/flp2:v=diag;logfile=build.diag.log'
-$msbuildArgs += '/m'
-
-& ((Get-MSBuild).FullName) $msbuildArgs
-
-# Run-Tests
+if($build){ Build }
+elseif($updateversion){ UpdateVersion -newversion $newversion }
+else{
+    $cmds = @('-build','-updateversion')
+    'Command not found or empty, please pass in one of the following [{0}]' -f ($cmds -join ' ') | Write-Error
+}
