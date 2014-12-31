@@ -712,9 +712,10 @@ function Open-PSBuildLog{
     [cmdletbinding()]
     param(
         [Parameter(ValueFromPipeLine=$true,Position=0)]
-        $logFiles,
         [ValidateSet('markdown','detailed','diagnostic')]
         $format,
+        [Parameter(ValueFromPipeLine=$true,Position=1)]
+        $logFiles,
         $logIndex = 0
     )
     process{
