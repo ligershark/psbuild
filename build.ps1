@@ -10,6 +10,12 @@ param(
     [Parameter(ParameterSetName='build',Position=1)]
     [switch]$CleanOutputFolder,
 
+    [Parameter(ParameterSetName='build',Position=2)]
+    [switch]$publishToNuget,
+
+    [Parameter(ParameterSetName='build',Position=3)]
+    [string]$nugetApiKey = ($env:NuGetApiKey),
+
     # updateversion parameters
     [Parameter(ParameterSetName='updateversion',Position=1,Mandatory=$true)]
     [string]$newversion,
@@ -149,6 +155,27 @@ function UpdateVersion{
     }
 }
 
+function PublishNuGetPackage{
+    [cmdletbinding()]
+    param(
+        [Parameter(Mandatory=$true,ValueFromPipeline=$true)]
+        [string]$nugetPackages,
+
+        [Parameter(Mandatory=$true)]
+        $nugetApiKey
+    )
+    process{
+        foreach($nugetPackage in $nugetPackages){
+            $pkgPath = (get-item $nugetPackage).FullName
+            $cmdArgs = @('push',$pkgPath,$nugetApiKey,'-NonInteractive')
+
+            'Publishing nuget package with the following args: [nuget.exe {0}]' -f ($cmdArgs -join ' ') | Write-Verbose
+            &(Get-Nuget) $cmdArgs
+        }
+    }
+}
+
+
 function Clean-OutputFolder{
     [cmdletbinding()]
     param()
@@ -181,6 +208,8 @@ function Build{
     [cmdletbinding()]
     param()
     process{
+        if($publishToNuget){ $CleanOutputFolder = $true }
+
         if($CleanOutputFolder){
             Clean-OutputFolder
         }
@@ -198,6 +227,13 @@ function Build{
         & ((Get-MSBuild).FullName) $msbuildArgs
 
         # Run-Tests
+
+        # publish to nuget if selected
+        if($publishToNuget){
+            $outputRoot = Join-Path $scriptDir "OutputRoot"
+            $outputRoot = (Get-Item $outputRoot).FullName
+            (Get-ChildItem -Path $outputRoot 'psbuild*.nupkg').FullName | PublishNuGetPackage -nugetApiKey $nugetApiKey
+        }
     }
 }
 

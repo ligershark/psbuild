@@ -5,17 +5,15 @@ environment:
 
 configuration: Release
 
-build:
-  project: psbuild.proj
-  publish_wap: false
-  publish_wap_xcopy: false
-  publish_azure: false
-  publish_nuget: false
-
-  verbosity: detailed
-
 before_build:
   - nuget restore src\psbuild.sln
+
+build_script:
+  - ps: .\appveyor.ps1
+
+environment:
+  NuGetApiKey:
+    secure: HFUEQanhaxHV/sRQYznQqg7LToxSGeIoSvrmyY29PJ1eDbXxUuYrEQ6MPAsZIQFT
 
 artifacts:
   - path: OutputRoot\**\*.psm1
