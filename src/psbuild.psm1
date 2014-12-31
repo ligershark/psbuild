@@ -88,6 +88,11 @@ function InternalGet-PSBuildToolsDir{
             'psbuild tools directory not found'  | Write-Error
         }
 
+        if(!(Test-Path $private:toolsDir)){
+            'Creating tools dir at [{0}]' -f $private:toolsDir | Write-Verbose
+            New-Item -Path $private:toolsDir -ItemType Directory | Out-Null
+        }
+
         $private:toolsDir
     }
 }
@@ -962,7 +967,6 @@ function Save-MSBuildProject{
         #if(-not $filePath){
         #    $filePath = $project.Location
         #}
-        #'project.Location.File: [{0}]' -f $project.Location.File | Write-Host
 
         $fullPath = (Get-Fullpath -path $filePath)
         $project.Save([string]$fullPath)
@@ -1764,6 +1768,7 @@ function Write-BuildMessage{
         $strong
     )
     process{
+
         if($global:PSBuildSettings.BuildMessageEnabled -and $message){
             $fgColor = $global:PSBuildSettings.BuildMessageForegroundColor
             $bColor = $global:PSBuildSettings.BuildMessageBackgroundColor
@@ -1772,7 +1777,12 @@ function Write-BuildMessage{
                 $bColor = $global:PSBuildSettings.BuildMessageStrongBackgroundColor
             }
 
-            $message | Write-Host -ForegroundColor $fgColor -BackgroundColor $bColor
+            if($Host -and ($Host.Name -eq 'ConsoleHost')){
+                $message | Write-Host -ForegroundColor $fgColor -BackgroundColor $bColor
+            }
+            else{
+                $message | Write-Verbose
+            }
         }
     }
 }
