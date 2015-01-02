@@ -6,6 +6,9 @@ param(
     [Parameter(ParameterSetName='updateversion',Position=0)]
     [switch]$updateversion,
 
+    [Parameter(ParameterSetName='getversion',Position=0)]
+    [switch]$getversion,
+
     # build parameters
     [Parameter(ParameterSetName='build',Position=1)]
     [switch]$CleanOutputFolder,
@@ -237,12 +240,13 @@ function Build{
     }
 }
 
-if(!$build -and !$updateversion){
+if(!$build -and !$updateversion -and !$getversion){
     $build = $true
 }
 
 if($build){ Build }
 elseif($updateversion){ UpdateVersion -newversion $newversion }
+elseif($getversion){ GetExistingVersion | Write-Output }
 else{
     $cmds = @('-build','-updateversion')
     'Command not found or empty, please pass in one of the following [{0}]' -f ($cmds -join ' ') | Write-Error
