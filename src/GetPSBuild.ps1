@@ -1,6 +1,6 @@
 ﻿[cmdletbinding()]
 param(
-    $versionToInstall = '0.0.5',
+    $versionToInstall = '0.0.6-beta1',
 
     $toolsDir = ("$env:LOCALAPPDATA\LigerShark\tools\"),
 
@@ -130,7 +130,7 @@ function GetPsBuildPsm1{
         }
 
         if(!$psbuildPsm1){ 
-            throw 'psbuild not found, and was not downloaded successfully. sorry.' 
+            throw ("psbuild not found, and was not downloaded successfully. sorry.`n`tCheck your nuget.config (default path={0}) file to ensure that nuget.org is enabled.`n`tYou can also try changing the versionToInstall value.`n`tYou can file an issue at https://github.com/ligershark/psbuild/issues." -f ("$env:APPDATA\NuGet\NuGet.config"))
         }
 
         $psbuildPsm1
