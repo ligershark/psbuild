@@ -1,4 +1,4 @@
-﻿[cmdletbinding()]
+﻿[cmdletbinding(DefaultParameterSetName='build')]
 param(
     [Parameter(ParameterSetName='build',Position=0)]
     [switch]$build,
