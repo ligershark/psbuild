@@ -110,9 +110,9 @@ $script:envVarTarget='Process'
 #>
 function Get-MSBuild{
     [cmdletbinding()]
-        param()
-        process{
-	    $path = $script:defaultMSBuildPath
+    param()
+    process{
+        $path = $script:defaultMSBuildPath
 
 	    if(!$path){
 	        $path =  Get-ChildItem "hklm:\SOFTWARE\Microsoft\MSBuild\ToolsVersions\" | 
@@ -137,15 +137,20 @@ function Set-MSBuild{
     [cmdletbinding()]
     param(
         [Parameter(ValueFromPipeline=$true)]
-        $msbuildPath = (Get-MSBuild)
+        $msbuildPath
     )
 
     process{
-            'Updating msbuild alias to point to [{0}]' -f $msbuildPath | Write-Verbose
-            Set-Alias msbuild $msbuildPath
+        if(!$msbuildPath){
+            $script:defaultMSBuildPath = $null
+            $msbuildPath = (Get-MSBuild)
+        }
+
+        'Updating msbuild alias to point to [{0}]' -f $msbuildPath | Write-Verbose
+        Set-Alias msbuild $msbuildPath
                 
-            'Updating defalut msbuild.exe to point to [{0}]' -f $msbuildPath | Write-Verbose
-            $script:defaultMSBuildPath = $msbuildPath
+        'Updating defalut msbuild.exe to point to [{0}]' -f $msbuildPath | Write-Verbose
+        $script:defaultMSBuildPath = $msbuildPath
     }
 }
 

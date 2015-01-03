@@ -40,7 +40,7 @@ $scriptDir = ((Get-ScriptDirectory) + "\")
 	This will return the path to msbuild.exe. If the path has not yet been set
 	then the highest installed version of msbuild.exe will be returned.
 #>
-function Get-MSBuild{
+function Get-MSBuildExe{
     [cmdletbinding()]
         param()
         process{
@@ -193,16 +193,38 @@ function Clean-OutputFolder{
     }
 }
 
+function LoadPester{
+    [cmdletbinding()]
+    param(
+        $pesterDir = (resolve-path (Join-Path $scriptDir 'contrib\pester\'))
+    )
+    process{
+        if(!(Get-Module pester)){
+            if($env:PesterDir -and (test-path $env:PesterDir)){
+                $pesterDir = $env:PesterDir
+            }
+
+            if(!(Test-Path $pesterDir)){
+                throw ('Pester dir not found at [{0}]' -f $pesterDir)
+            }
+            $modFile = (Join-Path $pesterDir 'Pester.psm1')
+            'Loading pester from [{0}]' -f $modFile | Write-Verbose
+            Import-Module (Join-Path $pesterDir 'Pester.psm1')
+        }
+    }
+}
+
 function Run-Tests{
     [cmdletbinding()]
     param(
         $testDirectory = (join-path $scriptDir tests)
     )
+    begin{ LoadPester }
     process{
         # go to the tests directory and run pester
         push-location
         set-location $testDirectory
-        Invoke-Pester
+        invoke-pester
         pop-location
     }
 }
@@ -227,9 +249,9 @@ function Build{
         $msbuildArgs += '/flp2:v=diag;logfile=msbuild.diag.log'
         $msbuildArgs += '/m'
 
-        & ((Get-MSBuild).FullName) $msbuildArgs
+        & ((Get-MSBuildExe).FullName) $msbuildArgs
 
-        # Run-Tests
+        Run-Tests
 
         # publish to nuget if selected
         if($publishToNuget){

@@ -2,6 +2,15 @@ $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $importPsbuild = (Join-Path -Path $here -ChildPath 'import-psbuild.ps1')
 . $importPsbuild
 
+function Get-ScriptDirectory
+{
+    $Invocation = (Get-Variable MyInvocation -Scope 1).Value
+    Split-Path $Invocation.MyCommand.Path
+}
+
+$scriptDir = ((Get-ScriptDirectory) + "\")
+
+set-msbuild
 Describe "get and set msbuild test cases" {
 
     Setup -File 'sayedha\fakemsbuildfile01.txt' 
@@ -16,16 +25,14 @@ Describe "get and set msbuild test cases" {
         
         $fakePath = ($msbuildDefaultPath = ("{0}\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" -f $env:windir))
         $fakePath = "$TestDrive\sayedha\fakemsbuildfile01.txt"
-
         Set-MSBuild -msbuildPath $fakePath
-        $retPath = Get-MSBuild
+        $retPath = (Get-MSBuild)
         $retPath | Should Be $fakePath
     }
 
     It "validate set-msbuild to null resets" {
         # call set-msbuild with a value and then call it with null and ensure the default value is used
         Set-MSBuild -msbuildPath "$TestDrive\sayedha\fakemsbuildfile02.txt"
-
         $valueBeforeSet = Get-MSBuild
 
         Set-MSBuild
@@ -40,3 +47,4 @@ Describe "get and set msbuild test cases" {
         $msbEscape.Length | Should Be 10
     }
 }
+set-msbuild
