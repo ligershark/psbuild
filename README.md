@@ -35,17 +35,18 @@ Currently psbuild is still a ***preview*** but should be stable enough for regul
 
 ##### how to get the log file for the last build
 
-    Invoke-MSBuild C:\temp\msbuild\proj1.proj
-    # returns the detailed log by default
-    Get-PSBuildLog
+```powershell
 
-	# you can also open the log in the default editor
+    Invoke-MSBuild C:\temp\msbuild\proj1.proj
+    # returns the detailed log in the default editor
 	Open-PSBuildLog
 
+	# returns the log in markdown format
+	Open-PSBuildLog markdown
+
     # returns the diagnostic
-    Get-PSBuildLog -logIndex 1
-	
-	Open-PSBuildLog -logIndex 1
+	Open-PSBuildLog diagnostic
+```
 
 #### show msbuild reserved properties
     Get-MSBuildReservedProperties
@@ -109,4 +110,10 @@ Failure
 To report any issues please create an item on the [issues page](https://github.com/sayedihashimi/psbuild/issues/new).
 
 # Contributing
-Contributing is pretty simple. The project mostly consists of one .psm1 file located at ```/src/psbuild.psm1```. Just modify that file with the updates and send me a Pull Request. I'll review it and work with you from there.
+Contributing is pretty simple. The project mostly consists of one .psm1 file located at ```/src/psbuild.psm1```. You should send PRs to the ```dev``` branch. If it's a simple bug fix feel free to go ahead and submit the fix as a PR. If you have a feature please propose it in the [issues](https://github.com/ligershark/psbuild/issues) section so that we can dicsuss your idea.
+
+# Credit
+
+This project uses the following open source components.
+
+ - [MarkdownLog](https://github.com/Wheelies/MarkdownLog) - MIT License ([link](https://github.com/Wheelies/MarkdownLog/blob/master/LICENSE))
