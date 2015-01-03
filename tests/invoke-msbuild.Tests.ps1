@@ -32,7 +32,7 @@ Describe 'invoke-msbuild test cases' {
 
 </Project>
 "@
-    Setup -File -Path $script:tempProj -Content $script:tempProjContent    
+    Setup -File -Path $script:tempProj -Content $script:tempProjContent
 
     $global:PSBuildSettings.BuildMessageEnabled = $false
     Add-Type -AssemblyName Microsoft.Build

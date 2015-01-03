@@ -726,7 +726,9 @@ function Open-PSBuildLog{
     param(
         [Parameter(ValueFromPipeLine=$true,Position=0)]
         [ValidateSet('markdown','detailed','diagnostic')]
-        $format
+        $format,
+
+        [switch]$returnFilePathInsteadOfOpening
     )
     process{
         $private:logDir = $global:PSBuildSettings.LastLogDirectory
@@ -750,7 +752,12 @@ function Open-PSBuildLog{
         }
 
         foreach($file in $logFiles){
-            start $file.FullName
+            if($returnFilePathInsteadOfOpening){
+                $file.FullName
+            }
+            else{
+                start ($file.FullName)
+            }
         }
     }
 }
@@ -828,19 +835,19 @@ function Get-MSBuildEscapeCharacters{
     [cmdletbinding()]
     param()
     process{
-    $resultList = @()
-    $resultList += @{'  %'='%25'}
-    $resultList += @{'  $'='%24'}
-    $resultList += @{'  @'='%40'}
-    $resultList += @{"  '"='%27'}
-    $resultList += @{'  ;'='%3B'}
-    $resultList += @{'  ?'='%3F'}
-    $resultList += @{'  *'='%2A'}
-    $resultList += @{'  ('='%28'}
-    $resultList += @{'  )'='%29'}
-    $resultList += @{'  "'='%22'}
-        
-    return $resultList
+        $resultList = @()
+        $resultList += @{'  %'='%25'}
+        $resultList += @{'  $'='%24'}
+        $resultList += @{'  @'='%40'}
+        $resultList += @{"  '"='%27'}
+        $resultList += @{'  ;'='%3B'}
+        $resultList += @{'  ?'='%3F'}
+        $resultList += @{'  *'='%2A'}
+        $resultList += @{'  ('='%28'}
+        $resultList += @{'  )'='%29'}
+        $resultList += @{'  "'='%22'}
+
+        return $resultList
     }
 }
 

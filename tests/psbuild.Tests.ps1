@@ -1,7 +1,7 @@
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $importPsbuild = (Join-Path -Path $here -ChildPath 'import-psbuild.ps1')
 . $importPsbuild
-
+$global:PSBuildSettings.BuildMessageEnabled = $false
 function Get-ScriptDirectory
 {
     $Invocation = (Get-Variable MyInvocation -Scope 1).Value
@@ -48,3 +48,76 @@ Describe "get and set msbuild test cases" {
     }
 }
 set-msbuild
+
+
+Describe "Open-PSBuildLog test cases" {
+    $script:tempProj = 'Open-PSBuildLog\temp.proj'
+    $script:tempProjContent = @"
+        <?xml version="1.0" encoding="utf-8"?>
+        <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Demo" ToolsVersion="4.0">
+
+          <Target Name="Demo">
+            <Message Text="Hello World" Importance="high"/>
+          </Target>
+
+        </Project>
+"@
+    Setup -File -Path $script:tempProj -Content $script:tempProjContent
+    $tempProjFilePath = Join-Path $TestDrive $script:tempProj
+
+    It "validate Open-PSBuildLog returns a file path-default" {
+        Invoke-MSBuild $tempProjFilePath
+        $logFilePath = Open-PSBuildLog -returnFilePathInsteadOfOpening
+        $logFilePath | Should Exist
+    }
+
+    It "validate Open-PSBuildLog returns a file path-diagnostic" {
+        Invoke-MSBuild $tempProjFilePath
+        $logFilePath = Open-PSBuildLog diagnostic -returnFilePathInsteadOfOpening
+        $logFilePath | Should Exist
+    }
+
+    It "validate Open-PSBuildLog returns a file path-detailed" {
+        Invoke-MSBuild $tempProjFilePath
+        $logFilePath = Open-PSBuildLog detailed -returnFilePathInsteadOfOpening
+        $logFilePath | Should Exist
+    }
+
+    It "validate Open-PSBuildLog returns a file path-markdown" {
+        Invoke-MSBuild $tempProjFilePath
+        $logFilePath = Open-PSBuildLog markdown -returnFilePathInsteadOfOpening
+        $logFilePath | Should Exist
+    }
+}
+
+Describe "Get-MSBuildEscapeCharacters tests" {
+    It "returns a non-empty array" {
+        $escapeChars = Get-MSBuildEscapeCharacters
+        $escapeChars -is [array] | Should Be $true
+        $escapeChars | %{
+            $_ | Should Not BeNullOrEmpty
+        }
+    }
+}
+
+Describe "Get-MSBuildReservedProperties tests" {
+    It "returns non-empty and contains reserved props" {
+        $reservedProps = Get-MSBuildReservedProperties
+
+        $allText = ($foo -join "`n")
+        $allText | Should NOt BeNullOrEmpty
+        $allText | Should Match 'MSBuildBinPath:'
+        $allText | Should Match 'MSBuildProjectDirectory:'
+        $allText | Should Match 'MSBuildThisFileDirectory:'
+        $allText | Should Match 'MSBuildThisFileExtension:'
+    }
+}
+
+Describe "New-MSBuildProject tests" {
+    It "creates a file at specified location" {
+        $tempProjFilePath = Join-Path $TestDrive 'New-MSBuildProject\create01.proj'
+        $newFile = New-MSBuildProject -filePath ($tempProjFilePath)
+        $newFile | Should Not Be $null
+        $tempProjFilePath | Should Exist
+    }
+}
