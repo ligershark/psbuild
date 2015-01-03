@@ -116,4 +116,5 @@ Contributing is pretty simple. The project mostly consists of one .psm1 file loc
 
 This project uses the following open source components.
 
- - [MarkdownLog](https://github.com/Wheelies/MarkdownLog) - MIT License ([link](https://github.com/Wheelies/MarkdownLog/blob/master/LICENSE))
+- [pester](https://github.com/pester/Pester) - Apache v2 ([link](https://github.com/pester/Pester/blob/master/LICENSE)) 
+- [MarkdownLog](https://github.com/Wheelies/MarkdownLog) - MIT License ([link](https://github.com/Wheelies/MarkdownLog/blob/master/LICENSE))
