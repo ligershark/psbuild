@@ -1745,11 +1745,9 @@ function PSBuildReset-TempEnvVars{
     param()
     process{
         foreach($key in $script:envVarToRestore.Keys){
-            $oldValue = [environment]::GetEnvironmentVariable("$key",$script:envVarTarget)
-            $newValue = ($script:envVarToRestore[$key])
+            $previousValue = ($script:envVarToRestore[$key])
 
-            'Resetting temp env var [{0}={1}]`tPrevious value:[{2}]' -f $key, $newValue, $oldValue | Write-Verbose
-            [environment]::SetEnvironmentVariable("$key",$newValue,$script:envVarTarget)
+            [environment]::SetEnvironmentVariable("$key",$previousValue,$script:envVarTarget)
         }
     }
 }

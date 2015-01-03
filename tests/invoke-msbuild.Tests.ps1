@@ -1,9 +1,16 @@
-﻿$here = Split-Path -Parent $MyInvocation.MyCommand.Path
-$importPsbuild = (Join-Path -Path $here -ChildPath 'import-psbuild.ps1')
+﻿function Get-ScriptDirectory
+{
+    $Invocation = (Get-Variable MyInvocation -Scope 1).Value
+    Split-Path $Invocation.MyCommand.Path
+}
+
+$scriptDir = ((Get-ScriptDirectory) + "\")
+
+$importPsbuild = (Join-Path -Path $scriptDir -ChildPath 'import-psbuild.ps1')
 . $importPsbuild
 
 # todo: should set this some other way
-$env:PSBuildToolsDir = (join-path -Path (resolve-path '..\src\psbuild\bin\Debug') $here)
+$env:PSBuildToolsDir = (resolve-path (Join-Path $scriptDir '..\src\psbuild\bin\Debug\'))
 
 Describe 'invoke-msbuild test cases' {
     
@@ -25,14 +32,14 @@ Describe 'invoke-msbuild test cases' {
     $global:PSBuildSettings.BuildMessageEnabled = $false
     Add-Type -AssemblyName Microsoft.Build
     It "ensure the project is invoked" {
-        $path = ("$TestDrive\{0}" -f $script:tempProj)
-
+        $path = Join-Path $TestDrive $script:tempProj
         $path | Should Exist
+
         Invoke-MSBuild $path
         "$TestDrive\$genPath" | Should Exist
     }
 
-    It "ensure preprocess does not error" {
+    It "ensure when -preprocess is passed that there are no errors" {
         $sourceProj = ("$TestDrive\{0}" -f $script:tempProj)
         
         Invoke-MSBuild $sourceProj -preprocess
@@ -63,7 +70,7 @@ Describe 'default property tests' {
 
     It 'confirm default property values are picked up' {
         $path = ("$TestDrive\{0}" -f $script:tempDefaultPropsProj01Path)
-        
+        Copy-Item $path C:\temp\result.proj
         $buildResultNoDefault = Invoke-MSBuild -projectsToBuild $path -debugMode -targets Build
         $outputTypeNoDefault = $buildResultNoDefault.EvalProperty('OutputType')
 
