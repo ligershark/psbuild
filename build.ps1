@@ -183,7 +183,7 @@ function Clean-OutputFolder{
     [cmdletbinding()]
     param()
     process{
-        $outputFolder = (Join-Path $scriptDir '\OutputRoot\')
+        $outputFolder = Get-OutputRoot
 
         if(Test-Path $outputFolder){
             'Deleting output folder [{0}]' -f $outputFolder | Write-Host
@@ -214,18 +214,34 @@ function LoadPester{
     }
 }
 
+function Get-OutputRoot{
+    [cmdletbinding()]
+    param()
+    process{
+        $outputRoot = Join-Path $scriptDir "OutputRoot"        
+        (Get-Item $outputRoot).FullName
+    }
+}
+
 function Run-Tests{
     [cmdletbinding()]
     param(
         $testDirectory = (join-path $scriptDir tests)
     )
-    begin{ LoadPester }
+    begin{ 
+        LoadPester
+        $previousToolsDir = $env:PSBuildToolsDir
+        # $env:PSBuildToolsDir = (Join-Path (Get-OutputRoot) 'PSBuild\')
+    }
     process{
         # go to the tests directory and run pester
         push-location
         set-location $testDirectory
         invoke-pester
         pop-location
+    }
+    end{
+        # $env:PSBuildToolsDir = $previousToolsDir
     }
 }
 
@@ -255,9 +271,7 @@ function Build{
 
         # publish to nuget if selected
         if($publishToNuget){
-            $outputRoot = Join-Path $scriptDir "OutputRoot"
-            $outputRoot = (Get-Item $outputRoot).FullName
-            (Get-ChildItem -Path $outputRoot 'psbuild*.nupkg').FullName | PublishNuGetPackage -nugetApiKey $nugetApiKey
+            (Get-ChildItem -Path (Get-OutputRoot) 'psbuild*.nupkg').FullName | PublishNuGetPackage -nugetApiKey $nugetApiKey
         }
     }
 }
@@ -266,10 +280,17 @@ if(!$build -and !$updateversion -and !$getversion){
     $build = $true
 }
 
-if($build){ Build }
-elseif($updateversion){ UpdateVersion -newversion $newversion }
-elseif($getversion){ GetExistingVersion | Write-Output }
-else{
-    $cmds = @('-build','-updateversion')
-    'Command not found or empty, please pass in one of the following [{0}]' -f ($cmds -join ' ') | Write-Error
+
+try{
+    if($build){ Build }
+    elseif($updateversion){ UpdateVersion -newversion $newversion }
+    elseif($getversion){ GetExistingVersion | Write-Output }
+    else{
+        $cmds = @('-build','-updateversion')
+        'Command not found or empty, please pass in one of the following [{0}]' -f ($cmds -join ' ') | Write-Error
+    }
+}
+catch{
+    "Build failed with an exception:`n{0}" -f ($_.Exception.Message) |  Write-Error
+    exit 1
 }
