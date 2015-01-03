@@ -704,8 +704,16 @@ function Set-PSBuildLogDirectory{
     Open the last default log file (typically detailed verbosity)    
 
 .EXAMPLE
-    Open-PSBuildLog -logIndex 1 
-    Opens a specific log file
+    Open-PSBuildLog markdown
+    Opens the last log file in markdown format
+
+.EXAMPLE
+    Open-PSBuildLog diagnostic
+    Opens the last diagnostic log file
+
+.EXAMPLE
+    Open-PSBuildLog detailed
+    Opens the last detailed log file. Note: this is the default.
 
 #>
 function Open-PSBuildLog{
@@ -713,31 +721,26 @@ function Open-PSBuildLog{
     param(
         [Parameter(ValueFromPipeLine=$true,Position=0)]
         [ValidateSet('markdown','detailed','diagnostic')]
-        $format,
-        [Parameter(ValueFromPipeLine=$true,Position=1)]
-        $logFiles,
-        $logIndex = 0
+        $format
     )
     process{
-        if(-not $logFiles){
-            $private:logDir = $global:PSBuildSettings.LastLogDirectory
+        $private:logDir = $global:PSBuildSettings.LastLogDirectory
 
-            if(![string]::IsNullOrEmpty($format)){
-                $private:filename = ('msbuild.{0}.log' -f $format)
+        if(![string]::IsNullOrEmpty($format)){
+            $private:filename = ('msbuild.{0}.log' -f $format)
                 
-                if($format -eq 'markdown'){
-                    $private:filename = ('msbuild.{0}.log.md' -f $format)
-                }
-                $logFiles = (get-item (join-path $private:logDir $private:filename))
+            if($format -eq 'markdown'){
+                $private:filename = ('msbuild.{0}.log.md' -f $format)
+            }
+            $logFiles = (get-item (join-path $private:logDir $private:filename))
+        }
+        else{
+            if($private:logDir){
+                $allFiles =  (Get-ChildItem $private:logDir | Where-Object {$_.PSIsContainer -eq $false} | Sort-Object LastWriteTime | Sort-Object Name)
+                $logFiles = $allFiles[0]
             }
             else{
-                if($private:logDir){
-                    $allFiles =  (Get-ChildItem $private:logDir | Where-Object {$_.PSIsContainer -eq $false} | Sort-Object LastWriteTime | Sort-Object Name)
-                    $logFiles = $allFiles[$logIndex]
-                }
-                else{
-                    '$global:PSBuildSettings.LastLogDirectory is empty, no recent logs' | Write-Verbose
-                }
+                '$global:PSBuildSettings.LastLogDirectory is empty, no recent logs' | Write-Verbose
             }
         }
 
