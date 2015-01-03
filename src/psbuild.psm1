@@ -222,6 +222,11 @@ function Set-MSBuild{
     The value for the /maxcpucount (/m) parameter. If this is not provided '/m' will be used.
     If you want to disable this then pass in the value 1 to execute on one core.
 
+.PARAMTER noLogFiles
+    You can use this to disable logging to files for this call to Invoke-MSBuild. Note: you can also
+    enable/disable log file generation via a global flag $global:PSBuildSettings.EnableBuildLogging.
+    If that is set to false this parameter is ignored and log files will not be written.
+
 .EXAMPLE
     Invoke-MSBuild C:\temp\msbuild\msbuild.proj
     Shows how you can build a project.
@@ -261,7 +266,6 @@ function Set-MSBuild{
 
 .EXAMPLE
     Invoke-MSBuild $defProps -defaultProperties @{'Configuration'='Release'}
-
 #>
 function Invoke-MSBuild{
     [cmdletbinding(
