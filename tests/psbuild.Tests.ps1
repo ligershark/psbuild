@@ -121,3 +121,75 @@ Describe "New-MSBuildProject tests" {
         $tempProjFilePath | Should Exist
     }
 }
+
+Describe "PSBuild-ConverToDictionary tests" {
+    It "does not return empty" {
+        $objtoconvert = @{
+            'one'='one-value'
+            'two'='two-value'
+        }
+
+        [system.collections.generic.dictionary[[string],[string]]]$convertedObj = PSBuild-ConverToDictionary $objtoconvert
+        $convertedObj | Should Not be $null
+        $convertedObj.Count | Should be 2
+        $convertedObj['one'] | Should be $objtoconvert['one']
+        $convertedObj['two'] | Should be $objtoconvert['two']
+    }
+}
+
+Describe "env var tests"{
+    $envVarNames = @('OutputType','SomeProp')
+
+    It "PSBuildSet-TempVar sets the env var" {
+
+        # PSBuildSet-TempVar
+        $envVarsToSet = @{
+            'OutputType'='exe'
+            'SomeProp'='somevalue'
+        }
+
+        PSBuildSet-TempVar $envVarsToSet
+
+        $envVarsToSet.Keys | % {
+            $envVarValue = [environment]::GetEnvironmentVariable($_,'Process')
+            $envVarValue | Should Be $envVarsToSet[$_]
+        }
+    }
+
+    It "PSBuildReset-TempEnvVars restores env vars" {
+        $originalEnvVars = @{
+            'OutputType'='dll'
+            'SomeProp'='someorigvalue'
+        }
+
+        $originalEnvVars.Keys | % {
+            [environment]::SetEnvironmentVariable($_,$originalEnvVars[$_],'Process')
+        }
+
+        $envVarsToSet = @{
+            'OutputType'='exe'
+            'SomeProp'='somevalue'
+        }
+
+        PSBuildSet-TempVar $envVarsToSet
+
+        $envVarsToSet.Keys | % {
+            $envVarValue = [environment]::GetEnvironmentVariable($_,'Process')
+            $envVarValue | Should Be $envVarsToSet[$_]
+        }
+
+        PSBuildReset-TempEnvVars
+
+        $originalEnvVars.Keys | % {
+            $envVarValue = [environment]::GetEnvironmentVariable($_,'Process')
+            $envVarValue | Should Be $originalEnvVars[$_]
+        }
+    }
+
+    AfterEach {
+        # reset env vars back to null
+        $envVarNames | % {
+            [environment]::SetEnvironmentVariable("$_", $null,'Process')
+        }
+    }
+}

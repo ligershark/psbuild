@@ -1713,6 +1713,7 @@ function PSBuild-ConverToDictionary{
     param(
         [Parameter(
             Mandatory=$true,
+            Position=0,
             ValueFromPipeline=$true)]
         [hashtable]
         $valueToConvert
@@ -1736,10 +1737,14 @@ function PSBuildSet-TempVar{
     param(
         [Parameter(
             Mandatory=$true,
+            Position=0,
             ValueFromPipeline=$true)]
         [hashtable]
         $envVars
     )
+    begin{
+        $script:envVarToRestore = @{}
+    }
     process{
         foreach($key in $envVars.Keys){
             $oldValue = [environment]::GetEnvironmentVariable("$key",$script:envVarTarget)
@@ -1801,9 +1806,13 @@ function Write-BuildMessage{
     }
 }
 
-Export-ModuleMember -function Get-*,Set-*,Invoke-*,Save-*,Test-*,Find-*,Add-*,Remove-*,Test-*,Open-*,New-*
-if($env:IsDeveloperMachine){
+
+if(!$env:IsDeveloperMachine){
+    Export-ModuleMember -function Get-*,Set-*,Invoke-*,Save-*,Test-*,Find-*,Add-*,Remove-*,Test-*,Open-*,New-*
+}
+else{
     # you can set the env var to expose all functions to importer. easy for development.
+    # this is required for pester testing
     Export-ModuleMember -function *    
 }
 

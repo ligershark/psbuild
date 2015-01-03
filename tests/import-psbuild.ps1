@@ -8,7 +8,7 @@ function Get-ScriptDirectory
 $scriptDir = ((Get-ScriptDirectory) + "\")
 $moduleName = 'psbuild'
 $modulePath = (Join-Path -Path $scriptDir -ChildPath ("..\src\{0}.psm1" -f $moduleName))
-
+$env:IsDeveloperMachine=$true
 if(Test-Path $modulePath){
     "Importing psbuild module from [{0}]" -f $modulePath | Write-Verbose
 
