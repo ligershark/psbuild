@@ -193,3 +193,48 @@ Describe "env var tests"{
         }
     }
 }
+
+Describe "nologs tests"{
+    $script:tempProj = 'nologs\temp.proj'
+    $script:tempProjContent = @"
+        <?xml version="1.0" encoding="utf-8"?>
+        <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Demo" ToolsVersion="4.0">
+
+          <Target Name="Demo">
+            <Message Text="Hello World" Importance="high"/>
+          </Target>
+
+        </Project>
+"@
+    Setup -File -Path $script:tempProj -Content $script:tempProjContent
+    $tempProjFilePath = Join-Path $TestDrive $script:tempProj
+
+    It "nologs does not produce log files" {
+        $logDir = $global:PSBuildSettings.LastLogDirectory = (Get-PSBuildLogDirectory -projectPath $tempProjFilePath)
+        # if there are any files there now delete them
+        Get-ChildItem $logDir *.log | Remove-Item
+
+        Invoke-MSBuild $tempProjFilePath -noLogFiles
+
+        # ensure there are no log files
+        $foundFiles = (Get-ChildItem $logDir *.log)
+        $foundFiles | Should Be $null
+    }
+
+    It "EnableBuildLogging disables logging to files" {
+        $global:PSBuildSettings.EnableBuildLogging = $false
+
+        $logDir = $global:PSBuildSettings.LastLogDirectory = (Get-PSBuildLogDirectory -projectPath $tempProjFilePath)
+        # if there are any files there now delete them
+        Get-ChildItem $logDir *.log | Remove-Item
+
+        Invoke-MSBuild $tempProjFilePath
+
+        # ensure there are no log files
+        $foundFiles = (Get-ChildItem $logDir *.log)
+        $foundFiles | Should Be $null
+
+        # reset it back to default value
+        $global:PSBuildSettings.EnableBuildLogging = $true
+    }
+}

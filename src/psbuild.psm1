@@ -281,8 +281,7 @@ function Invoke-MSBuild{
         [Parameter(ParameterSetName='build')]
         [Parameter(ParameterSetName='debugMode')]
         [alias('p')]
-        [Hashtable]
-        $properties,
+        [Hashtable]$properties,
         
         # I'm having an issue with how the call is handled if
         # -debugMode is passed and this is null.
@@ -321,23 +320,19 @@ function Invoke-MSBuild{
         [Parameter(ParameterSetName='build')]
         [Parameter(ParameterSetName='debugMode')]
         [alias("m")]
-        [int]
-        $maxcpucount,
+        [int]$maxcpucount,
         
         [Parameter(ParameterSetName='build')]
         [alias('nl')]
-        [switch]
-        $nologo,
+        [switch]$nologo,
 
         [Parameter(ParameterSetName='preprocess')]
         [alias('pp')]
-        [switch]
-        $preprocess,
+        [switch]$preprocess,
 
         [Parameter(ParameterSetName='build')]
         [alias('ds')]
-        [switch]
-        $detailedSummary,
+        [switch]$detailedSummary,
 
         [Parameter(ParameterSetName='build')]
         [Parameter(ParameterSetName='debugMode')]
@@ -349,12 +344,13 @@ function Invoke-MSBuild{
         $consoleLoggerParams = $global:PSBuildSettings.DefaultClp,
 
         [Parameter(ParameterSetName='build')]
-        [string]
-        $extraArgs,
+        [string]$extraArgs,
+
+        [Parameter(ParameterSetName='build')]
+        [switch]$noLogFiles,
 
         [Parameter(ParameterSetName='debugMode')]
-        [switch]
-        $debugMode
+        [switch]$debugMode
     )
 
     begin{
@@ -450,15 +446,13 @@ function Invoke-MSBuild{
                 }
             }
 
-            $logDir = $global:PSBuildSettings.LastLogDirectory = (Get-PSBuildLogDirectory -projectPath $project)
-            if($global:PSBuildSettings.EnableBuildLogging){
-                
+            if($global:PSBuildSettings.EnableBuildLogging -and !($noLogFiles)){
+                $logDir = $global:PSBuildSettings.LastLogDirectory = (Get-PSBuildLogDirectory -projectPath $project)
+
                 $loggers = (InternalGet-PSBuildLoggers -projectPath $project)
                 foreach($logger in $loggers){
                     $msbuildArgs += $logger
                 }
-
-                # $global:PSBuildSettings.LogDirectory = Get-PSBuildLogDirectory -projectPath $project
             }
 
             "Calling msbuild.exe with the following args: {0}" -f ($msbuildArgs -join ' ') | Write-BuildMessage
