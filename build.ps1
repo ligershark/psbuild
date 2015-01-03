@@ -237,7 +237,12 @@ function Run-Tests{
         # go to the tests directory and run pester
         push-location
         set-location $testDirectory
-        invoke-pester
+        if($env:ExitOnPesterFail){
+            invoke-pester -EnableExit
+        }
+        else{
+            invoke-pester
+        }
         pop-location
     }
     end{
