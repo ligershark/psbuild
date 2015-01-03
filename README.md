@@ -14,7 +14,7 @@ Currently psbuild is still a ***preview*** but should be stable enough for regul
 
 
 ##### download and install psbulid
-<code>
+<code style="background-color:grey">
     (new-object Net.WebClient).DownloadString("https://raw.github.com/ligershark/psbuild/master/src/GetPSBuild.ps1") | iex
 </code>
 
@@ -52,12 +52,14 @@ Currently psbuild is still a ***preview*** but should be stable enough for regul
 </code>
 
 #### show msbuild reserved properties
-
+<code>
     Get-MSBuildReservedProperties
+</code>
 
 #### show common msbuild escape characters
-
+<code>
 	Get-MSBuildEscapeCharacters
+</code>
 
 ##### You can also create a new MSBuild file with the following
 <code>
@@ -65,8 +67,9 @@ Currently psbuild is still a ***preview*** but should be stable enough for regul
 </code>
 
 ##### to see what commands are available
-
+<code>
     Get-Command -Module psbuild
+</code>
 
 Most functions have help defined so you can use ```get-help``` on most commands for more details.
 
