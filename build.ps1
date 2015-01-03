@@ -231,7 +231,7 @@ function Run-Tests{
     begin{ 
         LoadPester
         $previousToolsDir = $env:PSBuildToolsDir
-        # $env:PSBuildToolsDir = (Join-Path (Get-OutputRoot) 'PSBuild\')
+        $env:PSBuildToolsDir = (Join-Path (Get-OutputRoot) 'PSBuild\')
     }
     process{
         # go to the tests directory and run pester
@@ -246,7 +246,7 @@ function Run-Tests{
         pop-location
     }
     end{
-        # $env:PSBuildToolsDir = $previousToolsDir
+        $env:PSBuildToolsDir = $previousToolsDir
     }
 }
 
