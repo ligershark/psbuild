@@ -117,7 +117,7 @@ Failure
 </code>
 
 # Reporting Issues
-To report any issues please create an item on the [issues page](https://github.com/sayedihashimi/psbuild/issues/new).
+To report any issues please [create an new item](https://github.com/ligershark/psbuild/issues/new) on the [issues page](https://github.com/ligershark/psbuild/issues/).
 
 # Contributing
 Contributing is pretty simple. The project mostly consists of one .psm1 file located at ```/src/psbuild.psm1```. You should send PRs to the ```dev``` branch. If it's a simple bug fix feel free to go ahead and submit the fix as a PR. If you have a feature please propose it in the [issues](https://github.com/ligershark/psbuild/issues) section so that we can dicsuss your idea.
