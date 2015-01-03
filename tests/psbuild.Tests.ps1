@@ -104,7 +104,7 @@ Describe "Get-MSBuildReservedProperties tests" {
     It "returns non-empty and contains reserved props" {
         $reservedProps = Get-MSBuildReservedProperties
 
-        $allText = ($foo -join "`n")
+        $allText = ($reservedProps -join "`n")
         $allText | Should NOt BeNullOrEmpty
         $allText | Should Match 'MSBuildBinPath:'
         $allText | Should Match 'MSBuildProjectDirectory:'
