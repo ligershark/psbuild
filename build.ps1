@@ -243,6 +243,18 @@ function Run-Tests{
         else{
             invoke-pester
         }
+
+        $pesterArgs = @{}
+        if($env:ExitOnPesterFail -eq $true){
+            $pesterArgs.Add('-EnableExit',$true)
+        }
+        if($env:PesterEnableCodeCoverage -eq $true){
+            $pesterArgs.Add('-CodeCoverage','..\src\psbuild.psm1')
+        }
+
+        Invoke-Pester @pesterArgs
+
+
         pop-location
     }
     end{
