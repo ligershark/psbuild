@@ -466,6 +466,11 @@ function Invoke-MSBuild{
                 if(-not $debugMode){
                     "Using msbuild.exe from [{0}]. Use Set-MSBuild to change this." -f (Get-MSBuild).FullName | Write-BuildMessage
                     & ((Get-MSBuild).FullName) $msbuildArgs
+                    if($lastexitcode -ne 0){
+                        $msg = ('msbuild.exe exited with code: {0}' -f $lastexitcode)
+                        $msg | Write-Error
+                        throw $msg
+                    }
                 }
                 else{
                     # in debug mode we call msbuild using the APIs
