@@ -1,6 +1,6 @@
 ﻿[cmdletbinding()]
 param(
-    $versionToInstall = '0.0.6-beta2',
+    $versionToInstall = '0.0.6-beta3',
 
     $toolsDir = ("$env:LOCALAPPDATA\LigerShark\tools\"),
 
