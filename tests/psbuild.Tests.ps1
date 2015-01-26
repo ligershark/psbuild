@@ -53,14 +53,14 @@ set-msbuild
 Describe "Open-PSBuildLog test cases" {
     $script:tempProj = 'Open-PSBuildLog\temp.proj'
     $script:tempProjContent = @"
-        <?xml version="1.0" encoding="utf-8"?>
-        <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Demo" ToolsVersion="4.0">
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Demo" ToolsVersion="4.0">
 
-          <Target Name="Demo">
-            <Message Text="Hello World" Importance="high"/>
-          </Target>
+    <Target Name="Demo">
+    <Message Text="Hello World" Importance="high"/>
+    </Target>
 
-        </Project>
+</Project>
 "@
     Setup -File -Path $script:tempProj -Content $script:tempProjContent
     $tempProjFilePath = Join-Path $TestDrive $script:tempProj
@@ -197,14 +197,14 @@ Describe "env var tests"{
 Describe "nologs tests"{
     $script:tempProj = 'nologs\temp.proj'
     $script:tempProjContent = @"
-        <?xml version="1.0" encoding="utf-8"?>
-        <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Demo" ToolsVersion="4.0">
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Demo" ToolsVersion="4.0">
 
-          <Target Name="Demo">
-            <Message Text="Hello World" Importance="high"/>
-          </Target>
+    <Target Name="Demo">
+    <Message Text="Hello World" Importance="high"/>
+    </Target>
 
-        </Project>
+</Project>
 "@
     Setup -File -Path $script:tempProj -Content $script:tempProjContent
     $tempProjFilePath = Join-Path $TestDrive $script:tempProj
