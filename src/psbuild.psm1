@@ -193,6 +193,7 @@ function Set-MSBuild{
         10.0
         11.0
         12.0
+        14.0
 
 .PARAMETER Configuration
     This sets the MSBuild property Configuration to the value specified. This will override any value
@@ -216,6 +217,10 @@ function Set-MSBuild{
 .PARAMETER maxcpucount
     The value for the /maxcpucount (/m) parameter. If this is not provided '/m' will be used.
     If you want to disable this then pass in the value 1 to execute on one core.
+
+.PARAMETER ignoreExitCode
+    By default if msbuild.exe exists with a non-zeor exit code the script will throw an exception.
+    You can prevent this by passing in -ignoreExitCode.
 
 .EXAMPLE
     Invoke-MSBuild C:\temp\msbuild\msbuild.proj
@@ -344,8 +349,10 @@ function Invoke-MSBuild{
         $consoleLoggerParams = $global:PSBuildSettings.DefaultClp,
 
         [Parameter(ParameterSetName='build')]
-        [string]
-        $extraArgs,
+        [switch]$ignoreExitCode,
+
+        [Parameter(ParameterSetName='build')]
+        [string]$extraArgs,
 
         [Parameter(ParameterSetName='debugMode')]
         [switch]
@@ -463,6 +470,10 @@ function Invoke-MSBuild{
                 if(-not $debugMode){
                     "Using msbuild.exe from [{0}]. Use Set-MSBuild to change this." -f (Get-MSBuild).FullName | Write-BuildMessage
                     & ((Get-MSBuild).FullName) $msbuildArgs
+                    if(-not $ignoreExitCode -and ($LASTEXITCODE -ne 0)){
+                        $msg = ('MSBuild exited with a non-zero exit code [{0}]' -f $LASTEXITCODE)
+                        throw $msg
+                    }
                 }
                 else{
                     # in debug mode we call msbuild using the APIs
