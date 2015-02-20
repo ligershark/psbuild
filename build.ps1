@@ -40,7 +40,7 @@ $scriptDir = ((Get-ScriptDirectory) + "\")
 	This will return the path to msbuild.exe. If the path has not yet been set
 	then the highest installed version of msbuild.exe will be returned.
 #>
-function Get-MSBuild{
+function Get-MSBuildExe{
     [cmdletbinding()]
         param()
         process{
@@ -183,7 +183,7 @@ function Clean-OutputFolder{
     [cmdletbinding()]
     param()
     process{
-        $outputFolder = (Join-Path $scriptDir '\OutputRoot\')
+        $outputFolder = Get-OutputRoot
 
         if(Test-Path $outputFolder){
             'Deleting output folder [{0}]' -f $outputFolder | Write-Host
@@ -193,17 +193,72 @@ function Clean-OutputFolder{
     }
 }
 
+function LoadPester{
+    [cmdletbinding()]
+    param(
+        $pesterDir = (resolve-path (Join-Path $scriptDir 'contrib\pester\'))
+    )
+    process{
+        if(!(Get-Module pester)){
+            if($env:PesterDir -and (test-path $env:PesterDir)){
+                $pesterDir = $env:PesterDir
+            }
+
+            if(!(Test-Path $pesterDir)){
+                throw ('Pester dir not found at [{0}]' -f $pesterDir)
+            }
+            $modFile = (Join-Path $pesterDir 'Pester.psm1')
+            'Loading pester from [{0}]' -f $modFile | Write-Verbose
+            Import-Module (Join-Path $pesterDir 'Pester.psm1')
+        }
+    }
+}
+
+function Get-OutputRoot{
+    [cmdletbinding()]
+    param()
+    process{
+        $outputRoot = Join-Path $scriptDir "OutputRoot"        
+        (Get-Item $outputRoot).FullName
+    }
+}
+
 function Run-Tests{
     [cmdletbinding()]
     param(
         $testDirectory = (join-path $scriptDir tests)
     )
+    begin{ 
+        LoadPester
+        $previousToolsDir = $env:PSBuildToolsDir
+        $env:PSBuildToolsDir = (Join-Path (Get-OutputRoot) 'PSBuild\')
+    }
     process{
         # go to the tests directory and run pester
         push-location
         set-location $testDirectory
-        Invoke-Pester
+        if($env:ExitOnPesterFail){
+            invoke-pester -EnableExit
+        }
+        else{
+            invoke-pester
+        }
+
+        $pesterArgs = @{}
+        if($env:ExitOnPesterFail -eq $true){
+            $pesterArgs.Add('-EnableExit',$true)
+        }
+        if($env:PesterEnableCodeCoverage -eq $true){
+            $pesterArgs.Add('-CodeCoverage','..\src\psbuild.psm1')
+        }
+
+        Invoke-Pester @pesterArgs
+
+
         pop-location
+    }
+    end{
+        $env:PSBuildToolsDir = $previousToolsDir
     }
 }
 
@@ -227,15 +282,13 @@ function Build{
         $msbuildArgs += '/flp2:v=diag;logfile=msbuild.diag.log'
         $msbuildArgs += '/m'
 
-        & ((Get-MSBuild).FullName) $msbuildArgs
+        & ((Get-MSBuildExe).FullName) $msbuildArgs
 
-        # Run-Tests
+        Run-Tests
 
         # publish to nuget if selected
         if($publishToNuget){
-            $outputRoot = Join-Path $scriptDir "OutputRoot"
-            $outputRoot = (Get-Item $outputRoot).FullName
-            (Get-ChildItem -Path $outputRoot 'psbuild*.nupkg').FullName | PublishNuGetPackage -nugetApiKey $nugetApiKey
+            (Get-ChildItem -Path (Get-OutputRoot) 'psbuild*.nupkg').FullName | PublishNuGetPackage -nugetApiKey $nugetApiKey
         }
     }
 }
@@ -244,10 +297,17 @@ if(!$build -and !$updateversion -and !$getversion){
     $build = $true
 }
 
-if($build){ Build }
-elseif($updateversion){ UpdateVersion -newversion $newversion }
-elseif($getversion){ GetExistingVersion | Write-Output }
-else{
-    $cmds = @('-build','-updateversion')
-    'Command not found or empty, please pass in one of the following [{0}]' -f ($cmds -join ' ') | Write-Error
+
+try{
+    if($build){ Build }
+    elseif($updateversion){ UpdateVersion -newversion $newversion }
+    elseif($getversion){ GetExistingVersion | Write-Output }
+    else{
+        $cmds = @('-build','-updateversion')
+        'Command not found or empty, please pass in one of the following [{0}]' -f ($cmds -join ' ') | Write-Error
+    }
+}
+catch{
+    "Build failed with an exception:`n{0}" -f ($_.Exception.Message) |  Write-Error
+    exit 1
 }

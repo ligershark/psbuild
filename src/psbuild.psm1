@@ -110,9 +110,9 @@ $script:envVarTarget='Process'
 #>
 function Get-MSBuild{
     [cmdletbinding()]
-        param()
-        process{
-	    $path = $script:defaultMSBuildPath
+    param()
+    process{
+        $path = $script:defaultMSBuildPath
 
 	    if(!$path){
 	        $path =  Get-ChildItem "hklm:\SOFTWARE\Microsoft\MSBuild\ToolsVersions\" | 
@@ -137,15 +137,20 @@ function Set-MSBuild{
     [cmdletbinding()]
     param(
         [Parameter(ValueFromPipeline=$true)]
-        $msbuildPath = (Get-MSBuild)
+        $msbuildPath
     )
 
     process{
-            'Updating msbuild alias to point to [{0}]' -f $msbuildPath | Write-Verbose
-            Set-Alias msbuild $msbuildPath
+        if(!$msbuildPath){
+            $script:defaultMSBuildPath = $null
+            $msbuildPath = (Get-MSBuild)
+        }
+
+        'Updating msbuild alias to point to [{0}]' -f $msbuildPath | Write-Verbose
+        Set-Alias msbuild $msbuildPath
                 
-            'Updating defalut msbuild.exe to point to [{0}]' -f $msbuildPath | Write-Verbose
-            $script:defaultMSBuildPath = $msbuildPath
+        'Updating defalut msbuild.exe to point to [{0}]' -f $msbuildPath | Write-Verbose
+        $script:defaultMSBuildPath = $msbuildPath
     }
 }
 
@@ -218,6 +223,11 @@ function Set-MSBuild{
     The value for the /maxcpucount (/m) parameter. If this is not provided '/m' will be used.
     If you want to disable this then pass in the value 1 to execute on one core.
 
+.PARAMTER noLogFiles
+    You can use this to disable logging to files for this call to Invoke-MSBuild. Note: you can also
+    enable/disable log file generation via a global flag $global:PSBuildSettings.EnableBuildLogging.
+    If that is set to false this parameter is ignored and log files will not be written.
+
 .PARAMETER ignoreExitCode
     By default if msbuild.exe exists with a non-zeor exit code the script will throw an exception.
     You can prevent this by passing in -ignoreExitCode.
@@ -261,7 +271,6 @@ function Set-MSBuild{
 
 .EXAMPLE
     Invoke-MSBuild $defProps -defaultProperties @{'Configuration'='Release'}
-
 #>
 function Invoke-MSBuild{
     [cmdletbinding(
@@ -281,8 +290,7 @@ function Invoke-MSBuild{
         [Parameter(ParameterSetName='build')]
         [Parameter(ParameterSetName='debugMode')]
         [alias('p')]
-        [Hashtable]
-        $properties,
+        [Hashtable]$properties,
         
         # I'm having an issue with how the call is handled if
         # -debugMode is passed and this is null.
@@ -321,23 +329,19 @@ function Invoke-MSBuild{
         [Parameter(ParameterSetName='build')]
         [Parameter(ParameterSetName='debugMode')]
         [alias("m")]
-        [int]
-        $maxcpucount,
+        [int]$maxcpucount,
         
         [Parameter(ParameterSetName='build')]
         [alias('nl')]
-        [switch]
-        $nologo,
+        [switch]$nologo,
 
         [Parameter(ParameterSetName='preprocess')]
         [alias('pp')]
-        [switch]
-        $preprocess,
+        [switch]$preprocess,
 
         [Parameter(ParameterSetName='build')]
         [alias('ds')]
-        [switch]
-        $detailedSummary,
+        [switch]$detailedSummary,
 
         [Parameter(ParameterSetName='build')]
         [Parameter(ParameterSetName='debugMode')]
@@ -352,11 +356,13 @@ function Invoke-MSBuild{
         [switch]$ignoreExitCode,
 
         [Parameter(ParameterSetName='build')]
+        [switch]$noLogFiles,
+
+        [Parameter(ParameterSetName='build')]
         [string]$extraArgs,
 
         [Parameter(ParameterSetName='debugMode')]
-        [switch]
-        $debugMode
+        [switch]$debugMode
     )
 
     begin{
@@ -452,15 +458,13 @@ function Invoke-MSBuild{
                 }
             }
 
-            $logDir = $global:PSBuildSettings.LastLogDirectory = (Get-PSBuildLogDirectory -projectPath $project)
-            if($global:PSBuildSettings.EnableBuildLogging){
-                
+            if($global:PSBuildSettings.EnableBuildLogging -and !($noLogFiles)){
+                $logDir = $global:PSBuildSettings.LastLogDirectory = (Get-PSBuildLogDirectory -projectPath $project)
+
                 $loggers = (InternalGet-PSBuildLoggers -projectPath $project)
                 foreach($logger in $loggers){
                     $msbuildArgs += $logger
                 }
-
-                # $global:PSBuildSettings.LogDirectory = Get-PSBuildLogDirectory -projectPath $project
             }
 
             "Calling msbuild.exe with the following args: {0}" -f ($msbuildArgs -join ' ') | Write-BuildMessage
@@ -470,6 +474,7 @@ function Invoke-MSBuild{
                 if(-not $debugMode){
                     "Using msbuild.exe from [{0}]. Use Set-MSBuild to change this." -f (Get-MSBuild).FullName | Write-BuildMessage
                     & ((Get-MSBuild).FullName) $msbuildArgs
+
                     if(-not $ignoreExitCode -and ($LASTEXITCODE -ne 0)){
                         $msg = ('MSBuild exited with a non-zero exit code [{0}]' -f $LASTEXITCODE)
                         throw $msg
@@ -732,7 +737,9 @@ function Open-PSBuildLog{
     param(
         [Parameter(ValueFromPipeLine=$true,Position=0)]
         [ValidateSet('markdown','detailed','diagnostic')]
-        $format
+        $format,
+
+        [switch]$returnFilePathInsteadOfOpening
     )
     process{
         $private:logDir = $global:PSBuildSettings.LastLogDirectory
@@ -756,7 +763,12 @@ function Open-PSBuildLog{
         }
 
         foreach($file in $logFiles){
-            start $file.FullName
+            if($returnFilePathInsteadOfOpening){
+                $file.FullName
+            }
+            else{
+                start ($file.FullName)
+            }
         }
     }
 }
@@ -834,19 +846,19 @@ function Get-MSBuildEscapeCharacters{
     [cmdletbinding()]
     param()
     process{
-    $resultList = @()
-    $resultList += @{'  %'='%25'}
-    $resultList += @{'  $'='%24'}
-    $resultList += @{'  @'='%40'}
-    $resultList += @{"  '"='%27'}
-    $resultList += @{'  ;'='%3B'}
-    $resultList += @{'  ?'='%3F'}
-    $resultList += @{'  *'='%2A'}
-    $resultList += @{'  ('='%28'}
-    $resultList += @{'  )'='%29'}
-    $resultList += @{'  "'='%22'}
-        
-    return $resultList
+        $resultList = @()
+        $resultList += @{'  %'='%25'}
+        $resultList += @{'  $'='%24'}
+        $resultList += @{'  @'='%40'}
+        $resultList += @{"  '"='%27'}
+        $resultList += @{'  ;'='%3B'}
+        $resultList += @{'  ?'='%3F'}
+        $resultList += @{'  *'='%2A'}
+        $resultList += @{'  ('='%28'}
+        $resultList += @{'  )'='%29'}
+        $resultList += @{'  "'='%22'}
+
+        return $resultList
     }
 }
 
@@ -1712,6 +1724,7 @@ function PSBuild-ConverToDictionary{
     param(
         [Parameter(
             Mandatory=$true,
+            Position=0,
             ValueFromPipeline=$true)]
         [hashtable]
         $valueToConvert
@@ -1735,10 +1748,14 @@ function PSBuildSet-TempVar{
     param(
         [Parameter(
             Mandatory=$true,
+            Position=0,
             ValueFromPipeline=$true)]
         [hashtable]
         $envVars
     )
+    begin{
+        $script:envVarToRestore = @{}
+    }
     process{
         foreach($key in $envVars.Keys){
             $oldValue = [environment]::GetEnvironmentVariable("$key",$script:envVarTarget)
@@ -1756,11 +1773,9 @@ function PSBuildReset-TempEnvVars{
     param()
     process{
         foreach($key in $script:envVarToRestore.Keys){
-            $oldValue = [environment]::GetEnvironmentVariable("$key",$script:envVarTarget)
-            $newValue = ($script:envVarToRestore[$key])
+            $previousValue = ($script:envVarToRestore[$key])
 
-            'Resetting temp env var [{0}={1}]`tPrevious value:[{2}]' -f $key, $newValue, $oldValue | Write-Verbose
-            [environment]::SetEnvironmentVariable("$key",$newValue,$script:envVarTarget)
+            [environment]::SetEnvironmentVariable("$key",$previousValue,$script:envVarTarget)
         }
     }
 }
@@ -1802,9 +1817,13 @@ function Write-BuildMessage{
     }
 }
 
-Export-ModuleMember -function Get-*,Set-*,Invoke-*,Save-*,Test-*,Find-*,Add-*,Remove-*,Test-*,Open-*,New-*
-if($env:IsDeveloperMachine){
+
+if(!$env:IsDeveloperMachine){
+    Export-ModuleMember -function Get-*,Set-*,Invoke-*,Save-*,Test-*,Find-*,Add-*,Remove-*,Test-*,Open-*,New-*
+}
+else{
     # you can set the env var to expose all functions to importer. easy for development.
+    # this is required for pester testing
     Export-ModuleMember -function *    
 }
 
