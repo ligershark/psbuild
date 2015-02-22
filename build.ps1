@@ -218,8 +218,7 @@ function Get-OutputRoot{
     [cmdletbinding()]
     param()
     process{
-        $outputRoot = Join-Path $scriptDir "OutputRoot"        
-        (Get-Item $outputRoot).FullName
+        Join-Path $scriptDir "OutputRoot"
     }
 }
 
