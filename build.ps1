@@ -236,13 +236,7 @@ function Run-Tests{
         # go to the tests directory and run pester
         push-location
         set-location $testDirectory
-        if($env:ExitOnPesterFail){
-            invoke-pester -EnableExit
-        }
-        else{
-            invoke-pester
-        }
-
+     
         $pesterArgs = @{}
         if($env:ExitOnPesterFail -eq $true){
             $pesterArgs.Add('-EnableExit',$true)
@@ -252,7 +246,6 @@ function Run-Tests{
         }
 
         Invoke-Pester @pesterArgs
-
 
         pop-location
     }

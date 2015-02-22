@@ -18,8 +18,6 @@ if(!($env:PSBuildToolsDir)){
 }
 
 Describe 'invoke-msbuild test cases' {
-    
-    $script:tempProj = 'invoke-msbuild\temp.proj'
     $script:genPath = 'invoke-msbuild\generated.txt'
     $script:tempProjContent = @"
 <?xml version="1.0" encoding="utf-8"?>
@@ -32,7 +30,21 @@ Describe 'invoke-msbuild test cases' {
 
 </Project>
 "@
+    $script:tempProj = 'invoke-msbuild\temp.proj'
     Setup -File -Path $script:tempProj -Content $script:tempProjContent
+
+    $script:tempFailingProjContent = @"
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Demo" ToolsVersion="4.0">
+
+  <Target Name="Demo">
+    <Error Text="Error here"/>
+  </Target>
+
+</Project>
+"@
+    $script:tempFailingProj = 'invoke-msbuild\tempfailing.proj'
+    Setup -File -Path $script:tempFailingProj -Content $script:tempFailingProjContent
 
     $global:PSBuildSettings.BuildMessageEnabled = $false
     Add-Type -AssemblyName Microsoft.Build
@@ -48,6 +60,58 @@ Describe 'invoke-msbuild test cases' {
         $sourceProj = ("$TestDrive\{0}" -f $script:tempProj)
         
         Invoke-MSBuild $sourceProj -preprocess
+    }
+
+    It "can specify visualstudioversion" {
+        $sourceProj = ("$TestDrive\{0}" -f $script:tempProj)
+        
+        Invoke-MSBuild $sourceProj -visualStudioVersion 12.0
+    }
+
+    It "can specify configuration" {
+        $sourceProj = ("$TestDrive\{0}" -f $script:tempProj)
+        
+        Invoke-MSBuild $sourceProj -configuration Release
+    }
+
+    It "can specify OutputPath" {
+        $sourceProj = ("$TestDrive\{0}" -f $script:tempProj)
+        
+        Invoke-MSBuild $sourceProj -outputPath c:\temp\outputpath\
+    }
+
+    It "can specify DeployOnBuild" {
+        $sourceProj = ("$TestDrive\{0}" -f $script:tempProj)
+        
+        Invoke-MSBuild $sourceProj -deployOnBuild $true
+    }
+
+    It "can specify PublishProfile" {
+        $sourceProj = ("$TestDrive\{0}" -f $script:tempProj)
+        
+        Invoke-MSBuild $sourceProj -publishProfile MyProfile
+    }
+
+    It "can specify password" {
+        $sourceProj = ("$TestDrive\{0}" -f $script:tempProj)
+        
+        Invoke-MSBuild $sourceProj -password PasswordHere
+    }
+
+    It 'throws on a failing project'{
+        $sourceProj = ("$TestDrive\{0}" -f $script:tempFailingProj)
+        
+        {Invoke-MSBuild $sourceProj} | Should throw
+    }
+
+    It 'can build without passing in a project file'{
+        $sourceProj = ("$TestDrive\{0}" -f $script:tempProj)
+        $tempFolder = (New-Item -Type Directory -Path ('{0}\tempbuildnoprojfile' -f $TestDrive)).FullName
+        Copy-Item $sourceProj (Join-Path $tempFolder 'myproj.csproj')
+        Push-Location
+        Set-Location $tempFolder
+        Invoke-MSBuild
+        Pop-Location
     }
 }
 
