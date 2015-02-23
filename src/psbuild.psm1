@@ -107,21 +107,36 @@ $script:envVarTarget='Process'
 .SYNOPSIS  
 	This will return the path to msbuild.exe. If the path has not yet been set
 	then the highest installed version of msbuild.exe will be returned.
+
+.PARAMETER bitness
+    Determines wheter the 32 or 64-bit version of msbuild.exe is returned.
+    32 bit is the default.
 #>
 function Get-MSBuild{
     [cmdletbinding()]
-    param()
+    param(
+        [Parameter(Position=0)]
+        [ValidateSet('32bit','64bit')]
+        [string]$bitness = '32bit'
+    )
     process{
         $path = $script:defaultMSBuildPath
 
 	    if(!$path){
-	        $path =  Get-ChildItem "hklm:\SOFTWARE\Microsoft\MSBuild\ToolsVersions\" | 
-				        Sort-Object {[double]$_.PSChildName} -Descending | 
-				        Select-Object -First 1 | 
-				        Get-ItemProperty -Name MSBuildToolsPath |
-				        Select -ExpandProperty MSBuildToolsPath
-        
-            $path = (Join-Path -Path $path -ChildPath 'msbuild.exe')
+            $regLocalKey = $null
+
+            if($bitness -eq '32bit'){
+                $regLocalKey = [Microsoft.Win32.RegistryKey]::OpenBaseKey([Microsoft.Win32.RegistryHive]::LocalMachine,[Microsoft.Win32.RegistryView]::Registry32)
+            }
+            if($bitness -eq '64bit'){
+                $regLocalKey = [Microsoft.Win32.RegistryKey]::OpenBaseKey([Microsoft.Win32.RegistryHive]::LocalMachine,[Microsoft.Win32.RegistryView]::Registry64)
+            }
+
+            $versionKeyName = $regLocalKey.OpenSubKey('SOFTWARE\Microsoft\MSBuild\ToolsVersions\').GetSubKeyNames() | Sort-Object {[double]$_} -Descending
+            $keyToReturn = ('SOFTWARE\Microsoft\MSBuild\ToolsVersions\{0}' -f $versionKeyName)
+            
+            # return the key value here
+            $path = ( '{0}\msbuild.exe' -f $regLocalKey.OpenSubKey($keyToReturn).GetValue('MSBuildToolsPath'))
 	    }
 
         return Get-Item $path
