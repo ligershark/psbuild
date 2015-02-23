@@ -136,7 +136,7 @@ function Get-MSBuild{
             $keyToReturn = ('SOFTWARE\Microsoft\MSBuild\ToolsVersions\{0}' -f $versionKeyName)
             
             # return the key value here
-            $path = ( '{0}\msbuild.exe' -f $regLocalKey.OpenSubKey($keyToReturn).GetValue('MSBuildToolsPath'))
+            $path = ( '{0}msbuild.exe' -f $regLocalKey.OpenSubKey($keyToReturn).GetValue('MSBuildToolsPath'))
 	    }
 
         return Get-Item $path
@@ -151,21 +151,25 @@ function Get-MSBuild{
 function Set-MSBuild{
     [cmdletbinding()]
     param(
-        [Parameter(ValueFromPipeline=$true)]
-        $msbuildPath
+        [Parameter(ValueFromPipeline=$true,Position=0,Mandatory=$true)]
+        $msbuildPath,
+
+        [Parameter(Position=1)]
+        [bool]$persist=$true
     )
 
     process{
-        if(!$msbuildPath){
-            $script:defaultMSBuildPath = $null
+        if(!$msbuildPath){    
             $msbuildPath = (Get-MSBuild)
         }
 
         'Updating msbuild alias to point to [{0}]' -f $msbuildPath | Write-Verbose
         Set-Alias msbuild $msbuildPath
-                
-        'Updating defalut msbuild.exe to point to [{0}]' -f $msbuildPath | Write-Verbose
-        $script:defaultMSBuildPath = $msbuildPath
+            
+        if($persist -eq $true){
+            'Updating defalut msbuild.exe to point to [{0}]' -f $msbuildPath | Write-Verbose
+            $script:defaultMSBuildPath = $msbuildPath
+        }
     }
 }
 
@@ -207,6 +211,10 @@ function Set-MSBuild{
     You can specify the specific msbuild.exe that should be used by passing
     in this value. If this is not specified then Get-MSBuild will be used
     to get the path to msbuild.exe.
+
+.PARAMETER msbuildBitness
+    Determines wheter the 32 or 64-bit version of msbuild.exe is returned.
+    32 bit is the default.
 
 .PARAMETER visualStudioVersion
     This will set the VisualStudioVersion MSBuild parameter. Typical values for this include:
@@ -300,8 +308,11 @@ function Invoke-MSBuild{
         
         [Parameter(ParameterSetName='build')]
         [ValidateScript({Test-Path $_})]
-        $msbuildPath = (Get-MSBuild),
+        $msbuildPath,
         
+        [ValidateSet('32bit','64bit')]
+        [string]$msbuildBitness = '32bit',
+
         [Parameter(ParameterSetName='build')]
         [Parameter(ParameterSetName='debugMode')]
         [alias('p')]
@@ -396,6 +407,9 @@ function Invoke-MSBuild{
     }
 
     process{
+        if([string]::IsNullOrWhiteSpace($msbuildPath)){
+            $msbuildPath = (Get-MSBuild -bitness $msbuildBitness)
+        }
         # If we weren't provided a project to build, insert a dummy entry into the array
         # to fall back to msbuild default behaviour.
         if ($projectsToBuild -eq $null){
@@ -487,8 +501,8 @@ function Invoke-MSBuild{
             if($pscmdlet.ShouldProcess("`n`tmsbuild.exe {0}" -f ($msbuildArgs -join ' '))){
                 
                 if(-not $debugMode){
-                    "Using msbuild.exe from [{0}]. Use Set-MSBuild to change this." -f (Get-MSBuild).FullName | Write-BuildMessage
-                    & ((Get-MSBuild).FullName) $msbuildArgs
+                    "Using msbuild.exe from [{0}]. Use Set-MSBuild to change this." -f $msbuildPath | Write-BuildMessage
+                    & ($msbuildPath) $msbuildArgs
 
                     if(-not $ignoreExitCode -and ($LASTEXITCODE -ne 0)){
                         $msg = ('MSBuild exited with a non-zero exit code [{0}]' -f $LASTEXITCODE)
@@ -1851,4 +1865,4 @@ Add-Type -AssemblyName Microsoft.Build
 [string]$script:defaultMSBuildPath = $null
 [string]$script:VisualStudioVersion = $null
 # call this once to ensure the alias is set
-Get-MSBuild | Set-MSBuild
+Get-MSBuild | Set-MSBuild -persist $false
