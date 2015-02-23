@@ -10,7 +10,6 @@ function Get-ScriptDirectory
 
 $scriptDir = ((Get-ScriptDirectory) + "\")
 
-set-msbuild
 Describe "get and set msbuild test cases" {
 
     Setup -File 'sayedha\fakemsbuildfile01.txt' 

@@ -151,7 +151,7 @@ function Get-MSBuild{
 function Set-MSBuild{
     [cmdletbinding()]
     param(
-        [Parameter(ValueFromPipeline=$true,Position=0,Mandatory=$true)]
+        [Parameter(ValueFromPipeline=$true,Position=0)]
         $msbuildPath,
 
         [Parameter(Position=1)]
