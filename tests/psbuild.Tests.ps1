@@ -12,8 +12,9 @@ $scriptDir = ((Get-ScriptDirectory) + "\")
 
 Describe "get and set msbuild test cases" {
 
-    Setup -File 'sayedha\fakemsbuildfile01.txt' 
-    Setup -File 'sayedha\fakemsbuildfile02.txt' 
+    New-Item -ItemType Directory -Path (Join-Path $TestDrive 'sayedha')
+    Set-Content ('{0}\sayedha\fakemsbuildfile01.txt' -f $TestDrive) -Value '.'
+    Set-Content ('{0}\sayedha\fakemsbuildfile02.txt' -f $TestDrive) -Value '.'
     Add-Type -AssemblyName Microsoft.Build
     It "validate msbuild returns a file that exists" {
         $msbuildPath = Get-MSBuild

@@ -139,7 +139,7 @@ function Get-MSBuild{
             $path = ( '{0}msbuild.exe' -f $regLocalKey.OpenSubKey($keyToReturn).GetValue('MSBuildToolsPath'))
 	    }
 
-        return Get-Item $path
+        return $path
     }
 }
 <#
@@ -159,7 +159,8 @@ function Set-MSBuild{
     )
 
     process{
-        if(!$msbuildPath){    
+        if(!$msbuildPath){
+            $script:defaultMSBuildPath = $null
             $msbuildPath = (Get-MSBuild)
         }
 
