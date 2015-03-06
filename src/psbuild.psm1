@@ -40,6 +40,8 @@ $global:PSBuildSettings = New-Object PSObject -Property @{
     DefaultClp = '/clp:v=m;ShowCommandLine'
     ToolsDir = ''
     MarkdownLoggerVerbosity = 'n'
+    EnablePropertyQuoting = $true
+    PropertyQuotingRegex = '[''.*''|".*"]'
 }
 
 <#
@@ -256,6 +258,12 @@ function Set-MSBuild{
     By default if msbuild.exe exists with a non-zeor exit code the script will throw an exception.
     You can prevent this by passing in -ignoreExitCode.
 
+.PARAMETER disablePropertyQuoting
+    By default if you pass a property via -Properties which has a space the property will be surrounded
+    with single quotes (') if the value is not already surrounded with single quotes (') or double quotes (")
+    if the property value has a space in it. You can disable this by passing this property. You can disable
+    this globally with the setting $global:PSBuildSettings.PropertyQuotingRegex.
+
 .EXAMPLE
     Invoke-MSBuild C:\temp\msbuild\msbuild.proj
     Shows how you can build a project.
@@ -386,6 +394,9 @@ function Invoke-MSBuild{
         [switch]$noLogFiles,
 
         [Parameter(ParameterSetName='build')]
+        [switch]$disablePropertyQuoting,
+
+        [Parameter(ParameterSetName='build')]
         [string]$extraArgs,
 
         [Parameter(ParameterSetName='debugMode')]
@@ -449,8 +460,21 @@ function Invoke-MSBuild{
                     if(!($value)){
                         continue;
                     }
+                    else{
+                        $valueStr = $value
+                        if(($valueStr -match '\s') -and
+                            $global:PSBuildSettings.EnablePropertyQuoting -and 
+                            !($disablePropertyQuoting)){
+                            # if it's already quoted don't add quotes
+                            if(!($value -match $global:PSBuildSettings.PropertyQuotingRegex)){
+                                
+                                $valueStr = ("''{0}''" -f $value.Replace("'","''"))
+                            }
+                            
+                        }
 
-                    $msbuildArgs += ('/p:{0}=''{1}''' -f $key, $value)
+                        $msbuildArgs += ('/p:{0}={1}' -f $key, $valueStr)
+                    }
                 }
             }
             if($targets){
