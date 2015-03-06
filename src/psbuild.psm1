@@ -1862,7 +1862,7 @@ function Write-BuildMessage{
             }
 
             if($Host -and ($Host.Name -eq 'ConsoleHost')){
-                $message | Write-Host -ForegroundColor $fgColor -BackgroundColor $bColor
+                $message | Write-Host # -ForegroundColor $fgColor -BackgroundColor $bColor
             }
             else{
                 $message | Write-Verbose
