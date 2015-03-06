@@ -450,7 +450,7 @@ function Invoke-MSBuild{
                         continue;
                     }
 
-                    $msbuildArgs += ('/p:{0}={1}' -f $key, $value)
+                    $msbuildArgs += ('/p:{0}=''{1}''' -f $key, $value)
                 }
             }
             if($targets){
