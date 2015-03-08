@@ -502,7 +502,7 @@ function Invoke-MSBuild{
                             # if it's already quoted don't add quotes
                             if(!($value -match $global:PSBuildSettings.PropertyQuotingRegex)){
                                 
-                                $valueStr = ("''{0}''" -f $value.Replace("'","''"))
+                                $valueStr = ("'{0}'" -f $value.Replace("'","''"))
                             }
                             
                         }
