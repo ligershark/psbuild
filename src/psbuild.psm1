@@ -32,6 +32,7 @@ $global:PSBuildSettings = New-Object PSObject -Property @{
     BuildMessageStrongForegroundColor = [ConsoleColor]::Yellow
     BuildMessageStrongBackgroundColor = [ConsoleColor]::DarkGreen
 
+    EnabledLoggers = @('detailed','diagnostic','markdown')
     LogDirectory = ('{0}\LigerShark\PSBuild\logs\' -f $env:LOCALAPPDATA)
     LastLogDirectory = $null
 
@@ -249,6 +250,13 @@ function Set-MSBuild{
     The value for the /maxcpucount (/m) parameter. If this is not provided '/m' will be used.
     If you want to disable this then pass in the value 1 to execute on one core.
 
+.PARAMETER enabledLoggers
+    Can be used to turn on or off specific loggers. It's a string array that contains the loggers
+    to enable. The three valid options are detailed, diagnostic and markdown. All other values are
+    ignored. So if you just want a detailed logger pass -enabledLoggers detailed and
+    -enableLoggers @('detailed','diagnostic') for detailed and diagnostic. The default value for
+    this is @('detailed','diagnostic','markdown') and can be overridden in $global:PSBuildSettings.EnabledLoggers.
+
 .PARAMTER noLogFiles
     You can use this to disable logging to files for this call to Invoke-MSBuild. Note: you can also
     enable/disable log file generation via a global flag $global:PSBuildSettings.EnableBuildLogging.
@@ -303,6 +311,14 @@ function Set-MSBuild{
 
 .EXAMPLE
     Invoke-MSBuild $defProps -defaultProperties @{'Configuration'='Release'}
+
+.EXAMPLE
+    Invoke-MSBuild myproj.csproj -enabledLoggers detailed
+    Builds and creates just a detailed log
+
+.EXAMPLE
+    Invoke-MSBuild myproj.csproj -enabledLoggers @('detailed','markdown')
+    Builds and creates just a detailed and markdown log
 #>
 function Invoke-MSBuild{
     [cmdletbinding(
@@ -389,6 +405,9 @@ function Invoke-MSBuild{
 
         [Parameter(ParameterSetName='build')]
         [switch]$ignoreExitCode,
+
+        [Parameter(ParameterSetName='build')]
+        [string[]]$enabledLoggers = ($global:PSBuildSettings.EnabledLoggers),
 
         [Parameter(ParameterSetName='build')]
         [switch]$noLogFiles,
@@ -515,7 +534,9 @@ function Invoke-MSBuild{
             if($global:PSBuildSettings.EnableBuildLogging -and !($noLogFiles)){
                 $logDir = $global:PSBuildSettings.LastLogDirectory = (Get-PSBuildLogDirectory -projectPath $project)
 
-                $loggers = (InternalGet-PSBuildLoggers -projectPath $project)
+                Get-ChildItem $logDir *.log* | Remove-Item -ErrorAction SilentlyContinue | Out-Null
+
+                $loggers = (InternalGet-PSBuildLoggers -projectPath $project -enabledLoggers $enabledLoggers)
                 foreach($logger in $loggers){
                     $msbuildArgs += $logger
                 }
@@ -850,7 +871,10 @@ function InternalGet-PSBuildLoggers{
         [Parameter(
             Position=1,
             ValueFromPipeline=$true)]
-        $projectPath
+        $projectPath,
+
+        [Parameter(Position=2)]
+        $enabledLoggers = ($global:PSBuildSettings.EnabledLoggers)
     )
     begin{
         Add-Type -AssemblyName Microsoft.Build
@@ -866,18 +890,23 @@ function InternalGet-PSBuildLoggers{
         # {1} name of the file being built
         # {2} timestamp property
         # {3} tools directory
-        $private:loggers += '/flp1:v=d;logfile={0}msbuild.detailed.log'
-        $private:loggers += '/flp2:v=diag;logfile={0}msbuild.diagnostic.log'
-        
-        $mdLoggerBinaryPath = join-path $toolsDir 'psbuild.dll'
-        if(test-path $mdLoggerBinaryPath){
-            $private:loggers += ('/logger:MarkdownLogger,{3}\psbuild.dll;logfile={0}msbuild.markdown.log.md;v=' + $global:PSBuildSettings.MarkdownLoggerVerbosity + ';')
-            'Adding markdown logger to the build' | write-verbose
+        if($enabledLoggers -contains 'detailed'){
+            $private:loggers += '/flp1:v=d;logfile={0}msbuild.detailed.log'
         }
-        else{
-            'Not adding markdown logger because it was not found in the expected location [{0}]' -f $mdLoggerBinaryPath | write-verbose
+        if($enabledLoggers -contains 'diagnostic'){
+            $private:loggers += '/flp2:v=diag;logfile={0}msbuild.diagnostic.log'
         }
-        
+
+        if($enabledLoggers -contains 'markdown'){
+            $mdLoggerBinaryPath = join-path $toolsDir 'psbuild.dll'
+            if(test-path $mdLoggerBinaryPath){
+                $private:loggers += ('/logger:MarkdownLogger,{3}\psbuild.dll;logfile={0}msbuild.markdown.log.md;v=' + $global:PSBuildSettings.MarkdownLoggerVerbosity + ';')
+                'Adding markdown logger to the build' | write-verbose
+            }
+            else{
+                'Not adding markdown logger because it was not found in the expected location [{0}]' -f $mdLoggerBinaryPath | write-verbose
+            }
+        }
                
         $loggersResult = @()
 
