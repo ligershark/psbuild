@@ -3,8 +3,8 @@ param(
     [Parameter(ParameterSetName='build',Position=0)]
     [switch]$build,
     
-    [Parameter(ParameterSetName='updateversion',Position=0)]
-    [switch]$updateversion,
+    [Parameter(ParameterSetName='setversion',Position=0)]
+    [switch]$setversion,
 
     [Parameter(ParameterSetName='getversion',Position=0)]
     [switch]$getversion,
@@ -19,11 +19,11 @@ param(
     [Parameter(ParameterSetName='build',Position=3)]
     [string]$nugetApiKey = ($env:NuGetApiKey),
 
-    # updateversion parameters
-    [Parameter(ParameterSetName='updateversion',Position=1,Mandatory=$true)]
+    # setversion parameters
+    [Parameter(ParameterSetName='setversion',Position=1,Mandatory=$true)]
     [string]$newversion,
 
-    [Parameter(ParameterSetName='updateversion',Position=2)]
+    [Parameter(ParameterSetName='setversion',Position=2)]
     [string]$oldversion
 )
  
@@ -126,7 +126,7 @@ function GetExistingVersion{
     }
 }
 
-function UpdateVersion{
+function SetVersion{
     [cmdletbinding()]
     param(
         [Parameter(Position=0,Mandatory=$true)]
@@ -285,17 +285,17 @@ function Build{
     }
 }
 
-if(!$build -and !$updateversion -and !$getversion){
+if(!$build -and !$setversion -and !$getversion){
     $build = $true
 }
 
 
 try{
     if($build){ Build }
-    elseif($updateversion){ UpdateVersion -newversion $newversion }
+    elseif($setversion){ SetVersion -newversion $newversion }
     elseif($getversion){ GetExistingVersion | Write-Output }
     else{
-        $cmds = @('-build','-updateversion')
+        $cmds = @('-build','-setversion')
         'Command not found or empty, please pass in one of the following [{0}]' -f ($cmds -join ' ') | Write-Error
     }
 }
