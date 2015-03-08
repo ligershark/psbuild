@@ -74,6 +74,12 @@ Describe 'invoke-msbuild test cases' {
         Invoke-MSBuild $sourceProj -configuration Release
     }
 
+    It "can specify platform" {
+        $sourceProj = ("$TestDrive\{0}" -f $script:tempProj)
+
+        Invoke-MSBuild $sourceProj -platform AnyCPU
+    }
+
     It "can specify OutputPath" {
         $sourceProj = ("$TestDrive\{0}" -f $script:tempProj)
         

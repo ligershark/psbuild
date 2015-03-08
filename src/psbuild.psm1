@@ -231,6 +231,10 @@ function Set-MSBuild{
     This sets the MSBuild property Configuration to the value specified. This will override any value
     in properties or defaultProperties.
 
+.PARAMETER Platform
+    This sets the MSBuild property Platform to the value specified. This will override any value
+    in properties or defaultProperties.
+
 .PARAMETER nologo
     When set this passes the /nologo switch to msbuild.exe.
 
@@ -283,6 +287,10 @@ function Set-MSBuild{
 .EXAMPLE
     Invoke-MSBuild C:\temp\msbuild\msbuild.proj -configuration Release -visualStudioVersion 12.0
     You can easily pass in the value for the Configuraiton and VisualStudioVersion MSBuild properties.
+
+.EXAMPLE
+    Invoke-MSBuild C:\temp\msbuild\msbuild.proj -configuration Release -platform AnyCPU
+    You can easily pass in the value for the Configuraiton and Platform MSBuild properties.
 
 .EXAMPLE
     Invoke-MSBuild @('C:\temp\msbuild\proj1.proj';'C:\temp\msbuild\proj2.proj')
@@ -360,6 +368,10 @@ function Invoke-MSBuild{
         [Parameter(ParameterSetName='build')]
         [Parameter(ParameterSetName='debugMode')]
         $configuration,
+
+        [Parameter(ParameterSetName='build')]
+        [Parameter(ParameterSetName='debugMode')]
+        $platform,
 
         [Parameter(ParameterSetName='build')]
         [Parameter(ParameterSetName='debugMode')]
@@ -459,6 +471,9 @@ function Invoke-MSBuild{
             }
             if($configuration){
                 $properties['Configuration']=$configuration
+            }
+            if($platform){
+                $properties['Platform']=$configuration
             }
             if($outputPath){
                 $properties['OutputPath']=$outputPath
