@@ -306,6 +306,8 @@ function Build{
             Clean-OutputFolder
         }
 
+        Update-FilesWithCommitId
+
         $projFilePath = get-item (Join-Path $scriptDir 'psbuild.proj')
 
         $msbuildArgs = @()
