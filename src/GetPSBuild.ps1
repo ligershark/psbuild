@@ -142,17 +142,24 @@ function GetPsBuildPsm1{
         $psbuildPsm1 = (Get-ChildItem -Path "$toolsDir\psbuild.$versionToInstall" -Include 'psbuild.psm1' -Recurse -ErrorAction SilentlyContinue | Sort-Object -Descending -ErrorAction SilentlyContinue | Select-Object -First 1 -ErrorAction SilentlyContinue)
 
         if(!$psbuildPsm1){
-            'Downloading psbuild to the toolsDir' | Write-Verbose
-            # nuget install psbuild -Version 0.0.3-beta -Prerelease -OutputDirectory C:\temp\nuget\out\
-            $cmdArgs = @('install','psbuild','-Version',$versionToInstall,'-Prerelease','-OutputDirectory',(Resolve-Path $toolsDir).ToString())
+            try{
+                Push-Location
+                Set-Location ((Resolve-Path $toolsDir).ToString())
+                'Downloading psbuild to the toolsDir' | Write-Verbose
+                # nuget install psbuild -Version 0.0.3-beta -Prerelease -OutputDirectory C:\temp\nuget\out\
+                $cmdArgs = @('install','psbuild','-Version',$versionToInstall,'-Prerelease')
 
-            $nugetPath = (Get-Nuget -toolsDir $toolsDir -nugetDownloadUrl $nugetDownloadUrl)
-            'Calling nuget to install psbuild with the following args. [{0} {1}]' -f $nugetPath, ($cmdArgs -join ' ') | Write-Verbose
+                $nugetPath = (Get-Nuget -toolsDir $toolsDir -nugetDownloadUrl $nugetDownloadUrl)
+                'Calling nuget to install psbuild with the following args. [{0} {1}]' -f $nugetPath, ($cmdArgs -join ' ') | Write-Verbose
 
-            $command = '"{0}" {1}' -f $nugetPath,($cmdArgs -join ' ')
-            $command | Execute-CommandString
+                $command = '"{0}" {1}' -f $nugetPath,($cmdArgs -join ' ')
+                $command | Execute-CommandString
 
-            $psbuildPsm1 = (Get-ChildItem -Path "$toolsDir\psbuild.$versionToInstall" -Include 'psbuild.psm1' -Recurse | Sort-Object -Descending | Select-Object -First 1)
+                $psbuildPsm1 = (Get-ChildItem -Path "$toolsDir\psbuild.$versionToInstall" -Include 'psbuild.psm1' -Recurse | Sort-Object -Descending | Select-Object -First 1)
+            }
+            finally{
+                Pop-Location
+            }
         }
 
         if(!$psbuildPsm1){ 
