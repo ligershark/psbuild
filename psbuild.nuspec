@@ -10,6 +10,8 @@
     <description>
       NuGet package which installs a PS module on init that can be used by other packages in init.ps1/install.ps1.
       It exposes some functionality to simplify manipulating MSBuild files.
+
+      Commit ID: $(COMMIT_ID)
     </description>    
     <language>en-US</language>
     <projectUrl>https://github.com/ligershark/psbuild/</projectUrl>

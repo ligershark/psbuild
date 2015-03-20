@@ -104,30 +104,65 @@ function GetExistingVersion{
         ([xml](Get-Content $nuspecFile)).package.metadata.version
     }
 }
-
+$script:pkgDownloaderEnabled = $false
 function Enable-PackageDownloader{
     [cmdletbinding()]
     param(
         $toolsDir = "$env:LOCALAPPDATA\LigerShark\tools\package-downloader-$publishModuleVersion\",
         $pkgDownloaderDownloadUrl = 'http://go.microsoft.com/fwlink/?LinkId=524325') # package-downloader.psm1
     process{
-        if(get-module package-downloader){
-            remove-module package-downloader | Out-Null
-        }
 
-        if(!(get-module package-downloader)){
-            if(!(Test-Path $toolsDir)){ New-Item -Path $toolsDir -ItemType Directory -WhatIf:$false }
-
-            $expectedPath = (Join-Path ($toolsDir) 'package-downloader.psm1')
-            if(!(Test-Path $expectedPath)){
-                'Downloading [{0}] to [{1}]' -f $pkgDownloaderDownloadUrl,$expectedPath | Write-Verbose
-                (New-Object System.Net.WebClient).DownloadFile($pkgDownloaderDownloadUrl, $expectedPath)
+        if(!($script:pkgDownloaderEnabled)){
+            if(get-module package-downloader){
+                remove-module package-downloader | Out-Null
             }
 
-            if(!$expectedPath){throw ('Unable to download package-downloader.psm1')}
+            if(!(get-module package-downloader)){
+                if(!(Test-Path $toolsDir)){ New-Item -Path $toolsDir -ItemType Directory -WhatIf:$false }
 
-            'importing module [{0}]' -f $expectedPath | Write-Output
-            Import-Module $expectedPath -DisableNameChecking -Force
+                $expectedPath = (Join-Path ($toolsDir) 'package-downloader.psm1')
+                if(!(Test-Path $expectedPath)){
+                    'Downloading [{0}] to [{1}]' -f $pkgDownloaderDownloadUrl,$expectedPath | Write-Verbose
+                    (New-Object System.Net.WebClient).DownloadFile($pkgDownloaderDownloadUrl, $expectedPath)
+                }
+
+                if(!$expectedPath){throw ('Unable to download package-downloader.psm1')}
+
+                'importing module [{0}]' -f $expectedPath | Write-Output
+                Import-Module $expectedPath -DisableNameChecking -Force
+                $script:pkgDownloaderEnabled = $true
+            }
+        }
+    }
+}
+
+function Update-FilesWithCommitId{
+    [cmdletbinding()]
+    param(
+        [Parameter(Position=0,Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$commitId = ($env:APPVEYOR_REPO_COMMIT),
+
+        [Parameter(Position=2)]
+        [string]$filereplacerVersion = '0.2.0-beta'
+    )
+    process{
+        if(![string]::IsNullOrWhiteSpace($commitId)){
+            'Updating commitId from [{0}] to [{1}]' -f '$(COMMIT_ID)',$commitId | Write-Verbose
+
+            Enable-PackageDownloader
+            'trying to load file replacer' | Write-Verbose
+            Enable-NuGetModule -name 'file-replacer' -version $filereplacerVersion
+
+            $folder = $scriptDir
+            $include = '*.nuspec'
+            # In case the script is in the same folder as the files you are replacing add it to the exclude list
+            $exclude = "$($MyInvocation.MyCommand.Name);"
+            $replacements = @{
+                '$(COMMIT_ID)'="$commitId"
+            }
+            Replace-TextInFolder -folder $folder -include $include -exclude $exclude -replacements $replacements | Write-Verbose
+            'Replacement complete' | Write-Verbose
         }
     }
 }
