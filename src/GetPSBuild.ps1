@@ -103,6 +103,30 @@ function Get-Nuget(){
     }
 }
 
+
+function Execute-CommandString{
+    [cmdletbinding()]
+    param(
+        [Parameter(Mandatory=$true,Position=0,ValueFromPipeline=$true)]
+        [string[]]$command,
+
+        [switch]
+        $ignoreErrors
+    )
+    process{
+        foreach($cmdToExec in $command){
+            'Executing command [{0}]' -f $cmdToExec | Write-Verbose
+
+            cmd.exe /D /C $cmdToExec
+
+            if(-not $ignoreErrors -and ($LASTEXITCODE -ne 0)){
+                $msg = ('The command [{0}] exited with code [{1}]' -f $cmdToExec, $LASTEXITCODE)
+                throw $msg
+            }
+        }
+    }
+}
+
 # see if the particular version is installed under localappdata
 function GetPsBuildPsm1{
     [cmdletbinding()]
@@ -124,7 +148,9 @@ function GetPsBuildPsm1{
 
             $nugetPath = (Get-Nuget -toolsDir $toolsDir -nugetDownloadUrl $nugetDownloadUrl)
             'Calling nuget to install psbuild with the following args. [{0} {1}]' -f $nugetPath, ($cmdArgs -join ' ') | Write-Verbose
-            &$nugetPath $cmdArgs | Out-Null
+
+            $command = '"{0}" {1}' -f $nugetPath,($cmdArgs -join ' ')
+            $command | Execute-CommandString
 
             $psbuildPsm1 = (Get-ChildItem -Path "$toolsDir\psbuild.$versionToInstall" -Include 'psbuild.psm1' -Recurse | Sort-Object -Descending | Select-Object -First 1)
         }
