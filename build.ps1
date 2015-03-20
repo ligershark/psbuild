@@ -90,27 +90,6 @@ function Get-Nuget(){
     }
 }
 
-function Enable-GetNuGet{
-    [cmdletbinding()]
-    param($toolsDir = "$env:LOCALAPPDATA\LigerShark\tools\getnuget\",
-        $getNuGetDownloadUrl = 'https://raw.githubusercontent.com/sayedihashimi/publish-module/master/getnuget.psm1')
-    process{
-        if(!(get-module 'getnuget')){
-            if(!(Test-Path $toolsDir)){ New-Item -Path $toolsDir -ItemType Directory -WhatIf:$false }
-
-            $expectedPath = (Join-Path ($toolsDir) 'getnuget.psm1')
-            if(!(Test-Path $expectedPath)){
-                'Downloading [{0}] to [{1}]' -f $getNuGetDownloadUrl,$expectedPath | Write-Verbose
-                (New-Object System.Net.WebClient).DownloadFile($getNuGetDownloadUrl, $expectedPath)
-                if(!$expectedPath){throw ('Unable to download getnuget.psm1')}
-            }
-
-            'importing module [{0}]' -f $expectedPath | Write-Verbose
-            Import-Module $expectedPath -DisableNameChecking -Force -Scope Global
-        }
-    }
-}
-
 <#
 .SYNOPSIS 
 This will inspect the publsish nuspec file and return the value for the Version element.
@@ -123,6 +102,33 @@ function GetExistingVersion{
     )
     process{
         ([xml](Get-Content $nuspecFile)).package.metadata.version
+    }
+}
+
+function Enable-PackageDownloader{
+    [cmdletbinding()]
+    param(
+        $toolsDir = "$env:LOCALAPPDATA\LigerShark\tools\package-downloader-$publishModuleVersion\",
+        $pkgDownloaderDownloadUrl = 'http://go.microsoft.com/fwlink/?LinkId=524325') # package-downloader.psm1
+    process{
+        if(get-module package-downloader){
+            remove-module package-downloader | Out-Null
+        }
+
+        if(!(get-module package-downloader)){
+            if(!(Test-Path $toolsDir)){ New-Item -Path $toolsDir -ItemType Directory -WhatIf:$false }
+
+            $expectedPath = (Join-Path ($toolsDir) 'package-downloader.psm1')
+            if(!(Test-Path $expectedPath)){
+                'Downloading [{0}] to [{1}]' -f $pkgDownloaderDownloadUrl,$expectedPath | Write-Verbose
+                (New-Object System.Net.WebClient).DownloadFile($pkgDownloaderDownloadUrl, $expectedPath)
+            }
+
+            if(!$expectedPath){throw ('Unable to download package-downloader.psm1')}
+
+            'importing module [{0}]' -f $expectedPath | Write-Output
+            Import-Module $expectedPath -DisableNameChecking -Force
+        }
     }
 }
 
@@ -142,7 +148,8 @@ function SetVersion{
     )
     process{
         'Updating version from [{0}] to [{1}]' -f $oldversion,$newversion | Write-Verbose
-        Enable-GetNuGet
+
+        Enable-PackageDownloader
         'trying to load file replacer' | Write-Verbose
         Enable-NuGetModule -name 'file-replacer' -version $filereplacerVersion
 
