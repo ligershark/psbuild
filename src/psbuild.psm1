@@ -475,7 +475,7 @@ function Invoke-MSBuild{
                 $properties['Configuration']=$configuration
             }
             if($platform){
-                $properties['Platform']=$configuration
+                $properties['Platform']=$platform
             }
             if($outputPath){
                 $properties['OutputPath']=$outputPath
