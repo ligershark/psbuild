@@ -139,8 +139,6 @@ function Enable-PackageDownloader{
 function Update-FilesWithCommitId{
     [cmdletbinding()]
     param(
-        [Parameter(Position=0,Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
         [string]$commitId = ($env:APPVEYOR_REPO_COMMIT),
 
         [Parameter(Position=2)]
