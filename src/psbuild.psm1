@@ -41,7 +41,7 @@ $global:PSBuildSettings = New-Object PSObject -Property @{
     DefaultClp = '/clp:v=m;ShowCommandLine'
     ToolsDir = ''
     MarkdownLoggerVerbosity = 'n'
-    EnablePropertyQuoting = $true
+    EnablePropertyQuoting = $false
     PropertyQuotingRegex = '[''.*''|".*"]'
 }
 
