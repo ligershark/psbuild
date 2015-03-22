@@ -12,6 +12,24 @@ $scriptDir = ((Get-ScriptDirectory) + "\")
 $importPsbuild = (Join-Path -Path $scriptDir -ChildPath 'import-psbuild.ps1')
 . $importPsbuild
 
+$global:PSBuildSettings.BuildMessageEnabled = $false
+
+function Validate-PropFromMSBuildOutput{
+    [cmdletbinding()]
+    param(
+        [Parameter(Mandatory=$true,Position=0)]
+        $msbuildOutput,
+        [Parameter(Mandatory=$true,Position=1)]
+        [string]$propName,
+        [Parameter(Mandatory=$true,Position=2)]
+        [string]$expectedPropValue
+    )
+    process{
+        $actualValue = ([regex]"$propName.*\[.*]").match( ($msbuildOutput | Select-String "$propName.*") ).Groups[0].Value
+        $actualValue | Should Be ("$propName=[$expectedPropValue]")
+    }
+}
+
 # todo: should set this some other way
 if(!($env:PSBuildToolsDir)){
     $env:PSBuildToolsDir = (resolve-path (Join-Path $scriptDir '..\src\psbuild\bin\Debug\'))
@@ -33,7 +51,7 @@ Describe 'invoke-msbuild test cases' {
     $script:tempProj = 'invoke-msbuild\temp.proj'
     Setup -File -Path $script:tempProj -Content $script:tempProjContent
 
-    $script:tempFailingProjContent = @"
+    $script:tempFailingProjContent = @'
 <?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Demo" ToolsVersion="4.0">
 
@@ -42,10 +60,27 @@ Describe 'invoke-msbuild test cases' {
   </Target>
 
 </Project>
-"@
+'@
     $script:tempFailingProj = 'invoke-msbuild\tempfailing.proj'
     Setup -File -Path $script:tempFailingProj -Content $script:tempFailingProjContent
 
+    $script:printpropscontent = @'
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Demo" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+	<Target Name="Demo">
+		<Message Text="VisualStudioVersion=[$(VisualStudioVersion)]" Importance="high"/>
+		<Message Text="Configuration=[$(Configuration)]" Importance="high"/>
+		<Message Text="Platform=[$(Platform)]" Importance="high"/>
+		<Message Text="OutputPath=[$(OutputPath)]" Importance="high"/>
+		<Message Text="DeployOnBuild=[$(DeployOnBuild)]" Importance="high"/>
+		<Message Text="PublishProfile=[$(PublishProfile)]" Importance="high"/>
+		<Message Text="Password=[$(Password)]" Importance="high"/>
+ 	</Target>
+</Project>
+'@
+    $script:printpropertiesproj = 'invoke-msbuild\printprops.proj'
+    Setup -File -Path $script:printpropertiesproj -Content $script:printpropscontent
+    
     $global:PSBuildSettings.BuildMessageEnabled = $false
     Add-Type -AssemblyName Microsoft.Build
     It "ensure the project is invoked" {
@@ -63,45 +98,54 @@ Describe 'invoke-msbuild test cases' {
     }
 
     It "can specify visualstudioversion" {
-        $sourceProj = ("$TestDrive\{0}" -f $script:tempProj)
-        
-        Invoke-MSBuild $sourceProj -visualStudioVersion 12.0
+        $sourceProj = ("$TestDrive\{0}" -f $script:printpropertiesproj)
+        $msbuildOutput = (Invoke-MSBuild $sourceProj -visualStudioVersion 12.0 -nologo)
+        Validate-PropFromMSBuildOutput $msbuildOutput 'VisualStudioVersion' 12.0
     }
 
     It "can specify configuration" {
-        $sourceProj = ("$TestDrive\{0}" -f $script:tempProj)
-        
-        Invoke-MSBuild $sourceProj -configuration Release
+        $sourceProj = ("$TestDrive\{0}" -f $script:printpropertiesproj)
+        $msbuildOutput = (Invoke-MSBuild $sourceProj -configuration Release -nologo)
+        Validate-PropFromMSBuildOutput $msbuildOutput Configuration Release
     }
 
-    It "can specify platform" {
-        $sourceProj = ("$TestDrive\{0}" -f $script:tempProj)
+    It "can specify platform 1" {
+        $sourceProj = ("$TestDrive\{0}" -f $script:printpropertiesproj)
+        $msbuildOutput = (Invoke-MSBuild $sourceProj -Platform AnyCPU -nologo)
+        Validate-PropFromMSBuildOutput $msbuildOutput Platform AnyCPU
+    }
 
-        Invoke-MSBuild $sourceProj -platform AnyCPU
+    It "can specify platform with space" {
+        $sourceProj = ("$TestDrive\{0}" -f $script:printpropertiesproj)
+        $msbuildOutput = (Invoke-MSBuild $sourceProj -Platform 'Mixed Platforms' -nologo)
+        Validate-PropFromMSBuildOutput $msbuildOutput Platform 'Mixed Platforms'
     }
 
     It "can specify OutputPath" {
-        $sourceProj = ("$TestDrive\{0}" -f $script:tempProj)
-        
-        Invoke-MSBuild $sourceProj -outputPath c:\temp\outputpath\
+        $sourceProj = ("$TestDrive\{0}" -f $script:printpropertiesproj)
+        $msbuildOutput = (Invoke-MSBuild $sourceProj -OutputPath c:\temp\outputpath\ -nologo)
+        Validate-PropFromMSBuildOutput $msbuildOutput OutputPath c:\temp\outputpath\
     }
 
     It "can specify DeployOnBuild" {
-        $sourceProj = ("$TestDrive\{0}" -f $script:tempProj)
-        
-        Invoke-MSBuild $sourceProj -deployOnBuild $true
+        $sourceProj = ("$TestDrive\{0}" -f $script:printpropertiesproj)
+        $msbuildOutput = (Invoke-MSBuild $sourceProj -DeployOnBuild $true -nologo)
+        Validate-PropFromMSBuildOutput $msbuildOutput DeployOnBuild true
     }
 
     It "can specify PublishProfile" {
-        $sourceProj = ("$TestDrive\{0}" -f $script:tempProj)
-        
-        Invoke-MSBuild $sourceProj -publishProfile MyProfile
+        $sourceProj = ("$TestDrive\{0}" -f $script:printpropertiesproj)
+        $msbuildOutput = (Invoke-MSBuild $sourceProj -PublishProfile MyProfile -nologo)
+        Validate-PropFromMSBuildOutput $msbuildOutput PublishProfile MyProfile
     }
 
     It "can specify password" {
         $sourceProj = ("$TestDrive\{0}" -f $script:tempProj)
         
-        Invoke-MSBuild $sourceProj -password PasswordHere
+        Invoke-MSBuild $sourceProj -Password PasswordHere
+        $sourceProj = ("$TestDrive\{0}" -f $script:printpropertiesproj)
+        $msbuildOutput = (Invoke-MSBuild $sourceProj -Password PasswordHere -nologo)
+        Validate-PropFromMSBuildOutput $msbuildOutput Password PasswordHere
     }
 
     It 'throws on a failing project'{
