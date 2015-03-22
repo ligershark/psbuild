@@ -1911,7 +1911,7 @@ function Write-BuildMessage{
                 $message | Write-Host # -ForegroundColor $fgColor -BackgroundColor $bColor
             }
             else{
-                $message | Write-Verbose
+                $message | Write-Output
             }
         }
     }
