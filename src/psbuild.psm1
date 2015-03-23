@@ -603,7 +603,11 @@ function Invoke-MSBuild{
                     }
 
                     if($env:APPVEYOR -eq $true -and (get-command Add-AppveyorMessage -ErrorAction SilentlyContinue) ){
-                        $avmsg = ('Building projects {0}' -f $projArg)
+                        [string]$projstr = $projArg
+                        if([string]::IsNullOrWhiteSpace($projstr)){
+                            $projstr = '(project not specified)'
+                        }
+                        $avmsg = ('Building projects {0}' -f $projstr)
                         $avdetails = ('{0} {1}' -f $msbuildPath, ($msbuildArgs -join ' ' ))
                         Add-AppveyorMessage -Message $avmsg -Category Information -Details $avdetails -ErrorAction SilentlyContinue | Out-NUll
                     }
