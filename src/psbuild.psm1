@@ -42,6 +42,7 @@ $global:PSBuildSettings = New-Object PSObject -Property @{
     MarkdownLoggerVerbosity = 'n'
     EnablePropertyQuoting = $true
     PropertyQuotingRegex = '[''.*''|".*"]'
+    EnableAppVeyorSupport = $true
 }
 
 <#
@@ -595,19 +596,25 @@ function Invoke-MSBuild{
                 }
             }
 
-            $command = '"{0}" {1}' -f $msbuildPath, ($msbuildArgs -join ' ')
-
             if($pscmdlet.ShouldProcess("`n`tmsbuild.exe {0}" -f ($msbuildArgs -join ' '))){
-                
                 if(-not $debugMode){
                     if(!$script:defaultMSBuildPath){
                         'Using msbuild.exe from "{0}". You can use Set-MSBuild to update this.' -f $msbuildPath | Write-BuildMessage
+                    }
+
+                    if($env:APPVEYOR -eq $true -and (get-command Add-AppveyorMessage -ErrorAction SilentlyContinue) ){
+                        $avmsg = ('Building projects {0}' -f $projArg)
+                        $avdetails = ('{0} {1}' -f $msbuildPath, ($msbuildArgs -join ' ' ))
+                        Add-AppveyorMessage -Message $avmsg -Category Information -Details $avdetails -ErrorAction SilentlyContinue | Out-NUll
                     }
 
                     Execute-CommandString -command $msbuildPath -commandArgs $msbuildArgs
 
                     if(-not $ignoreExitCode -and ($LASTEXITCODE -ne 0)){
                         $msg = ('MSBuild exited with a non-zero exit code [{0}]' -f $LASTEXITCODE)
+                        if($env:APPVEYOR -eq $true -and (get-command Add-AppveyorMessage -ErrorAction SilentlyContinue) ){
+                            Add-AppveyorMessage -Message $msg -Category Error -ErrorAction SilentlyContinue | Out-NUll
+                        }
                         throw $msg
                     }
                 }
