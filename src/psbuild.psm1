@@ -31,7 +31,7 @@ $global:PSBuildSettings = New-Object PSObject -Property @{
     BuildMessageStrongForegroundColor = [ConsoleColor]::Yellow
     BuildMessageStrongBackgroundColor = [ConsoleColor]::DarkGreen
 
-    EnabledLoggers = @('detailed','diagnostic','markdown')
+    EnabledLoggers = @('detailed','diagnostic','markdown','appveyor')
     LogDirectory = ('{0}\LigerShark\PSBuild\logs\' -f $env:LOCALAPPDATA)
     LastLogDirectory = $null
 
@@ -43,6 +43,7 @@ $global:PSBuildSettings = New-Object PSObject -Property @{
     EnablePropertyQuoting = $true
     PropertyQuotingRegex = '[''.*''|".*"]'
     EnableAppVeyorSupport = $true
+    AppVeyorLoggerPath = 'C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll'
 }
 
 <#
@@ -974,7 +975,15 @@ function InternalGet-PSBuildLoggers{
                 'Not adding markdown logger because it was not found in the expected location [{0}]' -f $mdLoggerBinaryPath | write-verbose
             }
         }
-               
+
+        if(  $env:APPVEYOR -eq $true -and
+            ($enabledLoggers -contains 'appveyor') -and
+            ($global:PSBuildSettings.EnableAppVeyorSupport -eq $true) -and
+            (Test-Path $global:PSBuildSettings.AppVeyorLoggerPath) ){
+
+            $private:loggers += ('/logger:"{0}"' -f $global:PSBuildSettings.AppVeyorLoggerPath)
+        }
+
         $loggersResult = @()
 
         foreach($loggerToAdd in $private:loggers){            
