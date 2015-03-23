@@ -195,18 +195,17 @@ function Set-MSBuild{
     )
 
     process{
-        if(!$msbuildPath){
+        if([string]::IsNullOrWhiteSpace($msbuildPath)){
             $script:defaultMSBuildPath = $null
             $msbuildPath = (Get-MSBuild)
+        }
+        elseif($persist -eq $true){
+            'Updating defalut msbuild.exe to point to [{0}]' -f $msbuildPath | Write-Verbose
+            $script:defaultMSBuildPath = $msbuildPath
         }
 
         'Updating msbuild alias to point to [{0}]' -f $msbuildPath | Write-Verbose
         Set-Alias msbuild $msbuildPath
-            
-        if($persist -eq $true){
-            'Updating defalut msbuild.exe to point to [{0}]' -f $msbuildPath | Write-Verbose
-            $script:defaultMSBuildPath = $msbuildPath
-        }
     }
 }
 
@@ -597,11 +596,14 @@ function Invoke-MSBuild{
             }
 
             $command = '"{0}" {1}' -f $msbuildPath, ($msbuildArgs -join ' ')
-            
+
             if($pscmdlet.ShouldProcess("`n`tmsbuild.exe {0}" -f ($msbuildArgs -join ' '))){
                 
                 if(-not $debugMode){
-                    "Using msbuild.exe from [{0}]. Use Set-MSBuild to change this." -f $msbuildPath | Write-BuildMessage
+                    if(!$script:defaultMSBuildPath){
+                        'Using msbuild.exe from "{0}". You can use Set-MSBuild to update this.' -f $msbuildPath | Write-BuildMessage
+                    }
+
                     Execute-CommandString -command $msbuildPath -commandArgs $msbuildArgs
 
                     if(-not $ignoreExitCode -and ($LASTEXITCODE -ne 0)){
