@@ -26,8 +26,8 @@ function Validate-PropFromMSBuildOutput{
         [string]$expectedPropValue
     )
     process{
-        $actualValue = ([regex]"$propName.*\[.*]").match( ($msbuildOutput | Select-String "$propName.*") ).Groups[0].Value
-        $actualValue | Should Be ("$propName=[$expectedPropValue]")
+        $actualValue = ([regex]"\*\*$propName.*\[.*]").match( ($msbuildOutput | Select-String "$propName.*") ).Groups[0].Value
+        $actualValue | Should Be ("**$propName=[$expectedPropValue]")
     }
 }
 
@@ -104,13 +104,13 @@ Describe 'Property tests no quoting'{
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Demo" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 	<Target Name="Demo">
-		<Message Text="VisualStudioVersion=[$(VisualStudioVersion)]" Importance="high"/>
-		<Message Text="Configuration=[$(Configuration)]" Importance="high"/>
-		<Message Text="Platform=[$(Platform)]" Importance="high"/>
-		<Message Text="OutputPath=[$(OutputPath)]" Importance="high"/>
-		<Message Text="DeployOnBuild=[$(DeployOnBuild)]" Importance="high"/>
-		<Message Text="PublishProfile=[$(PublishProfile)]" Importance="high"/>
-		<Message Text="Password=[$(Password)]" Importance="high"/>
+		<Message Text="**VisualStudioVersion=[$(VisualStudioVersion)]" Importance="high"/>
+		<Message Text="**Configuration=[$(Configuration)]" Importance="high"/>
+		<Message Text="**Platform=[$(Platform)]" Importance="high"/>
+		<Message Text="**OutputPath=[$(OutputPath)]" Importance="high"/>
+		<Message Text="**DeployOnBuild=[$(DeployOnBuild)]" Importance="high"/>
+		<Message Text="**PublishProfile=[$(PublishProfile)]" Importance="high"/>
+		<Message Text="**Password=[$(Password)]" Importance="high"/>
  	</Target>
 </Project>
 '@
@@ -131,13 +131,13 @@ Describe 'Property tests with quoting'{
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Demo" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 	<Target Name="Demo">
-		<Message Text="VisualStudioVersion=[$(VisualStudioVersion)]" Importance="high"/>
-		<Message Text="Configuration=[$(Configuration)]" Importance="high"/>
-		<Message Text="Platform=[$(Platform)]" Importance="high"/>
-		<Message Text="OutputPath=[$(OutputPath)]" Importance="high"/>
-		<Message Text="DeployOnBuild=[$(DeployOnBuild)]" Importance="high"/>
-		<Message Text="PublishProfile=[$(PublishProfile)]" Importance="high"/>
-		<Message Text="Password=[$(Password)]" Importance="high"/>
+		<Message Text="**VisualStudioVersion=[$(VisualStudioVersion)]" Importance="high"/>
+		<Message Text="**Configuration=[$(Configuration)]" Importance="high"/>
+		<Message Text="**Platform=[$(Platform)]" Importance="high"/>
+		<Message Text="**OutputPath=[$(OutputPath)]" Importance="high"/>
+		<Message Text="**DeployOnBuild=[$(DeployOnBuild)]" Importance="high"/>
+		<Message Text="**PublishProfile=[$(PublishProfile)]" Importance="high"/>
+		<Message Text="**Password=[$(Password)]" Importance="high"/>
  	</Target>
 </Project>
 '@
@@ -150,6 +150,12 @@ Describe 'Property tests with quoting'{
     $global:PSBuildSettings.EnablePropertyQuoting = $true
     # invoke-property tests
     . (Join-Path $scriptDir 'property-test-cases.ps1')
+
+    It "can specify platform with space" {
+        $sourceProj = ("$TestDrive\{0}" -f $script:printpropertiesproj)
+        $msbuildOutput = (Invoke-MSBuild $sourceProj -Platform 'Mixed Platforms' -nologo)
+        Validate-PropFromMSBuildOutput $msbuildOutput Platform 'Mixed Platforms'
+    }
     $global:PSBuildSettings.EnablePropertyQuoting = $oldValue
 }
 

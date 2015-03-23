@@ -1,6 +1,5 @@
 ﻿<#
-
-.SYNOPSIS  
+.SYNOPSIS
 	This module will help to use msbuild from powershell.
     When you import this module the msbuild alias will be set.
     You can see what command are available by executing the
@@ -41,7 +40,7 @@ $global:PSBuildSettings = New-Object PSObject -Property @{
     DefaultClp = '/clp:v=m;ShowCommandLine'
     ToolsDir = ''
     MarkdownLoggerVerbosity = 'n'
-    EnablePropertyQuoting = $false
+    EnablePropertyQuoting = $true
     PropertyQuotingRegex = '[''.*''|".*"]'
 }
 
@@ -101,6 +100,40 @@ function InternalGet-PSBuildToolsDir{
 }
 
 $script:envVarTarget='Process'
+
+function Execute-CommandString{
+    [cmdletbinding()]
+    param(
+        [Parameter(Mandatory=$true,Position=0,ValueFromPipeline=$true)]
+        [string[]]$command,
+        
+        [Parameter(Position=1)]
+        $commandArgs,
+
+        $ignoreErrors
+    )
+    process{
+        foreach($cmdToExec in $command){
+            'Executing command [{0}]' -f $cmdToExec | Write-Verbose
+            
+            # write it to a .cmd file
+            $destPath = "$([System.IO.Path]::GetTempFileName()).cmd"
+            if(Test-Path $destPath){Remove-Item $destPath|Out-Null}
+            
+            '"{0}" {1}' -f $cmdToExec, ($commandArgs -join ' ') | Set-Content -Path $destPath | Out-Null
+
+            $actualCmd = ('"{0}"' -f $destPath)
+            cmd.exe /D /C $actualCmd
+
+            if(-not $ignoreErrors -and ($LASTEXITCODE -ne 0)){
+                $msg = ('The command [{0}] exited with code [{1}]' -f $cmdToExec, $LASTEXITCODE)
+                throw $msg
+            }
+
+            if(Test-Path $destPath){Remove-Item $destPath -ErrorAction SilentlyContinue |Out-Null}
+        }
+    }
+}
 
 #####################################################################
 # Functions relating to msbuild.exe
@@ -462,7 +495,13 @@ function Invoke-MSBuild{
         }
         foreach($project in $projectsToBuild){
             $msbuildArgs = @()
-            $msbuildArgs += ([string]$project)
+
+            [string]$projArg = [string]$project
+            if(![string]::IsNullOrWhiteSpace($projArg)){
+                $projArg = ('"{0}"' -f $projArg)
+            }
+
+            $msbuildArgs += ([string]$projArg)
 
             if(-not $properties){
                 $properties = @{}
@@ -503,12 +542,10 @@ function Invoke-MSBuild{
                             !($disablePropertyQuoting)){
                             # if it's already quoted don't add quotes
                             if(!($value -match $global:PSBuildSettings.PropertyQuotingRegex)){
-                                
-                                $valueStr = ("'{0}'" -f $value.Replace("'","''"))
+                                $valueStr = ('"{0}"' -f $value.Replace('"','""'))
                             }
-                            
                         }
-
+                        
                         $msbuildArgs += ('/p:{0}={1}' -f $key, $valueStr)
                     }
                 }
@@ -559,13 +596,13 @@ function Invoke-MSBuild{
                 }
             }
 
-            "Calling msbuild.exe with the following args: {0}" -f ($msbuildArgs -join ' ') | Write-BuildMessage
+            $command = '"{0}" {1}' -f $msbuildPath, ($msbuildArgs -join ' ')
             
             if($pscmdlet.ShouldProcess("`n`tmsbuild.exe {0}" -f ($msbuildArgs -join ' '))){
                 
                 if(-not $debugMode){
                     "Using msbuild.exe from [{0}]. Use Set-MSBuild to change this." -f $msbuildPath | Write-BuildMessage
-                    & ($msbuildPath) $msbuildArgs
+                    Execute-CommandString -command $msbuildPath -commandArgs $msbuildArgs
 
                     if(-not $ignoreExitCode -and ($LASTEXITCODE -ne 0)){
                         $msg = ('MSBuild exited with a non-zero exit code [{0}]' -f $LASTEXITCODE)
@@ -908,16 +945,16 @@ function InternalGet-PSBuildLoggers{
         # {2} timestamp property
         # {3} tools directory
         if($enabledLoggers -contains 'detailed'){
-            $private:loggers += '/flp1:v=d;logfile={0}msbuild.detailed.log'
+            $private:loggers += '/flp1:v=d;logfile="{0}msbuild.detailed.log"'
         }
         if($enabledLoggers -contains 'diagnostic'){
-            $private:loggers += '/flp2:v=diag;logfile={0}msbuild.diagnostic.log'
+            $private:loggers += '/flp2:v=diag;logfile="{0}msbuild.diagnostic.log"'
         }
 
         if($enabledLoggers -contains 'markdown'){
             $mdLoggerBinaryPath = join-path $toolsDir 'psbuild.dll'
             if(test-path $mdLoggerBinaryPath){
-                $private:loggers += ('/logger:MarkdownLogger,{3}\psbuild.dll;logfile={0}msbuild.markdown.log.md;v=' + $global:PSBuildSettings.MarkdownLoggerVerbosity + ';')
+                $private:loggers += ('/logger:MarkdownLogger,"{3}\psbuild.dll";v=n;logfile="{0}msbuild.markdown.log.md"') #;v=' + $global:PSBuildSettings.MarkdownLoggerVerbosity + '"')
                 'Adding markdown logger to the build' | write-verbose
             }
             else{

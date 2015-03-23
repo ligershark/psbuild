@@ -16,13 +16,7 @@
         $msbuildOutput = (Invoke-MSBuild $sourceProj -Platform AnyCPU -nologo)
         Validate-PropFromMSBuildOutput $msbuildOutput Platform AnyCPU
     }
-    <#
-    It "can specify platform with space" {
-        $sourceProj = ("$TestDrive\{0}" -f $script:printpropertiesproj)
-        $msbuildOutput = (Invoke-MSBuild $sourceProj -Platform 'Mixed Platforms' -nologo)
-        Validate-PropFromMSBuildOutput $msbuildOutput Platform 'Mixed Platforms'
-    }
-    #>
+    
     It "can specify OutputPath" {
         $sourceProj = ("$TestDrive\{0}" -f $script:printpropertiesproj)
         $msbuildOutput = (Invoke-MSBuild $sourceProj -OutputPath c:\temp\outputpath\ -nologo)
