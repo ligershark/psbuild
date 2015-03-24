@@ -618,7 +618,10 @@ function Invoke-MSBuild{
                     if(-not $ignoreExitCode -and ($LASTEXITCODE -ne 0)){
                         $msg = ('MSBuild exited with a non-zero exit code [{0}]' -f $LASTEXITCODE)
                         if($env:APPVEYOR -eq $true -and (get-command Add-AppveyorMessage -ErrorAction SilentlyContinue) ){
-                            Add-AppveyorMessage -Message $msg -Category Error -ErrorAction SilentlyContinue | Out-NUll
+                            $msbcommand = ('"{0}" {1}' -f $msbuildPath, ($msbuildArgs -join ' ' ))
+                            $summary = ("The command exited with a non-zero exit code [{0}]" -f $LASTEXITCODE)
+                            $msg = ("{0}.`nCommand:[{1}]" -f $summary, $msbcommand)
+                            Add-AppveyorMessage -Message $msg -Category Error -Details $msg -ErrorAction SilentlyContinue | Out-NUll
                         }
                         throw $msg
                     }
