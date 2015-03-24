@@ -609,7 +609,7 @@ function Invoke-MSBuild{
                             $projstr = '(project not specified)'
                         }
                         $avmsg = ('Building projects {0}' -f $projstr)
-                        $avdetails = ('{0} {1}' -f $msbuildPath, ($msbuildArgs -join ' ' ))
+                        $avdetails = ('"{0}" {1}' -f $msbuildPath, ($msbuildArgs -join ' ' ))
                         Add-AppveyorMessage -Message $avmsg -Category Information -Details $avdetails -ErrorAction SilentlyContinue | Out-NUll
                     }
 
