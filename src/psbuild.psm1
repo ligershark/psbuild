@@ -1942,6 +1942,41 @@ function PSBuildReset-TempEnvVars{
     }
 }
 
+
+$global:FilterStringSettings = New-Object PSObject -Property @{
+    DefaultMask = 'REMOVED-FROM-LOG'
+    GlobalReplacements = [array]@()
+}
+<#
+.SYNOPSIS
+Given a string ($message) and strings to remove ($textToRemove) this will mask the given text from
+$textToRemove in $message and return the result.
+#>
+function Filter-String{
+[cmdletbinding()]
+    param(
+        [Parameter(Position=0,Mandatory=$true,ValueFromPipeline=$true)]
+        [string[]]$message,
+        [string[]]$textToRemove,
+        [string]$mask = ($global:FilterStringSettings.DefaultMask)
+    )
+    process{
+        foreach($msg in $message){
+            $replacements = @()
+            $textToRemove | % { $replacements += $_ }
+            $global:FilterStringSettings.GlobalReplacements | % { $replacements += $_ }
+
+            $replacements = ($replacements | Select-Object -Unique)
+
+            $replacements | % {
+                $msg = $msg.Replace($_,$mask)
+            }
+
+            $msg
+        }
+    }
+}
+
 <#
 .SYNOPSIS
     Function that can be called to write a build message.
@@ -1981,7 +2016,7 @@ function Write-BuildMessage{
 
 
 if(!$env:IsDeveloperMachine){
-    Export-ModuleMember -function Get-*,Set-*,Invoke-*,Save-*,Test-*,Find-*,Add-*,Remove-*,Test-*,Open-*,New-*
+    Export-ModuleMember -function Get-*,Set-*,Invoke-*,Save-*,Test-*,Find-*,Add-*,Remove-*,Test-*,Open-*,New-*,Filter-*
 }
 else{
     # you can set the env var to expose all functions to importer. easy for development.

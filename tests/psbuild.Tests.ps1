@@ -238,3 +238,53 @@ Describe "nologs tests"{
         $global:PSBuildSettings.EnableBuildLogging = $true
     }
 }
+
+Describe 'filter-string tests'{
+    $originalMessage =
+@'
+Lorem ipsum dolor sit amet, semper adipiscing elit. Integer vulputate dui non venenatis sollicitudin. Aliquam nec sapien ut justo bibendum aliquet nec vestibulum leo.
+Aliquam dignissim porttitor vulputate. Fusce sollicitudin neque nec accumsan semper. Nam interdum finibus magna in aliquet. Sed rutrum tellus felis, semper
+sit amet bibendum ligula porta vel. Phasellus accumsan sem ut nibh consequat, quis tincidunt arcu euismod. Nullam ultricies arcu elit,
+semperet accumsan urna maximus nec. Fusce pulvinar justo a maximus ullamcorper.
+'@
+    $defaultMask = 'REMOVED-FROM-LOG'
+
+    BeforeEach{
+        $global:FilterStringSettings.GlobalReplacements = @()
+    }
+
+    It 'can perform single replace via param'{
+        $expectedResult = $originalMessage.Replace('semper',$defaultMask)
+        Filter-String -message $originalMessage -textToRemove 'semper' | Should be $expectedResult
+    }
+
+    It 'can perform multiple replace via param'{
+        $expectedResult = ($originalMessage.Replace('semper',$defaultMask).Replace('accumsan',$defaultMask))
+        Filter-String -message $originalMessage -textToRemove 'semper','accumsan' | Should Be $expectedResult
+    }
+
+    It 'can replace single value via global settings'{
+        $global:FilterStringSettings.GlobalReplacements += 'semper'
+        $expectedResult = $originalMessage.Replace('semper',$defaultMask)
+        Filter-String -message $originalMessage | Should be $expectedResult
+    }
+
+    It 'can replace multiple values via global settings'{
+        $global:FilterStringSettings.GlobalReplacements += 'semper','accumsan'
+        $expectedResult = ($originalMessage.Replace('semper',$defaultMask).Replace('accumsan',$defaultMask))
+        Filter-String -message $originalMessage | Should be $expectedResult
+    }
+
+    It 'can replace with parameter and global settings'{
+        $global:FilterStringSettings.GlobalReplacements += 'accumsan'
+        $expectedResult = ($originalMessage.Replace('semper',$defaultMask).Replace('accumsan',$defaultMask))
+        Filter-String -message $originalMessage -textToRemove 'semper' | Should be $expectedResult
+    }
+
+    It 'can replace with a custom mask'{
+        $mask = '*****'
+        $expectedResult = ($originalMessage.Replace('semper',$mask).Replace('accumsan',$mask))
+        Filter-String -message $originalMessage -textToRemove 'semper','accumsan' -mask $mask | Should Be $expectedResult
+    }
+
+}
