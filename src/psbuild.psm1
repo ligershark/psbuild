@@ -1979,9 +1979,41 @@ function Write-BuildMessage{
     }
 }
 
+function Load-Pester{
+    [cmdletbinding()]
+    param(
+        $pesterVersion = '3.3.6'
+    )
+    process{
+        # see if nuget-powershell is available and load if not
+        $nugetpsloaded = $false
+        if((get-command Get-NuGetPackage -ErrorAction SilentlyContinue)){
+            $nugetpsloaded = $true
+        }
 
+        if(!$nugetpsloaded){
+            (new-object Net.WebClient).DownloadString("https://raw.githubusercontent.com/ligershark/nuget-powershell/master/get-nugetps.ps1") | iex
+        }
+
+        $pesterDir = (Get-NuGetPackageExpectedPath -name 'pester' -version $pesterVersion -expandedPath)
+        $pesterModulepath = (Join-Path $pesterDir ('tools\Pester.psm1' -f $pesterVersion))
+
+        if(!(Test-Path $pesterModulepath)){
+            $pesterDir = Get-NuGetPackage -name pester -version $pesterVersion
+        }
+        else{
+            'Skipping pester download because it was found at [{0}]' -f $pesterModulepath | Write-Verbose
+        }
+
+        if(!(Test-Path $pesterModulepath)){
+            throw ('Pester not found at [{0}]' -f $pesterModulepath)
+        }
+
+        Import-Module $pesterModulepath -Global -Force
+    }
+}
 if(!$env:IsDeveloperMachine){
-    Export-ModuleMember -function Get-*,Set-*,Invoke-*,Save-*,Test-*,Find-*,Add-*,Remove-*,Test-*,Open-*,New-*
+    Export-ModuleMember -function Get-*,Set-*,Invoke-*,Save-*,Test-*,Find-*,Add-*,Remove-*,Test-*,Open-*,New-*,Load-*
 }
 else{
     # you can set the env var to expose all functions to importer. easy for development.
