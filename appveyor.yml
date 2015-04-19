@@ -11,7 +11,7 @@ before_build:
   - nuget restore src\psbuild.sln
 
 build_script:
-  - ps: .\appveyor.ps1
+  - ps: .\test.ps1
 
 artifacts:
   - path: OutputRoot\**\*.psm1
