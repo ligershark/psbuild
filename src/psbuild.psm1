@@ -19,6 +19,8 @@ function Get-ScriptDirectory
 
 $scriptDir = ((Get-ScriptDirectory) + "\")
 
+# when true any secretes will be masked when cmdlets like Write-Output are called
+$env:PSBUlidEnableMaskingSecretsInPSCmdlets=$true
 # User settings can override these
 $global:PSBuildSettings = New-Object PSObject -Property @{
     EnableBuildLogging = $true
@@ -125,7 +127,7 @@ function Execute-CommandString{
             '"{0}" {1}' -f $cmdToExec, ($commandArgs -join ' ') | Set-Content -Path $destPath | Out-Null
 
             $actualCmd = ('"{0}"' -f $destPath)
-            cmd.exe /D /C $actualCmd
+            cmd.exe /D /C $actualCmd | Write-Output
 
             if(-not $ignoreErrors -and ($LASTEXITCODE -ne 0)){
                 $msg = ('The command [{0}] exited with code [{1}]' -f $cmdToExec, $LASTEXITCODE)
@@ -268,6 +270,15 @@ function Set-MSBuild{
 .PARAMETER Platform
     This sets the MSBuild property Platform to the value specified. This will override any value
     in properties or defaultProperties.
+
+.PARAMETER textToMask
+    This is an array of strings that will be masked (i.e. hidden) from the PowerShell output
+    when the build is running. You can use this for connection strings or passwords, etc. so that
+    they are not displayed in the PowerShell console. You can also set global values using
+    the $global:FilterStringSettings.GlobalReplacements array which will apply to every build.
+    You can also control which PowerShell cmdlets are overridden with 
+    $global:FilterStringSettings.WriteFunctionsToCreate. The default list is:
+    'Out-Default','Write-Output','Write-Host','Write-Debug','Write-Error','Write-Warning','Write-Verbose','Out-Host','Out-String'
 
 .PARAMETER nologo
     When set this passes the /nologo switch to msbuild.exe.
@@ -425,6 +436,10 @@ function Invoke-MSBuild{
 
         [Parameter(ParameterSetName='build')]
         [Parameter(ParameterSetName='debugMode')]
+        [array]$textToMask,
+
+        [Parameter(ParameterSetName='build')]
+        [Parameter(ParameterSetName='debugMode')]
         [alias("m")]
         [int]$maxcpucount,
         
@@ -473,6 +488,17 @@ function Invoke-MSBuild{
         if($defaultProperties){
             $defaultProperties | PSBuildSet-TempVar
         }
+
+        if(![string]::IsNullOrWhiteSpace($password)){
+            if($textToMask -eq $null){
+                $textToMask = @()
+            }
+            $textToMask += $password
+        }
+
+        if($textToMask){
+            $script:BuildTextToMask = $textToMask
+        }
     }
 
     end{
@@ -483,6 +509,8 @@ function Invoke-MSBuild{
         if( ($global:PSBuildSettings.EnableBuildLogging) -and !($noLogFiles) -and !($debugMode)) {
             "`n>>>> Build completed you can use Open-PSBuildLog to open the log file" | Write-BuildMessage -strong
         }
+
+        $script:BuildTextToMask = [array]@()
     }
 
     process{
@@ -1942,10 +1970,11 @@ function PSBuildReset-TempEnvVars{
     }
 }
 
-
+$script:BuildTextToMask = [array]@()
 $global:FilterStringSettings = New-Object PSObject -Property @{
-    DefaultMask = 'REMOVED-FROM-LOG'
+    DefaultMask = '********'
     GlobalReplacements = [array]@()
+    WriteFunctionsToCreate = 'Out-Default','Write-Output','Write-Host','Write-Debug','Write-Error','Write-Warning','Write-Verbose','Out-Host','Out-String'
 }
 <#
 .SYNOPSIS
@@ -1955,25 +1984,59 @@ $textToRemove in $message and return the result.
 function Filter-String{
 [cmdletbinding()]
     param(
-        [Parameter(Position=0,Mandatory=$true,ValueFromPipeline=$true)]
+        [Parameter(Position=0,ValueFromPipeline=$true)]
         [string[]]$message,
         [string[]]$textToRemove,
         [string]$mask = ($global:FilterStringSettings.DefaultMask)
     )
     process{
-        foreach($msg in $message){
-            $replacements = @()
-            $textToRemove | % { $replacements += $_ }
-            $global:FilterStringSettings.GlobalReplacements | % { $replacements += $_ }
+        if($message -ne $null){
+            foreach($msg in $message){
+                $replacements = @()
+                $textToRemove | % { $replacements += $_ }
+                $global:FilterStringSettings.GlobalReplacements | % { $replacements += $_ }
 
-            $replacements = ($replacements | Select-Object -Unique)
+                if($script:BuildTextToMask){
+                    $script:BuildTextToMask | % { $replacements += $_ }    
+                }
 
-            $replacements | % {
-                $msg = $msg.Replace($_,$mask)
+                $replacements = ($replacements | Select-Object -Unique)
+
+                $replacements | % {
+                    $msg = $msg.Replace($_,$mask)
+                }
+
+                $msg
             }
-
-            $msg
         }
+    }
+}
+
+if($env:PSBUlidEnableMaskingSecretsInPSCmdlets -eq $true){
+
+    $strOutputOverrideFnFormatStr = @'
+        [cmdletbinding(ConfirmImpact='Medium')]
+        param(
+            [Parameter(ValueFromPipeline=$true)]
+            [System.Management.Automation.PSObject]$InputObject
+        )
+        begin{
+            $wrappedObject = $ExecutionContext.InvokeCommand.GetCmdlet('<name>')
+            $sb = { & $wrappedObject @PSBoundParameters }
+            $__sp = $sb.GetSteppablePipeline()
+            $__sp.Begin($pscmdlet)
+        }
+        process{
+            $__sp.Process( ($_ | Filter-String) )
+        }
+        end{
+            $__sp.End()
+        }
+'@
+    
+    $fnFormatStr = '${function:<fnname>} = ([scriptblock]::Create($strOutputOverrideFnFormatStr.Replace("<name>","<fnname>")))'
+    $global:FilterStringSettings.WriteFunctionsToCreate | % {
+        $fnFormatStr.Replace('<fnname>',$_)|iex    
     }
 }
 
@@ -2005,10 +2068,10 @@ function Write-BuildMessage{
             }
 
             if($Host -and ($Host.Name -eq 'ConsoleHost')){
-                $message | Write-Host # -ForegroundColor $fgColor -BackgroundColor $bColor
+                $message | Filter-String| Write-Host # -ForegroundColor $fgColor -BackgroundColor $bColor
             }
             else{
-                $message | Write-Output
+                $message | Filter-String| Write-Output
             }
         }
     }
