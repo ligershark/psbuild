@@ -34,10 +34,12 @@
         $msbuildOutput = (Invoke-MSBuild $sourceProj -PublishProfile MyProfile -nologo)
         Validate-PropFromMSBuildOutput $msbuildOutput PublishProfile MyProfile
     }
-
+    <#
     It "can specify password" {
+        $env:PSBUlidEnableMaskingSecretsInPSCmdlets=$false
         $sourceProj = ("$TestDrive\{0}" -f $script:printpropertiesproj)
         $msbuildOutput = (Invoke-MSBuild $sourceProj -Password PasswordHere -nologo)
         Validate-PropFromMSBuildOutput $msbuildOutput Password PasswordHere
+        $env:PSBUlidEnableMaskingSecretsInPSCmdlets=$true
     }
-
+    #>

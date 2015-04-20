@@ -247,7 +247,7 @@ Aliquam dignissim porttitor vulputate. Fusce sollicitudin neque nec accumsan sem
 sit amet bibendum ligula porta vel. Phasellus accumsan sem ut nibh consequat, quis tincidunt arcu euismod. Nullam ultricies arcu elit,
 semperet accumsan urna maximus nec. Fusce pulvinar justo a maximus ullamcorper.
 '@
-    $defaultMask = 'REMOVED-FROM-LOG'
+    $defaultMask = '********'
 
     BeforeEach{
         $global:FilterStringSettings.GlobalReplacements = @()

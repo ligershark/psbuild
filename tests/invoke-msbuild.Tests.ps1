@@ -227,3 +227,74 @@ Describe 'default property tests' {
             Should Be $info.ValueBefore
     }
 }
+
+Describe 'Masking tests - masking disabled'{
+    $script:printpropscontent = @'
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Demo" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+	<Target Name="Demo">
+		<Message Text="**VisualStudioVersion=[$(VisualStudioVersion)]" Importance="high"/>
+		<Message Text="**Configuration=[$(Configuration)]" Importance="high"/>
+		<Message Text="**Platform=[$(Platform)]" Importance="high"/>
+		<Message Text="**OutputPath=[$(OutputPath)]" Importance="high"/>
+		<Message Text="**DeployOnBuild=[$(DeployOnBuild)]" Importance="high"/>
+		<Message Text="**PublishProfile=[$(PublishProfile)]" Importance="high"/>
+		<Message Text="**Password=[$(Password)]" Importance="high"/>
+ 	</Target>
+</Project>
+'@
+    $script:printpropertiesproj = 'invoke-msbuild\printprops.proj'
+    Setup -File -Path $script:printpropertiesproj -Content $script:printpropscontent
+    Remove-Module psbuild -Force
+
+        $env:PSBUlidEnableMaskingSecretsInPSCmdlets=$false
+
+        $importPsbuild = (Join-Path -Path $scriptDir -ChildPath 'import-psbuild.ps1')
+        . $importPsbuild
+        It "can specify password" {
+        $sourceProj = ("$TestDrive\{0}" -f $script:printpropertiesproj)
+        $msbuildOutput = (Invoke-MSBuild $sourceProj -Password PasswordHere -nologo)
+        Validate-PropFromMSBuildOutput $msbuildOutput Password PasswordHere
+    }
+}
+
+Describe 'Masking tests - masking enabled'{
+    $script:printpropscontent = @'
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Demo" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+	<Target Name="Demo">
+		<Message Text="**VisualStudioVersion=[$(VisualStudioVersion)]" Importance="high"/>
+		<Message Text="**Configuration=[$(Configuration)]" Importance="high"/>
+		<Message Text="**Platform=[$(Platform)]" Importance="high"/>
+		<Message Text="**OutputPath=[$(OutputPath)]" Importance="high"/>
+		<Message Text="**DeployOnBuild=[$(DeployOnBuild)]" Importance="high"/>
+		<Message Text="**PublishProfile=[$(PublishProfile)]" Importance="high"/>
+		<Message Text="**Password=[$(Password)]" Importance="high"/>
+ 	</Target>
+</Project>
+'@
+    $script:printpropertiesproj = 'invoke-msbuild\printprops.proj'
+    Setup -File -Path $script:printpropertiesproj -Content $script:printpropscontent
+    Remove-Module psbuild -Force
+    $defaultMask = '********'
+
+    $env:PSBUlidEnableMaskingSecretsInPSCmdlets=$true
+
+    $importPsbuild = (Join-Path -Path $scriptDir -ChildPath 'import-psbuild.ps1')
+    . $importPsbuild
+    It "can specify password" {
+        $sourceProj = ("$TestDrive\{0}" -f $script:printpropertiesproj)
+        $msbuildOutput = (Invoke-MSBuild $sourceProj -Password PasswordHere -nologo)
+        Validate-PropFromMSBuildOutput $msbuildOutput Password $defaultMask
+        $msbuildOutput.Contains('PasswordHere') | Should Be $false
+    }
+
+    It 'can specify a different mask globally'{
+        $newMask = '##########'
+        $global:FilterStringSettings.DefaultMask = $newMask
+        $sourceProj = ("$TestDrive\{0}" -f $script:printpropertiesproj)
+        $msbuildOutput = (Invoke-MSBuild $sourceProj -Password PasswordHere -nologo)
+        Validate-PropFromMSBuildOutput $msbuildOutput Password $newMask
+        $msbuildOutput.Contains('PasswordHere') | Should Be $false
+    }
+}

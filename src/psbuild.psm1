@@ -20,7 +20,9 @@ function Get-ScriptDirectory
 $scriptDir = ((Get-ScriptDirectory) + "\")
 
 # when true any secretes will be masked when cmdlets like Write-Output are called
-$env:PSBUlidEnableMaskingSecretsInPSCmdlets=$true
+if([string]::IsNullOrWhiteSpace($env:PSBUlidEnableMaskingSecretsInPSCmdlets)){
+    $env:PSBUlidEnableMaskingSecretsInPSCmdlets=$true
+}
 # User settings can override these
 $global:PSBuildSettings = New-Object PSObject -Property @{
     EnableBuildLogging = $true
