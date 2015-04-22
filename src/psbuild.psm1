@@ -1984,7 +1984,7 @@ $global:FilterStringSettings = New-Object PSObject -Property @{
 Given a string ($message) and strings to remove ($textToRemove) this will mask the given text from
 $textToRemove in $message and return the result.
 #>
-function Filter-String{
+function Get-FilteredString{
 [cmdletbinding()]
     param(
         [Parameter(Position=0,ValueFromPipeline=$true)]
@@ -2030,7 +2030,7 @@ if($env:PSBUlidEnableMaskingSecretsInPSCmdlets -eq $true){
             $__sp.Begin($pscmdlet)
         }
         process{
-            $__sp.Process( ($_ | Filter-String) )
+            $__sp.Process( ($_ | Get-FilteredString) )
         }
         end{
             $__sp.End()
@@ -2071,16 +2071,16 @@ function Write-BuildMessage{
             }
 
             if($Host -and ($Host.Name -eq 'ConsoleHost')){
-                $message | Filter-String| Write-Host # -ForegroundColor $fgColor -BackgroundColor $bColor
+                $message | Get-FilteredString| Write-Host # -ForegroundColor $fgColor -BackgroundColor $bColor
             }
             else{
-                $message | Filter-String| Write-Output
+                $message | Get-FilteredString| Write-Output
             }
         }
     }
 }
 
-function Load-Pester{
+function Import-Pester{
     [cmdletbinding()]
     param(
         $pesterVersion = '3.3.6'
@@ -2114,7 +2114,7 @@ function Load-Pester{
     }
 }
 if(!$env:IsDeveloperMachine){
-    Export-ModuleMember -function Get-*,Set-*,Invoke-*,Save-*,Test-*,Find-*,Add-*,Remove-*,Test-*,Open-*,New-*,Filter-*,Load-*
+    Export-ModuleMember -function Get-*,Set-*,Invoke-*,Save-*,Test-*,Find-*,Add-*,Remove-*,Test-*,Open-*,New-*,Load-*
 }
 else{
     # you can set the env var to expose all functions to importer. easy for development.
