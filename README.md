@@ -14,62 +14,42 @@ Currently psbuild is still a ***preview*** but should be stable enough for regul
 
 
 ##### download and install psbulid
-<code style="background-color:grey">
-    (new-object Net.WebClient).DownloadString("https://raw.github.com/ligershark/psbuild/master/src/GetPSBuild.ps1") | iex
-</code>
+<code style="background-color:grey">(new-object Net.WebClient).DownloadString("https://raw.github.com/ligershark/psbuild/master/src/GetPSBuild.ps1") | iex</code>
 
 ##### build an msbuild file
-<code>
-    Invoke-MSBuild C:\temp\msbuild\msbuild.proj
-</code>
+<code>Invoke-MSBuild C:\temp\msbuild\msbuild.proj</code>
 
 ##### build the file provided with the given parameters
-<code>
-    Invoke-MSBuild C:\temp\msbuild\path.proj -properties @{'Configuration'='Release';'visualstudioversion'='12.0'} -extraArgs '/nologo'
-</code>
+<code>Invoke-MSBuild C:\temp\msbuild\path.proj -properties @{'Configuration'='Release';'visualstudioversion'='12.0'} -extraArgs '/nologo'</code>
 
 ##### build an msbuild file and execute a specific target
-<code>
-    Invoke-MSBuild C:\temp\msbuild\proj1.proj -targets Demo
-</code>
+<code>Invoke-MSBuild C:\temp\msbuild\proj1.proj -targets Demo</code>
 
 ##### build an msbuild file and execute multiple targets
-<code>
-    Invoke-MSBuild C:\temp\msbuild\proj1.proj -targets @('Demo';'Demo2')
-</code>
+<code>Invoke-MSBuild C:\temp\msbuild\proj1.proj -targets @('Demo';'Demo2')</code>
 ##### how to get the log file for the last build
 
-<code>
-    Invoke-MSBuild C:\temp\msbuild\proj1.proj
-    # returns the detailed log in the default editor
-	Open-PSBuildLog
+<code>Invoke-MSBuild C:\temp\msbuild\proj1.proj
+# returns the detailed log in the default editor
+Open-PSBuildLog
 
-	# returns the log in markdown format
-	Open-PSBuildLog markdown
+# returns the log in markdown format
+Open-PSBuildLog markdown
 
-    # returns the diagnostic
-	Open-PSBuildLog diagnostic
-</code>
+# returns the diagnostic
+Open-PSBuildLog diagnostic</code>
 
 #### show msbuild reserved properties
-<code>
-    Get-MSBuildReservedProperties
-</code>
+<code>Get-MSBuildReservedProperties</code>
 
 #### show common msbuild escape characters
-<code>
-	Get-MSBuildEscapeCharacters
-</code>
+<code>Get-MSBuildEscapeCharacters</code>
 
 ##### You can also create a new MSBuild file with the following
-<code>
-    New-MSBuildProject | Save-MSBuildProject -filePath .\new.proj
-</code>
+<code>New-MSBuildProject | Save-MSBuildProject -filePath .\new.proj</code>
 
 ##### to see what commands are available
-<code>
-    Get-Command -Module psbuild
-</code>
+<code>Get-Command -Module psbuild</code>
 
 Most functions have help defined so you can use ```get-help``` on most commands for more details.
 
