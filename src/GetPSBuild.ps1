@@ -104,7 +104,7 @@ function Get-Nuget(){
 }
 
 
-function Execute-CommandString{
+function Invoke-CommandString{
     [cmdletbinding()]
     param(
         [Parameter(Mandatory=$true,Position=0,ValueFromPipeline=$true)]
@@ -153,7 +153,7 @@ function GetPsBuildPsm1{
                 'Calling nuget to install psbuild with the following args. [{0} {1}]' -f $nugetPath, ($cmdArgs -join ' ') | Write-Verbose
 
                 $command = '"{0}" {1}' -f $nugetPath,($cmdArgs -join ' ')
-                $command | Execute-CommandString
+                $command | Invoke-CommandString
 
                 $psbuildPsm1 = (Get-ChildItem -Path "$toolsDir\psbuild.$versionToInstall" -Include 'psbuild.psm1' -Recurse | Sort-Object -Descending | Select-Object -First 1)
             }

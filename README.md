@@ -105,7 +105,20 @@ To report any issues please [create an new item](https://github.com/ligershark/p
 Contributing is pretty simple. The project mostly consists of one .psm1 file located at ```/src/psbuild.psm1```. You should send PRs to the ```dev``` branch. If it's a simple bug fix feel free to go ahead and submit the fix as a PR. If you have a feature please propose it in the [issues](https://github.com/ligershark/psbuild/issues) section so that we can dicsuss your idea.
 
 # Release Notes
-
+- Added a function, Import-Pester, to get and load [pester](https://github.com/pester/Pester). If pester is not installed it will be downloaded. See https://github.com/ligershark/psbuild/issues/56.
+- Update to filter secrets in PowerShell output. When passing ```-password``` the value will automatically be masked. You can also add additional values to be masked. For more info see ```Get-Help Get-FilteredString``` or ```Get-Help Invoke-MSBuild -Examples```. See https://github.com/ligershark/psbuild/issues/57.
+- Update to add entries to AppVeyor messages for projects that are built. See https://github.com/ligershark/psbuild/issues/56.
+- Updates to properly handle properties which have spaces. See https://github.com/ligershark/psbuild/issues/49.
+- Update to add ```-Platform``` as a paramter to Invoke-MSBuild
+- Added ```Invoke-CommandString``` which is used to call external .exe files. It is exported as well so can be used to simplify calling .exe files by users.
+- Added a parameter ```noLogFiles``` to ```Invoke-MSBuild``` which will disable writing log files. See https://github.com/ligershark/psbuild/issues/52.
+- Added ```psbuild``` alias for ```Invoke-MSBuild```.
+- Added ```-bitness``` parameter to ```Invoke-MSBuild``` so that you can pick either 32 or 64 bit msbuild
+- Update to select 32 bit msbuild.exe when running ```Invoke-MSBuild```
+- Update to throw an exception when the exit code from msbuild.exe is non-zero.
+- Update to add parameters to ```Open-PSBuildLog``` to specify the type of log to be opened.
+- Added a Markdown logger
+- Added ```-whatif``` support to ```Invoke-MSBuild```
 
 # Credits
 
