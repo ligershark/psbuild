@@ -2096,6 +2096,14 @@ function Write-BuildMessage{
     }
 }
 
+<#
+.SYNOPSIS
+    This will download and import the given version of pester https://github.com/pester/Pester, which is a
+    PowerShell testing framework.
+
+.PARAMETER pesterVersion
+    The version to import.
+#>
 function Import-Pester{
     [cmdletbinding()]
     param(
@@ -2130,7 +2138,7 @@ function Import-Pester{
     }
 }
 if(!$env:IsDeveloperMachine){
-    Export-ModuleMember -function Get-*,Set-*,Invoke-*,Save-*,Test-*,Find-*,Add-*,Remove-*,Test-*,Open-*,New-*,Load-*
+    Export-ModuleMember -function Get-*,Set-*,Invoke-*,Save-*,Test-*,Find-*,Add-*,Remove-*,Test-*,Open-*,New-*,Import-*
 }
 else{
     # you can set the env var to expose all functions to importer. easy for development.
