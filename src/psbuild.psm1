@@ -1983,6 +1983,22 @@ $global:FilterStringSettings = New-Object PSObject -Property @{
 .SYNOPSIS
 Given a string ($message) and strings to remove ($textToRemove) this will mask the given text from
 $textToRemove in $message and return the result.
+
+.PARAMETER message
+    The message to filter.
+
+.PARAMETER textToRemove
+    This is an array of strings that will be masked (i.e. hidden) from the PowerShell output.
+    You can use this for connection strings or passwords, etc. so that
+    they are not displayed in the PowerShell console. You can also set global values using
+    the $global:FilterStringSettings.GlobalReplacements array which will apply to every build.
+    You can also control which PowerShell cmdlets are overridden with
+    $global:FilterStringSettings.WriteFunctionsToCreate. The default list is:
+    'Out-Default','Write-Output','Write-Host','Write-Debug','Write-Error','Write-Warning','Write-Verbose','Out-Host','Out-String'
+
+.PARAMETER mask
+    The string that will be used in place of secrets. If no value is specifed then the value from $global:FilterStringSettings.DefaultMask
+    will be used, which is set to '********' by default.
 #>
 function Get-FilteredString{
 [cmdletbinding()]
