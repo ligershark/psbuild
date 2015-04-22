@@ -29,7 +29,8 @@ Currently psbuild is still a ***preview*** but should be stable enough for regul
 <code>Invoke-MSBuild C:\temp\msbuild\proj1.proj -targets @('Demo';'Demo2')</code>
 ##### how to get the log file for the last build
 
-<code>PS> Invoke-MSBuild C:\temp\msbuild\proj1.proj
+```powershell
+PS> Invoke-MSBuild C:\temp\msbuild\proj1.proj
 # returns the detailed log in the default editor
 PS> Open-PSBuildLog
 
@@ -38,7 +39,7 @@ PS> Open-PSBuildLog markdown
 
 # returns the diagnostic
 PS> Open-PSBuildLog diagnostic
-</code>
+```
 
 #### show msbuild reserved properties
 <code>Get-MSBuildReservedProperties</code>
@@ -65,7 +66,8 @@ In many cases after a build it would be helpful to be able to answer questions l
 
 But when you call msbuild.exe the project that is built is created in memory and trashed at the end of the process. ```Invoke-MSBuild``` now has a way that you can invoke your build and then have a _"handle"_ to your project that was built. This allows you to ask questions like the following. To enable this you just need to pass in the ```-debugMode``` switch to ```Invoke-MSBuild``` (_Note: this is actively under development so if you run into an problems please open an issue_). Here are some examples of what you can do.
 
-<code>PS> $bResult = Invoke-MSBuild .\temp.proj -debugMode
+```powershell
+PS> $bResult = Invoke-MSBuild .\temp.proj -debugMode
 
 PS> $bResult.EvalProperty('someprop')
 default
@@ -78,21 +80,23 @@ default
 
 PS> $bResult.ExpandString('@(someitem->''$(someprop)\%(Filename)%(Extension)'')')
 default\temp.proj
-</code>
+```
 
 You can get full access to the [ProjectInstance](http://msdn.microsoft.com/en-us/library/microsoft.build.execution.projectinstance(v=vs.121).aspx) object with the ProjectInstance property.
 
 More functionality is available via the ProjectInstance object.
 
-<code>PS> $bResult.ProjectInstance.GetItems('someitem').EvaluatedInclude
+```powershell
+PS> $bResult.ProjectInstance.GetItems('someitem').EvaluatedInclude
 temp.proj
-</code>
+```
 
 You can get the [BuildResuilt](http://msdn.microsoft.com/en-us/library/microsoft.build.execution.buildresult(v=vs.121).aspx) via the BuildResult parameter.
 
-<code>PS> $bResult.BuildResult.OverallResult
+```powershell
+PS> $bResult.BuildResult.OverallResult
 Failure
-</code>
+```
 
 # Reporting Issues
 To report any issues please [create an new item](https://github.com/ligershark/psbuild/issues/new) on the [issues page](https://github.com/ligershark/psbuild/issues/).
