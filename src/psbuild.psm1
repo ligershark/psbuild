@@ -2035,8 +2035,8 @@ if($env:PSBUlidEnableMaskingSecretsInPSCmdlets -eq $true){
             $__sp.End()
         }
 '@
-    
-    $fnFormatStr = '${function:<fnname>} = ([scriptblock]::Create($strOutputOverrideFnFormatStr.Replace("<name>","<fnname>")))'
+    # added a try/catch in case the cmdlet is not available or some other error is produced, test cases
+    $fnFormatStr = 'try{ ${function:<fnname>} = ([scriptblock]::Create($strOutputOverrideFnFormatStr.Replace("<name>","<fnname>"))) } catch{}'
     $global:FilterStringSettings.WriteFunctionsToCreate | % {
         $fnFormatStr.Replace('<fnname>',$_)|iex    
     }
