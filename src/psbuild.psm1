@@ -221,7 +221,8 @@ function Set-MSBuild{
     the Get-MSBuild function will be called to determine the version of MSBuild
     which should be used.
 
-.PARAMETER $projectsToBuild
+
+.PARAMETER projectsToBuild
     This is the parameter which determines which file(s) will be built. If no value is
     provided then msbuild will look in the current directory for a single solution to
     build. If a a single value is passed in only that item will be processed. If multiple
@@ -308,7 +309,7 @@ function Set-MSBuild{
     -enableLoggers @('detailed','diagnostic') for detailed and diagnostic. The default value for
     this is @('detailed','diagnostic','markdown') and can be overridden in $global:PSBuildSettings.EnabledLoggers.
 
-.PARAMTER noLogFiles
+.PARAMETER noLogFiles
     You can use this to disable logging to files for this call to Invoke-MSBuild. Note: you can also
     enable/disable log file generation via a global flag $global:PSBuildSettings.EnableBuildLogging.
     If that is set to false this parameter is ignored and log files will not be written.
