@@ -29,7 +29,7 @@ Currently psbuild is still a ***preview*** but should be stable enough for regul
 <code>Invoke-MSBuild C:\temp\msbuild\proj1.proj -targets @('Demo';'Demo2')</code>
 ##### how to get the log file for the last build
 
-<code>Invoke-MSBuild C:\temp\msbuild\proj1.proj
+<code>Invoke-MSBuild C:\temp\msbuild\proj1.proj</code>
 # returns the detailed log in the default editor
 Open-PSBuildLog
 
