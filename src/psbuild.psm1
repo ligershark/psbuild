@@ -634,7 +634,7 @@ function Invoke-MSBuild{
                         'Using msbuild.exe from "{0}". You can use Set-MSBuild to update this.' -f $msbuildPath | Write-BuildMessage
                     }
 
-                    if($env:APPVEYOR -eq $true -and (get-command Add-AppveyorMessage -ErrorAction SilentlyContinue) ){
+                    if( ($env:APPVEYOR -eq $true) -and (get-command Add-AppveyorMessage -ErrorAction SilentlyContinue) ){
                         [string]$projstr = $projArg
                         if([string]::IsNullOrWhiteSpace($projstr)){
                             $projstr = '(project not specified)'
@@ -648,7 +648,7 @@ function Invoke-MSBuild{
 
                     if(-not $ignoreExitCode -and ($LASTEXITCODE -ne 0)){
                         $msg = ('MSBuild exited with a non-zero exit code [{0}]' -f $LASTEXITCODE)
-                        if($env:APPVEYOR -eq $true -and (get-command Add-AppveyorMessage -ErrorAction SilentlyContinue) ){
+                        if( ($env:APPVEYOR -eq $true) -and (get-command Add-AppveyorMessage -ErrorAction SilentlyContinue) ){
                             $msbcommand = ('"{0}" {1}' -f $msbuildPath, ($msbuildArgs -join ' ' ))
                             $summary = ("The command exited with a non-zero exit code [{0}]" -f $LASTEXITCODE)
                             $msg = ("{0}.`nCommand:[{1}]" -f $summary, $msbcommand)
