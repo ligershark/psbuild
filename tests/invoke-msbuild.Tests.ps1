@@ -228,6 +228,37 @@ Describe 'default property tests' {
     }
 }
 
+Describe 'debugMode tests'{
+    $script:envVarTarget = 'Process'
+    $script:debugModeFilePath = 'invoke-msbuild\debugmode01.proj'
+    $script:debugModeFileContent = @'
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build" ToolsVersion="4.0">
+  <Target Name="Build">
+    <Message Text="Hello!" Importance="high"/>
+  </Target>
+
+</Project>
+'@
+    $foo = Setup -File -Path $script:debugModeFilePath -Content $script:debugModeFileContent
+    Add-Type -AssemblyName Microsoft.Build
+    $global:PSBuildSettings.BuildMessageEnabled = $false
+
+    It 'can build using debugMode without passing in targets'{
+        $path = ("$TestDrive\{0}" -f $script:debugModeFilePath)
+        $path = (Join-Path $TestDrive $script:debugModeFilePath)
+        $buildResult = Invoke-MSBuild -projectsToBuild $path -debugMode
+        $buildResult.BuildResult.OverallResult | Should Be Success
+    }
+
+    It 'can build using debugMode with passing in targets'{
+        $path = ("$TestDrive\{0}" -f $script:debugModeFilePath)
+        $path = (Join-Path $TestDrive $script:debugModeFilePath)
+        $buildResult = Invoke-MSBuild -projectsToBuild $path -debugMode -targets Build
+        $buildResult.BuildResult.OverallResult | Should Be Success
+    }
+}
+
 Describe 'Masking tests - masking disabled'{
     $script:printpropscontent = @'
 <?xml version="1.0" encoding="utf-8"?>

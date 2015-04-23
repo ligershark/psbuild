@@ -399,11 +399,7 @@ function Invoke-MSBuild{
         [alias('p')]
         [Hashtable]$properties,
         
-        # I'm having an issue with how the call is handled if
-        # -debugMode is passed and this is null.
-        # for now i'll have to require this parameter
         [Parameter(ParameterSetName='build')]
-#        [Parameter(ParameterSetName='debugMode',Mandatory=$true)]
         [Parameter(ParameterSetName='debugMode')]
         [alias('t')]
         $targets,
@@ -664,18 +660,25 @@ function Invoke-MSBuild{
                     $globalProps = (PSBuild-ConverToDictionary -valueToConvert $properties)
                     $pc = (New-Object -TypeName Microsoft.Build.Evaluation.ProjectCollection -ArgumentList $globalProps)
 
+                    # todo: add loggers
                     # $conLogger = New-Object -TypeName Microsoft.Build.Logging.ConsoleLogger
                     # $conLogger.Verbosity = [Microsoft.Build.Framework.LoggerVerbosity]::Detailed
                     # 'Registering logger' | Write-Host
                     # $pc.RegisterLogger($conLogger)
 
                     $projectObj = $pc.LoadProject((Resolve-Path $project))
-                    # todo: add loggers
+
                     $projectInstance = $projectObj.CreateProjectInstance()
 
-                    $brdArgs = @($projectInstance, ([string[]](@()+$targets)), [Microsoft.Build.Execution.HostServices]$null, [Microsoft.Build.Execution.BuildRequestDataFlags]::ProvideProjectStateAfterBuild)
-                    $brd = New-Object -TypeName Microsoft.Build.Execution.BuildRequestData -ArgumentList $brdArgs
-                    
+                    # PS will convert null strings to '' which causes some APIs to fail.
+                    # This is the best way I've found to work around this.
+                    if($PSBoundParameters.ContainsKey('targets')){
+                        $brd = New-Object -TypeName Microsoft.Build.Execution.BuildRequestData -ArgumentList @($projectInstance, ([string[]](@()+$targets)), [Microsoft.Build.Execution.HostServices]$null, [Microsoft.Build.Execution.BuildRequestDataFlags]::ProvideProjectStateAfterBuild)
+                    }
+                    else{
+                        $brd = New-Object -TypeName Microsoft.Build.Execution.BuildRequestData -ArgumentList @($projectInstance, ([string[]]@()), [Microsoft.Build.Execution.HostServices]$null, [Microsoft.Build.Execution.BuildRequestDataFlags]::ProvideProjectStateAfterBuild)
+                    }
+
                     $buildResult = [Microsoft.Build.Execution.BuildManager]::DefaultBuildManager.Build(
                         (New-Object -TypeName Microsoft.Build.Execution.BuildParameters -ArgumentList $pc),
                         $brd)
