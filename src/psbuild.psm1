@@ -403,7 +403,8 @@ function Invoke-MSBuild{
         # -debugMode is passed and this is null.
         # for now i'll have to require this parameter
         [Parameter(ParameterSetName='build')]
-        [Parameter(ParameterSetName='debugMode',Mandatory=$true)]
+#        [Parameter(ParameterSetName='debugMode',Mandatory=$true)]
+        [Parameter(ParameterSetName='debugMode')]
         [alias('t')]
         $targets,
         
