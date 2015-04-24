@@ -458,7 +458,7 @@ function Invoke-MSBuild{
         [Parameter(ParameterSetName='build')]
         [Parameter(ParameterSetName='debugMode')]
         [alias('dp')]
-        [string[]]$defaultProperties,
+        [hashtable]$defaultProperties,
 
         [Parameter(ParameterSetName='build')]
         [alias('clp')]

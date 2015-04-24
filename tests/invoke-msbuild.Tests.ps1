@@ -185,12 +185,12 @@ Describe 'default property tests' {
     It 'confirm default property values are picked up' {
         $path = ("$TestDrive\{0}" -f $script:tempDefaultPropsProj01Path)
 
-        $buildResultNoDefault = Invoke-MSBuild -projectsToBuild $path -debugMode -targets Build
+        $buildResultNoDefault = Invoke-MSBuild -projectsToBuild $path -debugMode -targets Demo
         $outputTypeNoDefault = $buildResultNoDefault.EvalProperty('OutputType')
 
         $outputTypeNoDefault | Should BeNullOrEmpty
 
-        $buildResultWithDefault = Invoke-MSBuild -projectsToBuild $path -debugMode -defaultProperties @{'OutputType'='exe'} -targets Build
+        $buildResultWithDefault = Invoke-MSBuild -projectsToBuild $path -debugMode -defaultProperties @{'OutputType'='exe'} -targets Demo
         $outputTypeWithDefault = $buildResultWithDefault.EvalProperty('OutputType')
 
         $outputTypeWithDefault | Should Be 'exe'
