@@ -385,11 +385,11 @@ function Invoke-MSBuild{
         [Parameter(ParameterSetName='debugMode',Mandatory=$true,Position=1,ValueFromPipeline=$true)]
         [Parameter(ParameterSetName='preprocess',Position=1,ValueFromPipeline=$true)]
         [alias('proj')]
-        $projectsToBuild,
+        [string[]]$projectsToBuild,
         
         [Parameter(ParameterSetName='build')]
         [ValidateScript({Test-Path $_})]
-        $msbuildPath,
+        [string]$msbuildPath,
         
         [ValidateSet('32bit','64bit')]
         [string]$msbuildBitness = '32bit',
@@ -402,25 +402,25 @@ function Invoke-MSBuild{
         [Parameter(ParameterSetName='build')]
         [Parameter(ParameterSetName='debugMode')]
         [alias('t')]
-        $targets,
+        [string[]]$targets,
         
         [Parameter(ParameterSetName='build')]
         [Parameter(ParameterSetName='debugMode')]
         [ValidateSet('10.0','11.0','12.0','14.0')]
         [alias('vsv')]
-        $visualStudioVersion,
+        [string]$visualStudioVersion,
         
         [Parameter(ParameterSetName='build')]
         [Parameter(ParameterSetName='debugMode')]
-        $configuration,
+        [string]$configuration,
 
         [Parameter(ParameterSetName='build')]
         [Parameter(ParameterSetName='debugMode')]
-        $platform,
+        [string]$platform,
 
         [Parameter(ParameterSetName='build')]
         [Parameter(ParameterSetName='debugMode')]
-        $outputPath,
+        [string]$outputPath,
 
         [Parameter(ParameterSetName='build')]
         [Parameter(ParameterSetName='debugMode')]
@@ -428,11 +428,11 @@ function Invoke-MSBuild{
 
         [Parameter(ParameterSetName='build')]
         [Parameter(ParameterSetName='debugMode')]
-        $publishProfile,
+        [string]$publishProfile,
 
         [Parameter(ParameterSetName='build')]
         [Parameter(ParameterSetName='debugMode')]
-        $password,
+        [string]$password,
 
         [Parameter(ParameterSetName='build')]
         [Parameter(ParameterSetName='debugMode')]
@@ -458,11 +458,11 @@ function Invoke-MSBuild{
         [Parameter(ParameterSetName='build')]
         [Parameter(ParameterSetName='debugMode')]
         [alias('dp')]
-        $defaultProperties,
+        [string[]]$defaultProperties,
 
         [Parameter(ParameterSetName='build')]
         [alias('clp')]
-        $consoleLoggerParams = $global:PSBuildSettings.DefaultClp,
+        [string]$consoleLoggerParams = $global:PSBuildSettings.DefaultClp,
 
         [Parameter(ParameterSetName='build')]
         [switch]$ignoreExitCode,
