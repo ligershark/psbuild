@@ -2015,19 +2015,31 @@ function Get-FilteredString{
     )
     process{
         if($message -ne $null){
-            foreach($msg in $message){
-                $replacements = @()
-                $textToRemove | % { $replacements += $_ }
-                $global:FilterStringSettings.GlobalReplacements | % { $replacements += $_ }
+            $replacements = New-Object System.Collections.Generic.List[System.String]
 
-                if($script:BuildTextToMask){
-                    $script:BuildTextToMask | % { $replacements += $_ }    
+            foreach($tr in $textToRemove){
+                if(-not ($replacements.Contains($tr))){
+                    $replacements.Add($tr)
                 }
+            }
 
-                $replacements = ($replacements | Select-Object -Unique)
+            foreach($gtr in $global:FilterStringSettings.GlobalReplacements){
+                if(-not ($replacements.Contains($gtr))){
+                    $replacements.Add($gtr)
+                }
+            }
 
-                $replacements | % {
-                    $msg = $msg.Replace($_,$mask)
+            if($script:BuildTextToMask){
+                foreach($btr in $script:BuildTextToMask){
+                    if(-not ($replacements.Contains($btr))){
+                        $replacements.Add($btr)
+                    }
+                }
+            }
+
+            foreach($msg in $message){
+                foreach($repl in $replacements){
+                    $msg = $msg.Replace($repl,$mask)
                 }
 
                 $msg
