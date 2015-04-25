@@ -277,7 +277,9 @@ function Run-Tests{
         push-location
         set-location $testDirectory
      
-        $pesterArgs = @{}
+        $pesterArgs = @{
+            '-PassThru' = $true
+        }
         if($env:ExitOnPesterFail -eq $true){
             $pesterArgs.Add('-EnableExit',$true)
         }
@@ -285,9 +287,12 @@ function Run-Tests{
             $pesterArgs.Add('-CodeCoverage','..\src\psbuild.psm1')
         }
 
-        Invoke-Pester @pesterArgs
-
+        $pesterResult = Invoke-Pester @pesterArgs
         pop-location
+
+        if($pesterResult.FailedCount -gt 0){
+            throw ('Failed test cases: {0}' -f $pesterResult.FailedCount)
+        }
     }
     end{
         $env:PSBuildToolsDir = $previousToolsDir
