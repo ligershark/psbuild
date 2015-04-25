@@ -11,13 +11,13 @@
 [cmdletbinding()]
 param()
 
-function Get-ScriptDirectory
+function InternalGet-ScriptDirectory
 {
     $Invocation = (Get-Variable MyInvocation -Scope 1).Value
     Split-Path $Invocation.MyCommand.Path
 }
 
-$scriptDir = ((Get-ScriptDirectory) + "\")
+$scriptDir = ((InternalGet-ScriptDirectory) + "\")
 
 # when true any secretes will be masked when cmdlets like Write-Output are called
 if([string]::IsNullOrWhiteSpace($env:PSBUlidEnableMaskingSecretsInPSCmdlets)){
