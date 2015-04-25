@@ -3,12 +3,21 @@ psbuild
 
 [![Build status](https://ci.appveyor.com/api/projects/status/k7p2m9b6h5m9w2q3/branch/master)](https://ci.appveyor.com/project/sayedihashimi/psbuild/branch/master)
 
-This project aims to make using MSBuild easier from powershell. The project has two main purposes
+The main purpose of this project to provide a better experience calling ```msbuild.exe``` from PowerShell. When using psbuild by default you'll get:
 
-1. To make interacting with MSBuild files in PowerShell much easier
-1. To make it easier to manipulate MSBuild files from PowerShell/NuGet
+ - the latest version of msbuild.exe on your machine
+ - multi-core build
+ - log files, three formats: detailed, diagnostic and markdown
+ - 32 bit version of ```msbuild.exe```. Using the 64 bit version accidently can cause issues
 
-Currently psbuild is still a ***preview*** but should be stable enough for regular usage.
+It also simplifies passing in properties, targets by handling the work to translate PowerShell syntax to the
+call to ```msbuild.exe```.
+
+psbuild also has some functionality that you can use to create and edit MSBuild files from PowerShell.
+
+To see the full set of commands that psbuild makes available just execute.
+
+<code>Get-Command -Module psbuild</code>
 
 ## Getting Started
 
