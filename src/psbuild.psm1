@@ -11,6 +11,8 @@
 [cmdletbinding()]
 param()
 
+Set-StrictMode -Version Latest
+
 function InternalGet-ScriptDirectory
 {
     $Invocation = (Get-Variable MyInvocation -Scope 1).Value
