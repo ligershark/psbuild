@@ -43,7 +43,7 @@ $global:PSBuildSettings = New-Object PSObject -Property @{
 
     TempDirectory = ('{0}\LigerShark\PSBuild\temp\' -f $env:LOCALAPPDATA)
 
-    DefaultClp = '/clp:v=m;ShowCommandLine'
+    DefaultClp = '/clp:v=m;ShowCommandLine;Summary'
     ToolsDir = ''
     MarkdownLoggerVerbosity = 'n'
     EnablePropertyQuoting = $true
