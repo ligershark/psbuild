@@ -2129,15 +2129,7 @@ function Import-Pester{
         $pesterVersion = '3.3.6'
     )
     process{
-        # see if nuget-powershell is available and load if not
-        $nugetpsloaded = $false
-        if((get-command Get-NuGetPackage -ErrorAction SilentlyContinue)){
-            $nugetpsloaded = $true
-        }
-
-        if(!$nugetpsloaded){
-            (new-object Net.WebClient).DownloadString("https://raw.githubusercontent.com/ligershark/nuget-powershell/master/get-nugetps.ps1") | iex
-        }
+        InternalEnsureNuGetPowershellLoaded
 
         $pesterDir = (Get-NuGetPackageExpectedPath -name 'pester' -version $pesterVersion -expandedPath)
         $pesterModulepath = (Join-Path $pesterDir ('tools\Pester.psm1' -f $pesterVersion))
@@ -2154,6 +2146,31 @@ function Import-Pester{
         }
 
         Import-Module $pesterModulepath -Global -Force
+    }
+}
+
+function InternalEnsureNuGetPowershellLoaded{
+    [cmdletbinding()]
+    param()
+    process{
+        # see if nuget-powershell is available and load if not
+        $nugetpsloaded = $false
+        if((get-command Get-NuGetPackage -ErrorAction SilentlyContinue)){
+            $nugetpsloaded = $true
+        }
+
+        if(!$nugetpsloaded){
+            (new-object Net.WebClient).DownloadString("https://raw.githubusercontent.com/ligershark/nuget-powershell/master/get-nugetps.ps1") | iex
+        }
+
+        # check to see that it was loaded
+        if((get-command Get-NuGetPackage -ErrorAction SilentlyContinue)){
+            $nugetpsloaded = $true
+        }
+
+        if(-not $nugetpsloaded){
+            throw ('Unable to load nuget-powershell, unknown error')
+        }
     }
 }
 
