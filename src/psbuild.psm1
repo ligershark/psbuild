@@ -43,7 +43,7 @@ $global:PSBuildSettings = New-Object PSObject -Property @{
 
     TempDirectory = ('{0}\LigerShark\PSBuild\temp\' -f $env:LOCALAPPDATA)
 
-    DefaultClp = '/clp:v=m;ShowCommandLine;Summary'
+    DefaultClp = '/clp:v=m;Summary'
     ToolsDir = ''
     MarkdownLoggerVerbosity = 'n'
     EnablePropertyQuoting = $true
@@ -2062,6 +2062,10 @@ function Get-FilteredString{
 
                 $msg
             }
+        }
+        else{
+            # required so that empty lines are output to the console
+            $message
         }
     }
 }
