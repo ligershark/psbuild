@@ -329,3 +329,40 @@ Describe 'Masking tests - masking enabled'{
         $msbuildOutput.Contains('PasswordHere') | Should Be $false
     }
 }
+
+Describe 'toolsversion tests'{
+    $script:printpropscontent = @'
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Demo" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+	<Target Name="Demo">
+		<Message Text="**VisualStudioVersion=[$(VisualStudioVersion)]" Importance="high"/>
+		<Message Text="**Configuration=[$(Configuration)]" Importance="high"/>
+		<Message Text="**Platform=[$(Platform)]" Importance="high"/>
+		<Message Text="**OutputPath=[$(OutputPath)]" Importance="high"/>
+		<Message Text="**DeployOnBuild=[$(DeployOnBuild)]" Importance="high"/>
+		<Message Text="**PublishProfile=[$(PublishProfile)]" Importance="high"/>
+		<Message Text="**Password=[$(Password)]" Importance="high"/>
+	</Target>
+</Project>
+'@
+    $script:printpropertiesproj = 'invoke-msbuild\printprops.proj'
+    Setup -File -Path $script:printpropertiesproj -Content $script:printpropscontent
+
+    Mock Invoke-CommandString {
+        return {
+            $commandArgs
+        }
+    } -param { $global:lastcmdargs = ($commandArgs -join ' ') } -ModuleName 'psbuild'
+
+    It 'can pass toolsversion'{
+        $sourceProj = ("$TestDrive\{0}" -f $script:printpropertiesproj)
+        $msbuildOutput = (Invoke-MSBuild $sourceProj -toolsversion '12.0')
+        $global:lastcmdargs.Contains('/toolsversion:12.0') | Should Be $true
+    }
+
+    It 'can not pass toolsversion'{
+        $sourceProj = ("$TestDrive\{0}" -f $script:printpropertiesproj)
+        $msbuildOutput = (Invoke-MSBuild $sourceProj)
+        $global:lastcmdargs.Contains('/toolsversion') | Should Be $false
+    }
+}

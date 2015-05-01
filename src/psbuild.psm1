@@ -257,6 +257,15 @@ function Set-MSBuild{
     in this value. If this is not specified then Get-MSBuild will be used
     to get the path to msbuild.exe.
 
+.PARAMETER toolsVersion
+    This allows you to specify the value for /toolsversion. If you do not pass
+    this then the parameter will not be passed. Some valid values include:
+        3.5
+        4.0
+        10.0
+        11.0
+        12.0
+
 .PARAMETER msbuildBitness
     Determines wheter the 32 or 64-bit version of msbuild.exe is returned.
     32 bit is the default.
@@ -395,6 +404,9 @@ function Invoke-MSBuild{
         
         [ValidateSet('32bit','64bit')]
         [string]$msbuildBitness = '32bit',
+
+        [alias('tv')]
+        [string]$toolsVersion,
 
         [Parameter(ParameterSetName='build')]
         [Parameter(ParameterSetName='debugMode')]
@@ -536,6 +548,10 @@ function Invoke-MSBuild{
 
             if(-not $properties){
                 $properties = @{}
+            }
+
+            if($toolsversion){
+                $msbuildArgs += ('/toolsversion:{0}' -f $toolsversion)
             }
 
             if($visualStudioVersion){
