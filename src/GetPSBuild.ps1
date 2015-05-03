@@ -56,8 +56,8 @@ For more information execute:
         Import-Module -Name $modsFolder\psbuild -DisableNameChecking -Force
     }
 
-    Write-Host "psbuild is installed and ready to use" -Foreground Green
-    Write-Host @"
+    Write-Output "psbuild is installed and ready to use"
+    Write-Output @"
 USAGE:
     PS> Invoke-MSBuild 'C:\temp\msbuild\msbuild.proj'
     PS> Invoke-MSBuild C:\temp\msbuild\path.proj -properties (@{'OutputPath'='c:\ouput\';'visualstudioversion'='12.0'}) -extraArgs '/nologo'
