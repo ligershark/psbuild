@@ -32,10 +32,12 @@ function Install-PSBuild {
     }
 
     # this will download using nuget if its not in localappdata
-    $psbPsm1File = GetPsBuildPsm1
+    [System.IO.FileInfo]$psbPsm1File = GetPsBuildPsm1
+    if($psbPsm1File -eq $null){
+        throw ('Unable to locate psbuild.psm1 file as expected')
+    }
 
     # copy the folder to the modules folder
-
     Copy-Item -Path "$($psbPsm1File.Directory.FullName)\*"  -Destination $destFolder -Recurse
 
     if ((Get-ExecutionPolicy) -eq "Restricted"){
@@ -141,8 +143,8 @@ function GetPsBuildPsm1{
 
         if(!$psbuildPsm1){
             try{
-                Push-Location
-                Set-Location ((Resolve-Path $toolsDir).ToString())
+                Push-Location | Out-Null
+                Set-Location ((Resolve-Path $toolsDir).ToString()) | Out-Null
                 'Downloading psbuild to the toolsDir' | Write-Verbose
                 # nuget install psbuild -Version 0.0.3-beta -Prerelease -OutputDirectory C:\temp\nuget\out\
                 $cmdArgs = @('install','psbuild','-Version',$versionToInstall,'-Prerelease')
@@ -156,7 +158,7 @@ function GetPsBuildPsm1{
                 $psbuildPsm1 = (Get-ChildItem -Path "$toolsDir\psbuild.$versionToInstall" -Include 'psbuild.psm1' -Recurse | Sort-Object -Descending | Select-Object -First 1)
             }
             finally{
-                Pop-Location
+                Pop-Location | Out-Null
             }
         }
 
