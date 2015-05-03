@@ -50,7 +50,6 @@ To fix this change your execution policy to something like RemoteSigned.
 For more information execute:
         
         PS> Get-Help about_execution_policies
-
 "@
     }
     else{
@@ -74,7 +73,7 @@ Or visit http://msbuildbook.com/psbuild
     If nuget is in the tools
     folder then it will be downloaded there.
 #>
-function Get-Nuget(){
+function Get-Nuget{
     [cmdletbinding()]
     param(
         $toolsDir = ("$env:LOCALAPPDATA\LigerShark\tools\"),
@@ -103,7 +102,6 @@ function Get-Nuget(){
     }
 }
 
-
 function Invoke-CommandString{
     [cmdletbinding()]
     param(
@@ -117,7 +115,7 @@ function Invoke-CommandString{
         foreach($cmdToExec in $command){
             'Executing command [{0}]' -f $cmdToExec | Write-Verbose
 
-            cmd.exe /D /C $cmdToExec
+            cmd.exe /D /C $cmdToExec | Out-Null
 
             if(-not $ignoreErrors -and ($LASTEXITCODE -ne 0)){
                 $msg = ('The command [{0}] exited with code [{1}]' -f $cmdToExec, $LASTEXITCODE)
@@ -153,7 +151,7 @@ function GetPsBuildPsm1{
                 'Calling nuget to install psbuild with the following args. [{0} {1}]' -f $nugetPath, ($cmdArgs -join ' ') | Write-Verbose
 
                 $command = '"{0}" {1}' -f $nugetPath,($cmdArgs -join ' ')
-                $command | Invoke-CommandString
+                $command | Invoke-CommandString | Out-Null
 
                 $psbuildPsm1 = (Get-ChildItem -Path "$toolsDir\psbuild.$versionToInstall" -Include 'psbuild.psm1' -Recurse | Sort-Object -Descending | Select-Object -First 1)
             }
