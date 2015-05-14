@@ -150,9 +150,12 @@ Failure
 ```
 
 # Reporting Issues
+
 To report any issues please [create an new item](https://github.com/ligershark/psbuild/issues/new) on the [issues page](https://github.com/ligershark/psbuild/issues/).
 
 # Release Notes
+
+- Updated ```New-MSBuildProject``` to create files with the highest ```ToolsVersion``` on the box. Also added a ```-toolsVersion``` parameter.
 - Updated ```Invoke-MSBuild``` to not require targets when passing in ```-debugMode```.
 - Added a function, Import-Pester, to get and load [pester](https://github.com/pester/Pester). If pester is not installed it will be downloaded. See https://github.com/ligershark/psbuild/issues/56.
 - Update to filter secrets in PowerShell output. When passing ```-password``` the value will automatically be masked. You can also add additional values to be masked. For more info see ```Get-Help Get-FilteredString``` or ```Get-Help Invoke-MSBuild -Examples```. See https://github.com/ligershark/psbuild/issues/57.

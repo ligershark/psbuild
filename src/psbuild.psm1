@@ -1156,16 +1156,23 @@ function Create-MSBuildReservedPropertiesFile{
 function New-MSBuildProject{
     [cmdletbinding()]
     param(
-        [Parameter(
-            Position=1)]
-        $filePath
+        [Parameter(Position=0)]
+        $filePath,
+
+        [string]$toolsVersion
     )
     begin{
         Add-Type -AssemblyName Microsoft.Build
     }
 
     process{
+        # if toolsversion is empty pick the highest tools version on the machine
+        if([string]::IsNullOrEmpty($toolsVersion)){
+            $regLocalKey = [Microsoft.Win32.RegistryKey]::OpenBaseKey([Microsoft.Win32.RegistryHive]::LocalMachine,[Microsoft.Win32.RegistryView]::Registry32)
+            $toolsVersion = ($regLocalKey.OpenSubKey('SOFTWARE\Microsoft\MSBuild\ToolsVersions\').GetSubKeyNames() | Sort-Object {[double]$_} -Descending |Select-Object -First 1)
+        }
         $newProj = [Microsoft.Build.Construction.ProjectRootElement]::Create()
+        $newProj.ToolsVersion = $toolsVersion
 
         if($filePath){
             Save-MSBuildProject -project $newProj -filePath $filePath | Out-Null
