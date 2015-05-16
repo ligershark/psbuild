@@ -65,10 +65,15 @@ PS> Open-PSBuildLog markdown
 PS> Open-PSBuildLog diagnostic
 ```
 
+#### how to open the log directory
+
+To see logs from previous builds use the ```Open-PSBuildLogDirectory``` command.
+In this directory you'll find a folder for each project, each with log files.
+
 #### How to pass extra arguments to msbuild.exe
 
 When you call ```Invoke-MSBuild``` the call to ```msbuild.exe``` will be constructed for you. If you need to add
-additonal arguments to ```msbuild.exe``` you can use the ```-extraArgs``` parameter. For example if you wanted
+additional arguments to ```msbuild.exe``` you can use the ```-extraArgs``` parameter. For example if you wanted
 to attach a custom logger or write a log file to a specific location.
 
 <code>Invoke-MSBuild C:\temp\msbuild\msbuild.proj -extraArgs '/flp3:v=d;logfile="C:\temp\msbuild\msbuild.detailed.log"'</code>
@@ -86,7 +91,7 @@ This will display the list of known reserved properties and their values.
 #### show common msbuild escape characters
 
 When authoring MSBuild files there are a few [special characters](https://msdn.microsoft.com/en-us/library/bb546106.aspx)
-that you'll need to escape. Instead of searching the web for the result you can simply invoke a cmdlet.
+that you'll need to escape. Instead of searching the web for the result you can simply call this.
 
 <code>Get-MSBuildEscapeCharacters</code>
 
@@ -111,7 +116,7 @@ In many cases after a build it would be helpful to be able to answer questions l
 
 But when you call msbuild.exe the project that is built is created in memory and trashed at the end of the
 process. ```Invoke-MSBuild``` now has a way that you can invoke your build and then have a _"handle"_ to your
-project that was built. This allows you to ask questions like the following. To enable this you just need to
+project that was built. Using this object you can evaluate the properties and items. To enable this you just need to
 pass in the ```-debugMode``` switch to ```Invoke-MSBuild``` (_Note: this is actively under development so if you
 run into an problems please open an issue_). Here are some examples of what you can do.
 
@@ -154,7 +159,7 @@ Failure
 To report any issues please [create an new item](https://github.com/ligershark/psbuild/issues/new) on the [issues page](https://github.com/ligershark/psbuild/issues/).
 
 # Release Notes
-
+- Added ```Open-PSBuildLogDirectory``` to open the log directory https://github.com/ligershark/psbuild/issues/66
 - Updated ```New-MSBuildProject``` to create files with the highest ```ToolsVersion``` on the box. Also added a ```-toolsVersion``` parameter.
 - Updated ```Invoke-MSBuild``` to not require targets when passing in ```-debugMode```.
 - Added a function, Import-Pester, to get and load [pester](https://github.com/pester/Pester). If pester is not installed it will be downloaded. See https://github.com/ligershark/psbuild/issues/56.
