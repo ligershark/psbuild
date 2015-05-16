@@ -918,6 +918,14 @@ function Get-PSBuildLogDirectory{
     }
 }
 
+function Open-PSBuildLogDirectory{
+    [cmdletbinding()]
+    param()
+    process{
+        start (Get-PSBuildLogDirectory)
+    }
+}
+
 <#
 .SYNOPSIS  
 	Used to set the directory where psbuild will keep msbuild log files.
