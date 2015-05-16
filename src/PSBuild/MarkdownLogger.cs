@@ -124,7 +124,7 @@
         }
 
         void BuildStarted(object sender, BuildStartedEventArgs e) {           
-            AppendLine(string.Format("####Build Started {0}", e.Timestamp).ToMarkdownRawMarkdown());
+            AppendLine(string.Format("####Build Started ```{0}```", e.Timestamp).ToMarkdownRawMarkdown());
 
             if (IsVerbosityAtLeast(LoggerVerbosity.Detailed)) {
                 var r = from be in e.BuildEnvironment.Keys

@@ -22,7 +22,7 @@ To see the full set of commands that psbuild makes available just execute.
 ## Getting Started
 
 ##### download and install psbulid
-<code style="background-color:grey">(new-object Net.WebClient).DownloadString("https://raw.github.com/ligershark/psbuild/master/src/GetPSBuild.ps1") | iex</code>
+<code style="background-color:grey">(new-object Net.WebClient).DownloadString("https://raw.githubusercontent.com/ligershark/psbuild/dev/src/GetPSBuild.ps1") | iex</code>
 
 ##### build an msbuild file
 <code>Invoke-MSBuild C:\temp\msbuild\msbuild.proj</code>
@@ -65,10 +65,15 @@ PS> Open-PSBuildLog markdown
 PS> Open-PSBuildLog diagnostic
 ```
 
+#### how to open the log directory
+
+To see logs from previous builds use the ```Open-PSBuildLogDirectory``` command.
+In this directory you'll find a folder for each project, each with log files.
+
 #### How to pass extra arguments to msbuild.exe
 
 When you call ```Invoke-MSBuild``` the call to ```msbuild.exe``` will be constructed for you. If you need to add
-additonal arguments to ```msbuild.exe``` you can use the ```-extraArgs``` parameter. For example if you wanted
+additional arguments to ```msbuild.exe``` you can use the ```-extraArgs``` parameter. For example if you wanted
 to attach a custom logger or write a log file to a specific location.
 
 <code>Invoke-MSBuild C:\temp\msbuild\msbuild.proj -extraArgs '/flp3:v=d;logfile="C:\temp\msbuild\msbuild.detailed.log"'</code>
@@ -86,7 +91,7 @@ This will display the list of known reserved properties and their values.
 #### show common msbuild escape characters
 
 When authoring MSBuild files there are a few [special characters](https://msdn.microsoft.com/en-us/library/bb546106.aspx)
-that you'll need to escape. Instead of searching the web for the result you can simply invoke a cmdlet.
+that you'll need to escape. Instead of searching the web for the result you can simply call this.
 
 <code>Get-MSBuildEscapeCharacters</code>
 
@@ -102,6 +107,40 @@ offers a command to enable you to easily create a new empty MSBuild project file
 
 Most functions have help defined so you can use ```get-help``` on most commands for more details.
 
+#### How to add psbuild to your build script.
+
+If you're automating your build process then you should make sure they are portable.
+You can add the function below to your build script, and call it before using psbuild.
+If psbuild is not already installed it will be downloaded.
+
+```powershell
+<#
+.SYNOPSIS
+    You can add this to you build script to ensure that psbuild is available before calling
+    Invoke-MSBuild. If psbuild is not available locally it will be downloaded automatically.
+#>
+function EnsurePsbuildInstlled{
+    [cmdletbinding()]
+    param(
+        [string]$psbuildInstallUri = 'https://raw.githubusercontent.com/ligershark/psbuild/master/src/GetPSBuild.ps1'
+    )
+    process{
+        if(-not (Get-Command "Invoke-MsBuild" -errorAction SilentlyContinue)){
+            'Installing psbuild from [{0}]' -f $psbuildInstallUri | Write-Verbose
+            (new-object Net.WebClient).DownloadString($psbuildInstallUri) | iex
+        }
+        else{
+            'psbuild already loaded, skipping download' | Write-Verbose
+        }
+
+        # make sure it's loaded and throw if not
+        if(-not (Get-Command "Invoke-MsBuild" -errorAction SilentlyContinue)){
+            throw ('Unable to install/load psbuild from [{0}]' -f $psbuildInstallUri)
+        }
+    }
+}
+```
+
 ## Debug mode
 In many cases after a build it would be helpful to be able to answer questions like the following.
  
@@ -111,7 +150,7 @@ In many cases after a build it would be helpful to be able to answer questions l
 
 But when you call msbuild.exe the project that is built is created in memory and trashed at the end of the
 process. ```Invoke-MSBuild``` now has a way that you can invoke your build and then have a _"handle"_ to your
-project that was built. This allows you to ask questions like the following. To enable this you just need to
+project that was built. Using this object you can evaluate the properties and items. To enable this you just need to
 pass in the ```-debugMode``` switch to ```Invoke-MSBuild``` (_Note: this is actively under development so if you
 run into an problems please open an issue_). Here are some examples of what you can do.
 
@@ -150,9 +189,12 @@ Failure
 ```
 
 # Reporting Issues
+
 To report any issues please [create an new item](https://github.com/ligershark/psbuild/issues/new) on the [issues page](https://github.com/ligershark/psbuild/issues/).
 
 # Release Notes
+- Added ```Open-PSBuildLogDirectory``` to open the log directory https://github.com/ligershark/psbuild/issues/66
+- Updated ```New-MSBuildProject``` to create files with the highest ```ToolsVersion``` on the box. Also added a ```-toolsVersion``` parameter.
 - Updated ```Invoke-MSBuild``` to not require targets when passing in ```-debugMode```.
 - Added a function, Import-Pester, to get and load [pester](https://github.com/pester/Pester). If pester is not installed it will be downloaded. See https://github.com/ligershark/psbuild/issues/56.
 - Update to filter secrets in PowerShell output. When passing ```-password``` the value will automatically be masked. You can also add additional values to be masked. For more info see ```Get-Help Get-FilteredString``` or ```Get-Help Invoke-MSBuild -Examples```. See https://github.com/ligershark/psbuild/issues/57.

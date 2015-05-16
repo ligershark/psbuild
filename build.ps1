@@ -24,7 +24,11 @@ param(
     [string]$newversion,
 
     [Parameter(ParameterSetName='setversion',Position=2)]
-    [string]$oldversion
+    [string]$oldversion,
+
+    [Parameter(ParameterSetName='openciwebsite',Position=0)]
+    [Alias('openci')]
+    [switch]$openciwebsite
 )
  
  function Get-ScriptDirectory
@@ -332,7 +336,15 @@ function Build{
     }
 }
 
-if(!$build -and !$setversion -and !$getversion){
+function OpenCiWebsite{
+    [cmdletbinding()]
+    param()
+    process{
+        start 'https://ci.appveyor.com/project/sayedihashimi/psbuild'
+    }
+}
+
+if(!$build -and !$setversion -and !$getversion -and !$openciwebsite){
     $build = $true
 }
 
@@ -341,6 +353,7 @@ try{
     if($build){ Build }
     elseif($setversion){ SetVersion -newversion $newversion }
     elseif($getversion){ GetExistingVersion | Write-Output }
+    elseif($openciwebsite){ OpenCiWebsite }
     else{
         $cmds = @('-build','-setversion')
         'Command not found or empty, please pass in one of the following [{0}]' -f ($cmds -join ' ') | Write-Error

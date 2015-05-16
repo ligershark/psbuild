@@ -13,16 +13,14 @@ param()
 
 Set-StrictMode -Version Latest
 
-function InternalGet-ScriptDirectory
-{
-    $Invocation = (Get-Variable MyInvocation -Scope 1).Value
-    Split-Path $Invocation.MyCommand.Path
+function InternalGet-ScriptDirectory{
+    split-path (((Get-Variable MyInvocation -Scope 1).Value).MyCommand.Path)
 }
 
 $scriptDir = ((InternalGet-ScriptDirectory) + "\")
 
 # when true any secretes will be masked when cmdlets like Write-Output are called
-if([string]::IsNullOrWhiteSpace($env:PSBUlidEnableMaskingSecretsInPSCmdlets)){
+if(-not (test-path env:PSBUlidEnableMaskingSecretsInPSCmdlets)){
     $env:PSBUlidEnableMaskingSecretsInPSCmdlets=$true
 }
 # User settings can override these
@@ -118,7 +116,9 @@ function Invoke-CommandString{
         [Parameter(Position=1)]
         $commandArgs,
 
-        $ignoreErrors
+        $ignoreErrors,
+
+        [bool]$maskSecrets
     )
     process{
         foreach($cmdToExec in $command){
@@ -131,7 +131,12 @@ function Invoke-CommandString{
             '"{0}" {1}' -f $cmdToExec, ($commandArgs -join ' ') | Set-Content -Path $destPath | Out-Null
 
             $actualCmd = ('"{0}"' -f $destPath)
-            cmd.exe /D /C $actualCmd | Write-Output
+            if($maskSecrets){
+                cmd.exe /D /C $actualCmd | Write-Output
+            }
+            else{
+                cmd.exe /D /C $actualCmd
+            }
 
             if(-not $ignoreErrors -and ($LASTEXITCODE -ne 0)){
                 $msg = ('The command [{0}] exited with code [{1}]' -f $cmdToExec, $LASTEXITCODE)
@@ -659,7 +664,7 @@ function Invoke-MSBuild{
                         Add-AppveyorMessage -Message $avmsg -Category Information -Details $avdetails -ErrorAction SilentlyContinue | Out-NUll
                     }
 
-                    Invoke-CommandString -command $msbuildPath -commandArgs $msbuildArgs
+                    Invoke-CommandString -command $msbuildPath -commandArgs $msbuildArgs -maskSecrets (HasSecretsToMask -textToMask $textToMask -password $password )
 
                     if(-not $ignoreExitCode -and ($LASTEXITCODE -ne 0)){
                         $msg = ('MSBuild exited with a non-zero exit code [{0}]' -f $LASTEXITCODE)
@@ -716,6 +721,42 @@ function Invoke-MSBuild{
     }
 }
 Set-Alias psbuild Invoke-MSBuild
+
+function HasSecretsToMask{
+    [cmdletbinding()]
+    param(
+        [array]$textToMask,
+        [string]$password
+    )
+    process{
+        [bool]$hasSecrets = $false
+
+        if($textToMask -ne $null){
+            foreach($text in $textToMask){
+                if(-not [string]::IsNullOrWhiteSpace($textToMask)){
+                    $hasSecrets = $true
+                    break
+                }
+            }
+        }
+
+        if($global:FilterStringSettings.GlobalReplacements -ne $null){
+            foreach($text in $global:FilterStringSettings.GlobalReplacements){
+                if(-not [string]::IsNullOrWhiteSpace($textToMask)){
+                    $hasSecrets = $true
+                    break
+                }
+            }
+        }
+
+        if(-not [string]::IsNullOrWhiteSpace($password)){
+            $hasSecrets = $true
+        }
+
+        # return the value to the caller
+        $hasSecrets
+    }
+}
 
 <#
 .SYNOPSIS
@@ -874,6 +915,14 @@ function Get-PSBuildLogDirectory{
         else{
             return $null   
         }
+    }
+}
+
+function Open-PSBuildLogDirectory{
+    [cmdletbinding()]
+    param()
+    process{
+        start (Get-PSBuildLogDirectory)
     }
 }
 
@@ -1158,16 +1207,23 @@ function Create-MSBuildReservedPropertiesFile{
 function New-MSBuildProject{
     [cmdletbinding()]
     param(
-        [Parameter(
-            Position=1)]
-        $filePath
+        [Parameter(Position=0)]
+        $filePath,
+
+        [string]$toolsVersion
     )
     begin{
         Add-Type -AssemblyName Microsoft.Build
     }
 
     process{
+        # if toolsversion is empty pick the highest tools version on the machine
+        if([string]::IsNullOrEmpty($toolsVersion)){
+            $regLocalKey = [Microsoft.Win32.RegistryKey]::OpenBaseKey([Microsoft.Win32.RegistryHive]::LocalMachine,[Microsoft.Win32.RegistryView]::Registry32)
+            $toolsVersion = ($regLocalKey.OpenSubKey('SOFTWARE\Microsoft\MSBuild\ToolsVersions\').GetSubKeyNames() | Sort-Object {[double]$_} -Descending |Select-Object -First 1)
+        }
         $newProj = [Microsoft.Build.Construction.ProjectRootElement]::Create()
+        $newProj.ToolsVersion = $toolsVersion
 
         if($filePath){
             Save-MSBuildProject -project $newProj -filePath $filePath | Out-Null
@@ -2071,7 +2127,6 @@ function Get-FilteredString{
 }
 
 if($env:PSBUlidEnableMaskingSecretsInPSCmdlets -eq $true){
-
     $strOutputOverrideFnFormatStr = @'
         [cmdletbinding(ConfirmImpact='Medium')]
         param(
@@ -2126,10 +2181,10 @@ function Write-BuildMessage{
             }
 
             if($Host -and ($Host.Name -eq 'ConsoleHost')){
-                $message | Get-FilteredString| Write-Host # -ForegroundColor $fgColor -BackgroundColor $bColor
+                $message | Write-Host
             }
             else{
-                $message | Get-FilteredString| Write-Output
+                $message | Write-Output
             }
         }
     }
