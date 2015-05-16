@@ -22,7 +22,7 @@ To see the full set of commands that psbuild makes available just execute.
 ## Getting Started
 
 ##### download and install psbulid
-<code style="background-color:grey">(new-object Net.WebClient).DownloadString("https://raw.githubusercontent.com/ligershark/psbuild/dev/src/GetPSBuild.ps1") | iex</code>
+<code style="background-color:grey">(new-object Net.WebClient).DownloadString("https://raw.githubusercontent.com/ligershark/psbuild/master/src/GetPSBuild.ps1") | iex</code>
 
 ##### build an msbuild file
 <code>Invoke-MSBuild C:\temp\msbuild\msbuild.proj</code>
