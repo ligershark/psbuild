@@ -198,6 +198,12 @@ function SetVersion{
             "$oldversion"="$newversion"
         }
         Replace-TextInFolder -folder $folder -include $include -exclude $exclude -replacements $replacements | Write-Verbose
+
+        # update the .psd1 file
+        $replacements = @{
+            ($oldversion.Replace('-beta','.1'))=($newversion.Replace('-beta','.1'))
+        }
+        Replace-TextInFolder -folder $folder -include '*.psd1' -exclude $exclude -replacements $replacements | Write-Verbose
         'Replacement complete' | Write-Verbose
     }
 }

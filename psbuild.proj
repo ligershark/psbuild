@@ -68,6 +68,7 @@
 
       <ToolsItems Include="$(NugetSourceRoot)init.ps1"/>
       <ToolsItems Include="$(NugetSourceRoot)psbuild.psm1"/>
+      <ToolsItems Include="$(NugetSourceRoot)psbuild.psd1"/>
       <ToolsItems Include="$(PSBuildOutputRoot)*.dll"/>
     </ItemGroup>
   </Target>

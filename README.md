@@ -193,6 +193,8 @@ Failure
 To report any issues please [create an new item](https://github.com/ligershark/psbuild/issues/new) on the [issues page](https://github.com/ligershark/psbuild/issues/).
 
 # Release Notes
+
+- Added a module manifest to support versioning https://github.com/ligershark/psbuild/issues/67
 - Added ```Open-PSBuildLogDirectory``` to open the log directory https://github.com/ligershark/psbuild/issues/66
 - Updated ```New-MSBuildProject``` to create files with the highest ```ToolsVersion``` on the box. Also added a ```-toolsVersion``` parameter.
 - Updated ```Invoke-MSBuild``` to not require targets when passing in ```-debugMode```.
