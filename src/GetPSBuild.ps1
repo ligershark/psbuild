@@ -53,7 +53,7 @@ For more information execute:
 "@
     }
     else{
-        Import-Module -Name $modsFolder\psbuild -DisableNameChecking -Force
+        Import-Module -Name $modsFolder\psbuild\psbuild.psd1 -DisableNameChecking -Force
     }
 
     Write-Output "psbuild is installed and ready to use"

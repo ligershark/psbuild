@@ -62,4 +62,4 @@
 #*.rtf   diff=astextplain
 #*.RTF   diff=astextplain
 
-*.ps1 text eol=crlf
+*.ps*1 text eol=crlf
