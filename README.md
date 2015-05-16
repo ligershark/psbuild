@@ -107,6 +107,40 @@ offers a command to enable you to easily create a new empty MSBuild project file
 
 Most functions have help defined so you can use ```get-help``` on most commands for more details.
 
+#### How to add psbuild to your build script.
+
+If you're automating your build process then you should make sure they are portable.
+You can add the function below to your build script, and call it before using psbuild.
+If psbuild is not already installed it will be downloaded.
+
+```powershell
+<#
+.SYNOPSIS
+    You can add this to you build script to ensure that psbuild is available before calling
+    Invoke-MSBuild. If psbuild is not available locally it will be downloaded automatically.
+#>
+function EnsurePsbuildInstlled{
+    [cmdletbinding()]
+    param(
+        [string]$psbuildInstallUri = 'https://raw.githubusercontent.com/ligershark/psbuild/master/src/GetPSBuild.ps1'
+    )
+    process{
+        if(-not (Get-Command "Invoke-MsBuild" -errorAction SilentlyContinue)){
+            'Installing psbuild from [{0}]' -f $psbuildInstallUri | Write-Verbose
+            (new-object Net.WebClient).DownloadString($psbuildInstallUri) | iex
+        }
+        else{
+            'psbuild already loaded, skipping download' | Write-Verbose
+        }
+
+        # make sure it's loaded and throw if not
+        if(-not (Get-Command "Invoke-MsBuild" -errorAction SilentlyContinue)){
+            throw ('Unable to install/load psbuild from [{0}]' -f $psbuildInstallUri)
+        }
+    }
+}
+```
+
 ## Debug mode
 In many cases after a build it would be helpful to be able to answer questions like the following.
  
