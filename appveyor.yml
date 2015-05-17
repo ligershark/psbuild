@@ -14,7 +14,7 @@ build_script:
   - ps: .\appveyor.ps1
 
 artifacts:
-  - path: OutputRoot\**\*.psm1
+  - path: OutputRoot\**\*.ps*1
   - path: OutputRoot\PSBuild\**\*.dll
   - path: OutputRoot\PSBuild\**\*.pdb
   - path: OutputRoot\**\*.nupkg
