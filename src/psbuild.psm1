@@ -659,8 +659,8 @@ function Invoke-MSBuild{
                         if([string]::IsNullOrWhiteSpace($projstr)){
                             $projstr = '(project not specified)'
                         }
-                        $avmsg = ('Building projects {0}' -f $projstr)
-                        $avdetails = ('"{0}" {1}' -f $msbuildPath, ($msbuildArgs -join ' ' ))
+                        $avmsg = (('Building projects {0}' -f $projstr) | Get-FilteredString -textToRemove ($password -join $textToMask))
+                        $avdetails = (('"{0}" {1}' -f $msbuildPath, ($msbuildArgs -join ' ' ))|Get-FilteredString -textToRemove ($password -join $textToMask))
                         Add-AppveyorMessage -Message $avmsg -Category Information -Details $avdetails -ErrorAction SilentlyContinue | Out-NUll
                     }
 
@@ -669,9 +669,9 @@ function Invoke-MSBuild{
                     if(-not $ignoreExitCode -and ($LASTEXITCODE -ne 0)){
                         $msg = ('MSBuild exited with a non-zero exit code [{0}]' -f $LASTEXITCODE)
                         if( ($env:APPVEYOR -eq $true) -and (get-command Add-AppveyorMessage -ErrorAction SilentlyContinue) ){
-                            $msbcommand = ('"{0}" {1}' -f $msbuildPath, ($msbuildArgs -join ' ' ))
-                            $summary = ("The command exited with a non-zero exit code [{0}]" -f $LASTEXITCODE)
-                            $msg = ("{0}.`nCommand:[{1}]" -f $summary, $msbcommand)
+                            $msbcommand = (('"{0}" {1}' -f $msbuildPath, ($msbuildArgs -join ' ' ))|Get-FilteredString -textToRemove ($password -join $textToMask))
+                            $summary = (("The command exited with a non-zero exit code [{0}]" -f $LASTEXITCODE)|Get-FilteredString -textToRemove ($password -join $textToMask))
+                            $msg = (("{0}.`nCommand:[{1}]" -f $summary, $msbcommand)|Get-FilteredString -textToRemove ($password -join $textToMask))
                             Add-AppveyorMessage -Message $msg -Category Error -Details $msg -ErrorAction SilentlyContinue | Out-NUll
                         }
                         throw $msg
