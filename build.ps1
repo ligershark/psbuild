@@ -38,7 +38,7 @@ param(
 }
 
 $scriptDir = ((Get-ScriptDirectory) + "\")
-
+[string]$script:defaultMSBuildPath=$null
 <#
 .SYNOPSIS  
 	This will return the path to msbuild.exe. If the path has not yet been set
