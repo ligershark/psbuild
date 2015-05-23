@@ -9,7 +9,9 @@
 
 #>
 [cmdletbinding()]
-param()
+param(
+    $nugetPsMinModuleVersion = '0.2.1.1'
+)
 
 Set-StrictMode -Version Latest
 
@@ -2231,7 +2233,12 @@ function InternalEnsureNuGetPowershellLoaded{
         # see if nuget-powershell is available and load if not
         $nugetpsloaded = $false
         if((get-command Get-NuGetPackage -ErrorAction SilentlyContinue)){
-            $nugetpsloaded = $true
+            # check the module to ensure we have the correct version
+
+            $currentversion = (Get-Module -Name nuget-powershell).Version
+            if( ($currentversion -ne $null) -and ($currentversion.CompareTo([version]::Parse($nugetPsMinModuleVersion)) -ge 0 )){
+                $nugetpsloaded = $true
+            }
         }
 
         if(!$nugetpsloaded){
