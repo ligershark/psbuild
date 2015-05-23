@@ -2206,7 +2206,7 @@ function Import-Pester{
         $pesterVersion = '3.3.6'
     )
     process{
-        InternalEnsureNuGetPowershellLoaded
+        Import-NuGetPowershell
 
         $pesterDir = (Get-NuGetPackageExpectedPath -name 'pester' -version $pesterVersion -expandedPath)
         $pesterModulepath = (Join-Path $pesterDir ('tools\Pester.psm1' -f $pesterVersion))
@@ -2226,9 +2226,11 @@ function Import-Pester{
     }
 }
 
-function InternalEnsureNuGetPowershellLoaded{
+function Import-NuGetPowershell{
     [cmdletbinding()]
-    param()
+    param(
+        $nugetPsMinModVersion = $nugetPsMinModuleVersion
+    )
     process{
         # see if nuget-powershell is available and load if not
         $nugetpsloaded = $false
@@ -2236,7 +2238,7 @@ function InternalEnsureNuGetPowershellLoaded{
             # check the module to ensure we have the correct version
 
             $currentversion = (Get-Module -Name nuget-powershell).Version
-            if( ($currentversion -ne $null) -and ($currentversion.CompareTo([version]::Parse($nugetPsMinModuleVersion)) -ge 0 )){
+            if( ($currentversion -ne $null) -and ($currentversion.CompareTo([version]::Parse($nugetPsMinModVersion)) -ge 0 )){
                 $nugetpsloaded = $true
             }
         }

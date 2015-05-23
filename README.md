@@ -194,6 +194,7 @@ To report any issues please [create an new item](https://github.com/ligershark/p
 
 # Release Notes
 
+- Added ```Import-NuGetPowershell``` to load [```nuget-powershell```](https://github.com/ligershark/nuget-powershell)
 - Added a module manifest to support versioning https://github.com/ligershark/psbuild/issues/67
 - Added ```Open-PSBuildLogDirectory``` to open the log directory https://github.com/ligershark/psbuild/issues/66
 - Updated ```New-MSBuildProject``` to create files with the highest ```ToolsVersion``` on the box. Also added a ```-toolsVersion``` parameter.
