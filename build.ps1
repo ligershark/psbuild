@@ -112,7 +112,7 @@ $script:pkgDownloaderEnabled = $false
 function Enable-PackageDownloader{
     [cmdletbinding()]
     param(
-        $toolsDir = "$env:LOCALAPPDATA\LigerShark\tools\package-downloader-$publishModuleVersion\",
+        $toolsDir = "$env:LOCALAPPDATA\LigerShark\tools\package-downloader\v1\",
         $pkgDownloaderDownloadUrl = 'http://go.microsoft.com/fwlink/?LinkId=524325') # package-downloader.psm1
     process{
 
