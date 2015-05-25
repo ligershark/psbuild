@@ -193,7 +193,7 @@ Failure
 To report any issues please [create an new item](https://github.com/ligershark/psbuild/issues/new) on the [issues page](https://github.com/ligershark/psbuild/issues/).
 
 # Release Notes
-
+- Added ```Import-FileReplacer``` to load [```file-replacer```](https://github.com/ligershark/template-builder/blob/master/file-replacer.psm1). This is a PowerShell module that can be used to replace text in files.
 - Added ```Import-NuGetPowershell``` to load [```nuget-powershell```](https://github.com/ligershark/nuget-powershell)
 - Added a module manifest to support versioning https://github.com/ligershark/psbuild/issues/67
 - Added ```Open-PSBuildLogDirectory``` to open the log directory https://github.com/ligershark/psbuild/issues/66
