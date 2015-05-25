@@ -2226,6 +2226,16 @@ function Import-Pester{
     }
 }
 
+<#
+.SYNOPSIS
+    This will download and import nuget-powershell (https://github.com/ligershark/nuget-powershell),
+    which is a PowerShell utility that can be used to easily download nuget packages.
+
+    If nuget-powershell is already loaded then the download/import will be skipped.
+
+.PARAMETER nugetPsMinModVersion
+    The minimum version to import
+#>
 function Import-NuGetPowershell{
     [cmdletbinding()]
     param(
@@ -2254,6 +2264,38 @@ function Import-NuGetPowershell{
 
         if(-not $nugetpsloaded){
             throw ('Unable to load nuget-powershell, unknown error')
+        }
+    }
+}
+
+<#
+.SYNOPSIS
+    This will download and import the given version of file-replacer (https://github.com/ligershark/template-builder/blob/master/file-replacer.psm1),
+    which can be used to replace text in files under a given folder.
+
+    If file-replacer is already loaded then the download/import will be skipped.
+
+.PARAMETER fileReplacerVersion
+    The version to import.
+#>
+function Import-FileReplacer{
+    [cmdletbinding()]
+    param(
+        [string]$fileReplacerVersion = '0.4.0-beta'
+    )
+    process{
+        $fileReplacerLoaded = $false
+        # Replace-TextInFolder
+        if(get-command Replace-TextInFolder -ErrorAction SilentlyContinue){
+            $fileReplacerLoaded = $true
+        }
+
+        # download/import file-replacer
+        if(-not $fileReplacerLoaded){
+            'Importing file-replacer version [{0}]' -f $fileReplacerVersion | Write-Verbose
+            Import-NuGetPowershell | Out-Null
+            $pkgpath = (Get-NuGetPackage 'file-replacer' -version $fileReplacerVersion -binpath)
+            Import-Module (Join-Path $pkgpath 'file-replacer.psm1') -DisableNameChecking -Global | Out-Null
         }
     }
 }

@@ -288,3 +288,15 @@ semperet accumsan urna maximus nec. Fusce pulvinar justo a maximus ullamcorper.
     }
 
 }
+
+Describe 'file-replacer tests'{
+    It 'can load file-replacer'{
+        Remove-Module -Name file-replacer -Force | Out-Null
+        get-command -Module file-replacer | Should be $null
+
+        Import-FileReplacer
+
+        get-command -Module file-replacer | Should not be $null
+        (get-command -Module file-replacer).Name.Contains('Replace-TextInFolder') | Should be $true
+    }
+}
