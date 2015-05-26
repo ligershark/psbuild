@@ -50,6 +50,7 @@ $global:PSBuildSettings = New-Object PSObject -Property @{
     PropertyQuotingRegex = '[''.*''|".*"]'
     EnableAppVeyorSupport = $true
     AppVeyorLoggerPath = 'C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll'
+    EnableMaskLogFiles = $true
 }
 
 <#
@@ -667,12 +668,38 @@ function Invoke-MSBuild{
                     }
 
                     Invoke-CommandString -command $msbuildPath -commandArgs $msbuildArgs -maskSecrets (HasSecretsToMask -textToMask $textToMask -password $password )
+                    $msbuildExitCode = $LASTEXITCODE
 
-                    if(-not $ignoreExitCode -and ($LASTEXITCODE -ne 0)){
-                        $msg = ('MSBuild exited with a non-zero exit code [{0}]' -f $LASTEXITCODE)
+                    if( ($global:PSBuildSettings.EnableBuildLogging -and !($noLogFiles)) -and
+                        ($global:PSBuildSettings.EnableMaskLogFiles -eq $true) -and (HasSecretsToMask -textToMask $textToMask -password $password)){
+                        # replace secrets in log files
+                        Import-FileReplacer
+
+                        $replacements = @{}
+
+                        $allTextToMask = New-Object System.Collections.Generic.List[System.String]
+                        foreach($str in $textToMask){
+                            if(-not [string]::IsNullOrWhiteSpace($str) -and (-not ($replacements.ContainsKey($str)) )) {
+                                $replacements.Add($str,$global:FilterStringSettings.DefaultMask)
+                            }
+                        }
+                        if(-not [string]::IsNullOrWhiteSpace($password) -and (-not ($replacements.ContainsKey($password)) )) {
+                            $replacements.Add($password,$global:FilterStringSettings.DefaultMask)
+                        }
+                        foreach($str in $global:FilterStringSettings.GlobalReplacements){
+                            if(-not [string]::IsNullOrWhiteSpace($str) -and (-not ($replacements.ContainsKey($password))) ) {
+                                $replacements.Add($str,$global:FilterStringSettings.DefaultMask)
+                            }
+                        }
+
+                        Replace-TextInFolder -folder $logDir -replacements $replacements -include '*.log*'
+                    }
+
+                    if(-not $ignoreExitCode -and ($msbuildExitCode -ne 0)){
+                        $msg = ('MSBuild exited with a non-zero exit code [{0}]' -f $msbuildExitCode)
                         if( ($env:APPVEYOR -eq $true) -and (get-command Add-AppveyorMessage -ErrorAction SilentlyContinue) ){
                             $msbcommand = (Get-FilteredString -message ('"{0}" {1}' -f $msbuildPath, ($msbuildArgs -join ' ' )))
-                            $summary = (Get-FilteredString -message ("The command exited with a non-zero exit code [{0}]" -f $LASTEXITCODE))
+                            $summary = (Get-FilteredString -message ("The command exited with a non-zero exit code [{0}]" -f $msbuildExitCode))
                             $msg = (Get-FilteredString -message ("{0}.`nCommand:[{1}]" -f $summary, $msbcommand))
                             Add-AppveyorMessage -Message $msg -Category Error -Details $msg -ErrorAction SilentlyContinue | Out-NUll
                         }
