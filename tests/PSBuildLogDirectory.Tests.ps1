@@ -24,7 +24,9 @@ Describe 'tests for Get-PSBuildLogDirectory' {
     $global:PSBuildSettings.BuildMessageEnabled = $false
     Add-Type -AssemblyName Microsoft.Build
 
-    It 'tests for Get-PSBuildLogDirectory' {
+    It 'tests for Get-PSBuildLogDirectory (no hashing)' {
+        $global:PSBuildSettings.EnableAddingHashToLogDir = $false
+
         $projFilePath = ("$TestDrive\{0}" -f $script:tempPSBuildLogProj01Path)
 
         $projFileInfo = Get-Item $projFilePath
@@ -34,5 +36,19 @@ Describe 'tests for Get-PSBuildLogDirectory' {
         $expectedLogDirName = ('{0}\' -f $projFileInfo.Name)
         # logdir should end in the 'proj-file-name\'
         $logdir | Should Match ".*psbulidlog01.proj-log\\$"
+
+        $global:PSBuildSettings.EnableAddingHashToLogDir = $true
+    }
+
+    It 'tests for Get-PSBuildLogDirectory' {
+        $projFilePath = ("$TestDrive\{0}" -f $script:tempPSBuildLogProj01Path)
+
+        $projFileInfo = Get-Item $projFilePath
+
+        $logdir = Get-PSBuildLogDirectory -projectPath $projFilePath
+
+        $expectedLogDirName = ('{0}\' -f $projFileInfo.Name)
+        # logdir should end in the 'proj-file-name\'
+        $logdir | Should Match ".*psbulidlog01.proj-.*log\\$"
     }
 }

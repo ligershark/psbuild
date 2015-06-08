@@ -51,6 +51,7 @@ $global:PSBuildSettings = New-Object PSObject -Property @{
     EnableAppVeyorSupport = $true
     AppVeyorLoggerPath = 'C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll'
     EnableMaskLogFiles = $true
+    EnableAddingHashToLogDir = $true
 }
 
 <#
@@ -929,8 +930,15 @@ function Get-PSBuildLogDirectory{
                 $itemResult = (Get-Item $projectPath)
 
                 $projFileName = ((Get-Item $projectPath).Name)
-                
-                $logDir = (Join-Path -Path ($global:PSBuildSettings.LogDirectory) -ChildPath ('{0}-log\' -f $projFileName) )
+                $logDir = $null
+                if($global:PSBuildSettings.EnableAddingHashToLogDir -and (-not [string]::IsNullOrWhiteSpace($projectPath))) {
+                    $projfullpath = (Get-Item $projectPath).FullName
+                    $projfilepathhash = Get-StringHash -text $projfullpath
+                    $logDir = (Join-Path -Path ($global:PSBuildSettings.LogDirectory) -ChildPath ('{0}-{1}-log\' -f $projFileName,$projfilepathhash) )
+                }
+                else{
+                    $logDir = (Join-Path -Path ($global:PSBuildSettings.LogDirectory) -ChildPath ('{0}-log\' -f $projFileName) )
+                }
             }
 
             # before returning ensure the log directory is created on disk
@@ -944,6 +952,22 @@ function Get-PSBuildLogDirectory{
         else{
             return $null   
         }
+    }
+}
+
+#http://jongurgul.com/blog/get-stringhash-get-filehash/
+Function Get-StringHash{
+    [cmdletbinding()]
+    param(
+        [String] $text,
+        $HashName = "MD5"
+    )
+    process{
+        $sb = New-Object System.Text.StringBuilder
+        [System.Security.Cryptography.HashAlgorithm]::Create($HashName).ComputeHash([System.Text.Encoding]::UTF8.GetBytes($text))|%{
+                [Void]$sb.Append($_.ToString("x2"))
+            }
+        $sb.ToString()
     }
 }
 
