@@ -693,7 +693,7 @@ function Invoke-MSBuild{
                             }
                         }
 
-                        Replace-TextInFolder -folder $logDir -replacements $replacements -include '*.log*'
+                        Replace-TextInFolder -folder $logDir -replacements $replacements -include '*'
                     }
 
                     if(-not $ignoreExitCode -and ($msbuildExitCode -ne 0)){
