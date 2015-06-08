@@ -9,36 +9,48 @@ function GetPsModulesPath{
     [cmdletbinding()]
     param()
     process{
-        $ModulePaths = @($Env:PSModulePath -split ';')
+        $Destination = $null
+        if(Test-Path 'Env:PSModulePath'){
+            $ModulePaths = @($Env:PSModulePath -split ';')
     
-        $ExpectedUserModulePath = Join-Path -Path ([Environment]::GetFolderPath('MyDocuments')) -ChildPath WindowsPowerShell\Modules
-        $Destination = $ModulePaths | Where-Object { $_ -eq $ExpectedUserModulePath}
-        if (-not $Destination) {
-            $Destination = $ModulePaths | Select-Object -Index 0
+            $ExpectedUserModulePath = Join-Path -Path ([Environment]::GetFolderPath('MyDocuments')) -ChildPath WindowsPowerShell\Modules
+            $Destination = $ModulePaths | Where-Object { $_ -eq $ExpectedUserModulePath}
+            if (-not $Destination) {
+                $Destination = $ModulePaths | Select-Object -Index 0
+            }
         }
-
         $Destination
     }
 }
 
 # originally based off of the scrit at http://psget.net/GetPsGet.ps1
 function Install-PSBuild {
-    $modsFolder= GetPsModulesPath
-    $destFolder = (join-path $modsFolder 'psbuild\')
-    $destFile = (join-path $destFolder 'psbuild.psm1')
-    
-    if(!(test-path $destFolder)){
-        new-item -path $destFolder -ItemType Directory -Force | out-null
-    }
-
     # this will download using nuget if its not in localappdata
     [System.IO.FileInfo]$psbPsm1File = GetPsBuildPsm1
     if($psbPsm1File -eq $null){
         throw ('Unable to locate psbuild.psm1 file as expected')
     }
+    $modsFolder = $null
+    try{
+        $modsFolder= GetPsModulesPath
+    }
+    catch{
+        $_.Exception | Write-Warning
+    }
+    $moduleFile = $null
+    if(-not [string]::IsNullOrWhiteSpace($modsFolder)){
+        $destFolder = (join-path $modsFolder 'psbuild\')
+        $destFile = (join-path $destFolder 'psbuild.psm1')
 
-    # copy the folder to the modules folder
-    Copy-Item -Path "$($psbPsm1File.Directory.FullName)\*"  -Destination $destFolder -Recurse
+        if(!(test-path $destFolder)){
+            new-item -path $destFolder -ItemType Directory -Force | out-null
+        }
+        Copy-Item -Path "$($psbPsm1File.Directory.FullName)\*"  -Destination $destFolder -Recurse
+        $moduleFile = $destFile
+    }
+    else{
+        $moduleFile = Join-Path $psbPsm1File.Directory.FullName 'psbuild.psd1'
+    }
 
     if ((Get-ExecutionPolicy) -eq "Restricted"){
         Write-Warning @"
@@ -53,7 +65,7 @@ For more information execute:
 "@
     }
     else{
-        Import-Module -Name $modsFolder\psbuild\psbuild.psd1 -DisableNameChecking -Force
+        Import-Module -Name $moduleFile -DisableNameChecking -Force
     }
 
     Write-Output "psbuild is installed and ready to use"
