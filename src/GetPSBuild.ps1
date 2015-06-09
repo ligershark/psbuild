@@ -2,7 +2,8 @@
 param(
     $versionToInstall = '1.1.3-beta',
     $toolsDir = ("$env:LOCALAPPDATA\LigerShark\tools\"),
-    $nugetDownloadUrl = 'http://nuget.org/nuget.exe'
+    $nugetDownloadUrl = 'http://nuget.org/nuget.exe',
+    $nugetSource = 'https://www.nuget.org/api/v2/'
 )
 
 function GetPsModulesPath{
@@ -157,7 +158,7 @@ function GetPsBuildPsm1{
                 Set-Location ((Resolve-Path $toolsDir).ToString()) | Out-Null
                 'Downloading psbuild to the toolsDir' | Write-Verbose
                 # nuget install psbuild -Version 0.0.3-beta -Prerelease -OutputDirectory C:\temp\nuget\out\
-                $cmdArgs = @('install','psbuild','-Version',$versionToInstall,'-Prerelease')
+                $cmdArgs = @('install','psbuild','-Version',$versionToInstall,'-Prerelease','-source',$nugetSource)
 
                 $nugetPath = (Get-Nuget -toolsDir $toolsDir -nugetDownloadUrl $nugetDownloadUrl)
                 'Calling nuget to install psbuild with the following args. [{0} {1}]' -f $nugetPath, ($cmdArgs -join ' ') | Write-Verbose
