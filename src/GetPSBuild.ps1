@@ -1,7 +1,7 @@
 ﻿[cmdletbinding()]
 param(
     $versionToInstall = '1.1.3-beta',
-    $toolsDir = ("$env:LOCALAPPDATA\LigerShark\tools\"),
+    $toolsDir = ("$env:temp\LigerShark\psbuild\"),
     $nugetDownloadUrl = 'http://nuget.org/nuget.exe',
     $nugetSource = 'https://www.nuget.org/api/v2/'
 )
@@ -89,7 +89,7 @@ Or visit http://msbuildbook.com/psbuild
 function Get-Nuget{
     [cmdletbinding()]
     param(
-        $toolsDir = ("$env:LOCALAPPDATA\LigerShark\tools\"),
+        $toolsDir = $Script:toolsDir,
         $nugetDownloadUrl = 'http://nuget.org/nuget.exe'
     )
     process{
@@ -142,7 +142,7 @@ function Invoke-CommandString{
 function GetPsBuildPsm1{
     [cmdletbinding()]
     param(
-        $toolsDir = ("$env:LOCALAPPDATA\LigerShark\tools\"),
+        $toolsDir = $script:toolsDir,
         $nugetDownloadUrl = 'http://nuget.org/nuget.exe'
     )
     process{
