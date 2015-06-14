@@ -38,10 +38,10 @@ $global:PSBuildSettings = New-Object PSObject -Property @{
     BuildMessageStrongBackgroundColor = [ConsoleColor]::DarkGreen
 
     EnabledLoggers = @('detailed','diagnostic','markdown','appveyor')
-    LogDirectory = ('{0}\LigerShark\PSBuild\logs\' -f $env:LOCALAPPDATA)
+    LogDirectory = ('{0}\LigerShark\PSBuild\logs\' -f $env:temp)
     LastLogDirectory = $null
 
-    TempDirectory = ('{0}\LigerShark\PSBuild\temp\' -f $env:LOCALAPPDATA)
+    TempDirectory = ('{0}\LigerShark\PSBuild\temp\' -f $env:temp)
 
     DefaultClp = '/clp:v=m;Summary'
     ToolsDir = ''
@@ -62,7 +62,7 @@ $global:PSBuildSettings = New-Object PSObject -Property @{
 
      1. see if tools dir is defined in $env:PSBuildToolsDir
      2. see if psbuild.dll exists in the same folder
-     3. look for the latest version in localappdata
+     3. look for the latest version in %temp%
 #>
 function InternalGet-PSBuildToolsDir{
     [cmdletbinding()]
@@ -86,13 +86,13 @@ function InternalGet-PSBuildToolsDir{
                 'Assigned ToolsDir to the script folder [{0}]' -f ($private:toolsDir) | Write-Verbose
             }
         }
-        # 3 look for the latest version in localappdata
+        # 3 look for the latest version in %temp%
         if([string]::IsNullOrWhiteSpace($private:toolsDir)){
-            $lsToolsPath = ('{0}\LigerShark\tools\' -f $env:LOCALAPPDATA)
+            $lsToolsPath = ('{0}\LigerShark\tools\' -f $env:temp)
             $psbuildDllUnderAppData = (Get-ChildItem -Path "$lsToolsPath" -Include 'psbuild.dll' -Recurse -ErrorAction SilentlyContinue | Sort-Object -Descending -ErrorAction SilentlyContinue | Select-Object -First 1 -ErrorAction SilentlyContinue)
             if($psbuildDllUnderAppData -and (test-path $psbuildDllUnderAppData)){
                 $private:toolsDir = ((get-item ($psbuildDllUnderAppData)).Directory.FullName)
-                'Assigned ToolsDir to localappdata [{0}]' -f ($private:toolsDir) | Write-Verbose
+                'Assigned ToolsDir to temp [{0}]' -f ($private:toolsDir) | Write-Verbose
             }
         }
         # warning
@@ -1006,7 +1006,7 @@ function Set-PSBuildLogDirectory{
         }
         else{
             # reset the log directory
-            $global:PSBuildSettings.LogDirectory = ('{0}\LigerShark\PSBuild\logs\' -f $env:LOCALAPPDATA)
+            $global:PSBuildSettings.LogDirectory = ('{0}\LigerShark\PSBuild\logs\' -f $env:temp)
         }
     }
 }

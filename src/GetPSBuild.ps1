@@ -26,7 +26,7 @@ function GetPsModulesPath{
 
 # originally based off of the scrit at http://psget.net/GetPsGet.ps1
 function Install-PSBuild {
-    # this will download using nuget if its not in localappdata
+    # this will download using nuget if its not in %temp%
     [System.IO.FileInfo]$psbPsm1File = GetPsBuildPsm1
     if($psbPsm1File -eq $null){
         throw ('Unable to locate psbuild.psm1 file as expected')
@@ -138,7 +138,7 @@ function Invoke-CommandString{
     }
 }
 
-# see if the particular version is installed under localappdata
+# see if the particular version is installed under %temp%
 function GetPsBuildPsm1{
     [cmdletbinding()]
     param(
