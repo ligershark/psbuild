@@ -1,6 +1,6 @@
 ﻿[cmdletbinding()]
 param(
-    $versionToInstall = '1.1.3-beta',
+    $versionToInstall = '1.1.4-beta',
     $toolsDir = ("$env:temp\LigerShark\psbuild\"),
     $nugetDownloadUrl = 'http://nuget.org/nuget.exe',
     $nugetSource = 'https://www.nuget.org/api/v2/'
