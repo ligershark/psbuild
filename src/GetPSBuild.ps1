@@ -1,7 +1,7 @@
 ﻿[cmdletbinding()]
 param(
     $versionToInstall = '1.1.4-beta',
-    $toolsDir = ("$env:temp\LigerShark\psbuild\"),
+    $appDataDir = ("$env:LOCALAPPDATA\LigerShark\psbuild\"),
     $nugetDownloadUrl = 'http://nuget.org/nuget.exe',
     $nugetSource = 'https://www.nuget.org/api/v2/'
 )
@@ -89,7 +89,7 @@ Or visit http://msbuildbook.com/psbuild
 function Get-Nuget{
     [cmdletbinding()]
     param(
-        $toolsDir = $Script:toolsDir,
+        $toolsDir = $appDataDir,
         $nugetDownloadUrl = 'http://nuget.org/nuget.exe'
     )
     process{
@@ -142,7 +142,7 @@ function Invoke-CommandString{
 function GetPsBuildPsm1{
     [cmdletbinding()]
     param(
-        $toolsDir = $script:toolsDir,
+        $toolsDir = $appDataDir,
         $nugetDownloadUrl = 'http://nuget.org/nuget.exe'
     )
     process{
@@ -180,5 +180,22 @@ function GetPsBuildPsm1{
         $psbuildPsm1
     }
 }
+
+function Repair-ToolsDir{
+    [CmdletBinding()]
+    param($toolsDir = $appDataDir)
+    process{
+        $systemDir = [Environment]::GetFolderPath('System')
+        if ($toolsDir.StartsWith($systemDir) -and ($PSVersionTable.CLRVersion.Major -ge 4))
+        {
+            $sysWowDir = [Environment]::GetFolderPath('SystemX86')
+            $toolsDir = $toolsDir.Replace($systemDir, $sysWowDir)
+        }
+
+        $toolsDir
+    }
+}
+
+$appDataDir = Repair-ToolsDir $appDataDir
 
 Install-PSBuild
