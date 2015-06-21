@@ -181,19 +181,19 @@ function GetPsBuildPsm1{
     }
 }
 
-function Repair-ToolsDir
-{
+function Repair-ToolsDir{
     [CmdletBinding()]
     param($toolsDir = $appDataDir)
+    process{
+        $systemDir = [Environment]::GetFolderPath('System')
+        if ($toolsDir.StartsWith($systemDir) -and ($PSVersionTable.CLRVersion.Major -ge 4))
+        {
+            $sysWowDir = [Environment]::GetFolderPath('SystemX86')
+            $toolsDir = $toolsDir.Replace($systemDir, $sysWowDir)
+        }
 
-    $systemDir = [Environment]::GetFolderPath('System')
-    if ($toolsDir.StartsWith($systemDir) -and ($PSVersionTable.CLRVersion.Major -ge 4))
-    {
-        $sysWowDir = [Environment]::GetFolderPath('SystemX86')
-        $toolsDir = $toolsDir.Replace($systemDir, $sysWowDir)
+        $toolsDir
     }
-
-    $toolsDir
 }
 
 $appDataDir = Repair-ToolsDir $appDataDir
