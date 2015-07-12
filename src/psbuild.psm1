@@ -132,22 +132,25 @@ function Invoke-CommandString{
             $destPath = "$([System.IO.Path]::GetTempFileName()).cmd"
             if(Test-Path $destPath){Remove-Item $destPath|Out-Null}
             
-            '"{0}" {1}' -f $cmdToExec, ($commandArgs -join ' ') | Set-Content -Path $destPath | Out-Null
+            try{
+                '"{0}" {1}' -f $cmdToExec, ($commandArgs -join ' ') | Set-Content -Path $destPath | Out-Null
 
-            $actualCmd = ('"{0}"' -f $destPath)
-            if($maskSecrets){
-                cmd.exe /D /C $actualCmd | Write-Output
-            }
-            else{
-                cmd.exe /D /C $actualCmd
-            }
+                $actualCmd = ('"{0}"' -f $destPath)
+                if($maskSecrets){
+                    cmd.exe /D /C $actualCmd | Write-Output
+                }
+                else{
+                    cmd.exe /D /C $actualCmd
+                }
 
-            if(-not $ignoreErrors -and ($LASTEXITCODE -ne 0)){
-                $msg = ('The command [{0}] exited with code [{1}]' -f $cmdToExec, $LASTEXITCODE)
-                throw $msg
+                if(-not $ignoreErrors -and ($LASTEXITCODE -ne 0)){
+                    $msg = ('The command [{0}] exited with code [{1}]' -f $cmdToExec, $LASTEXITCODE)
+                    throw $msg
+                }
             }
-
-            if(Test-Path $destPath){Remove-Item $destPath -ErrorAction SilentlyContinue |Out-Null}
+            finally{
+                if(Test-Path $destPath){Remove-Item $destPath -ErrorAction SilentlyContinue |Out-Null}
+            }
         }
     }
 }
