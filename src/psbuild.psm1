@@ -671,8 +671,8 @@ function Invoke-MSBuild{
                         Add-AppveyorMessage -Message $avmsg -Category Information -Details $avdetails -ErrorAction SilentlyContinue | Out-NUll
                     }
 
-                    Invoke-CommandString -command $msbuildPath -commandArgs $msbuildArgs -maskSecrets (HasSecretsToMask -textToMask $textToMask -password $password )
-                    $msbuildExitCode = $LASTEXITCODE
+                    $invokeargs = @{'command'=$msbuildPath;'commandArgs'=$msbuildArgs;'maskSecrets'=(HasSecretsToMask -textToMask $textToMask -password $password );'ignoreErrors'=$ignoreExitCode}
+                    Invoke-CommandString @invokeargs
 
                     if( ($global:PSBuildSettings.EnableBuildLogging -and !($noLogFiles)) -and
                         ($global:PSBuildSettings.EnableMaskLogFiles -eq $true) -and (HasSecretsToMask -textToMask $textToMask -password $password)){
@@ -697,17 +697,6 @@ function Invoke-MSBuild{
                         }
 
                         Replace-TextInFolder -folder $logDir -replacements $replacements -include '*'
-                    }
-
-                    if(-not $ignoreExitCode -and ($msbuildExitCode -ne 0)){
-                        $msg = ('MSBuild exited with a non-zero exit code [{0}]' -f $msbuildExitCode)
-                        if( ($env:APPVEYOR -eq $true) -and (get-command Add-AppveyorMessage -ErrorAction SilentlyContinue) ){
-                            $msbcommand = (Get-FilteredString -message ('"{0}" {1}' -f $msbuildPath, ($msbuildArgs -join ' ' )))
-                            $summary = (Get-FilteredString -message ("The command exited with a non-zero exit code [{0}]" -f $msbuildExitCode))
-                            $msg = (Get-FilteredString -message ("{0}.`nCommand:[{1}]" -f $summary, $msbcommand))
-                            Add-AppveyorMessage -Message $msg -Category Error -Details $msg -ErrorAction SilentlyContinue | Out-NUll
-                        }
-                        throw $msg
                     }
                 }
                 else{

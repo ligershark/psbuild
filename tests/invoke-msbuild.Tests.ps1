@@ -88,6 +88,12 @@ Describe 'invoke-msbuild test cases' {
         {Invoke-MSBuild $sourceProj} | Should throw
     }
 
+    It 'can use ignoreexitcode to prevent exception'{
+        $sourceProj = ("$TestDrive\{0}" -f $script:tempFailingProj)
+
+        {Invoke-MSBuild $sourceProj -ignoreExitCode} | Should not throw
+    }
+
     It 'can build without passing in a project file'{
         $sourceProj = ("$TestDrive\{0}" -f $script:tempProj)
         $tempFolder = (New-Item -Type Directory -Path ('{0}\tempbuildnoprojfile' -f $TestDrive)).FullName
