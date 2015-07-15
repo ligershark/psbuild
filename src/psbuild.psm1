@@ -54,6 +54,42 @@ $global:PSBuildSettings = New-Object PSObject -Property @{
     EnableAddingHashToLogDir = $true
 }
 
+function InternalOverrideSettingsFromEnv{
+    [cmdletbinding()]
+    param(
+        [Parameter(Position=0)]
+        [object[]]$settings = ($global:PSBuildSettings),
+
+        [Parameter(Position=1)]
+        [string]$prefix = 'PSBuild'
+    )
+    process{
+        foreach($settingsObj in $settings){
+            if($settingsObj -eq $null){
+                continue
+            }
+
+            $settingNames = $null
+            if($settingsObj -is [hashtable]){
+                $settingNames = $settingsObj.Keys
+            }
+            else{
+                $settingNames = ($settingsObj | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name)
+
+            }
+
+            foreach($name in ($settingNames.Clone())){
+                $fullname = ('{0}{1}' -f $prefix,$name)
+                if(Test-Path "env:$fullname"){
+                    'Updating setting [{0}] to [{1}]' -f ($settingsObj.$name),((get-childitem "env:$fullname").Value) | Write-Verbose
+                    $settingsObj.$name = ((get-childitem "env:$fullname").Value)
+                }
+            }
+        }
+    }
+}
+InternalOverrideSettingsFromEnv -settings $global:PSBuildSettings -prefix PSBuild
+
 <#
 .SYNOPSIS  
 	This returns the path to the tools folder. The tools folder is where you can find

@@ -300,3 +300,25 @@ Describe 'file-replacer tests'{
         (get-command -Module file-replacer).Name.Contains('Replace-TextInFolder') | Should be $true
     }
 }
+
+Describe 'settings tests'{
+    It 'can override a setting with an env var'{
+        $env:PSBuildEnableBuildLogging = $false
+        $env:PSBuildBuildMessageEnabled = $false
+        $env:PSBuildDefaultClp = 'custom value'
+
+        Remove-Module -Name psbuild -Force | Out-Null
+        Remove-Item -Path variable:PSBuildSettings | Out-Null
+        # import the module
+        . $importPsbuild
+
+        try{
+            [Convert]::ToBoolean($global:PSBuildSettings.EnableBuildLogging) | Should be $false
+            [Convert]::ToBoolean($global:PSBuildSettings.BuildMessageEnabled) | Should be $false
+            $global:PSBuildSettings.DefaultClp | Should be 'custom value'
+        }
+        finally{
+            Remove-Item -Path env:PSBuildEnableBuildLogging,env:PSBuildBuildMessageEnabled,env:PSBuildDefaultClp
+        }
+    }
+}
