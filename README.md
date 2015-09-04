@@ -194,6 +194,7 @@ To report any issues please [create an new item](https://github.com/ligershark/p
 
 # Release Notes
 
+- Update to allow overriding settings with env variables https://github.com/ligershark/psbuild/commit/b00cc3c63a81c20f9101cbd111d1b1e1bffe874a
 - Update to ensure log directory is unique for every project built https://github.com/ligershark/psbuild/issues/71.
 - Update to filter secrets from log files. https://github.com/ligershark/psbuild/issues/59.
 - Added ```Import-FileReplacer``` to load [```file-replacer```](https://github.com/ligershark/template-builder/blob/master/file-replacer.psm1). This is a PowerShell module that can be used to replace text in files.
