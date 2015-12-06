@@ -194,6 +194,7 @@ To report any issues please [create an new item](https://github.com/ligershark/p
 
 # Release Notes
 
+- Fixed [an issue](https://github.com/ligershark/psbuild/issues/76) where commands were being quoted unnecessarily
 - Update to allow overriding settings with env variables https://github.com/ligershark/psbuild/commit/b00cc3c63a81c20f9101cbd111d1b1e1bffe874a
 - Update to ensure log directory is unique for every project built https://github.com/ligershark/psbuild/issues/71.
 - Update to filter secrets from log files. https://github.com/ligershark/psbuild/issues/59.
