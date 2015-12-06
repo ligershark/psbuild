@@ -158,7 +158,9 @@ function Invoke-CommandString{
 
         $ignoreErrors,
 
-        [bool]$maskSecrets
+        [bool]$maskSecrets,
+
+        [switch]$disableCommandQuoting
     )
     process{
         foreach($cmdToExec in $command){
@@ -169,7 +171,12 @@ function Invoke-CommandString{
             if(Test-Path $destPath){Remove-Item $destPath|Out-Null}
             
             try{
-                '"{0}" {1}' -f $cmdToExec, ($commandArgs -join ' ') | Set-Content -Path $destPath | Out-Null
+                $commandstr = $cmdToExec
+                if(-not $disableCommandQuoting -and $commandstr.Contains(' ') -and (-not ($commandstr -match '''.*''|".*"' ))){
+                    $commandstr = ('"{0}"' -f $commandstr)
+                }
+
+                '{0} {1}' -f $commandstr, ($commandArgs -join ' ') | Set-Content -Path $destPath | Out-Null
 
                 $actualCmd = ('"{0}"' -f $destPath)
                 if($maskSecrets){
@@ -180,7 +187,7 @@ function Invoke-CommandString{
                 }
 
                 if(-not $ignoreErrors -and ($LASTEXITCODE -ne 0)){
-                    $msg = ('The command [{0}] exited with code [{1}]' -f $cmdToExec, $LASTEXITCODE)
+                    $msg = ('The command [{0}] exited with code [{1}]' -f $commandstr, $LASTEXITCODE)
                     throw $msg
                 }
             }
