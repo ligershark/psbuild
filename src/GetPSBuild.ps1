@@ -15,7 +15,7 @@ function GetPsModulesPath{
             $ModulePaths = @($Env:PSModulePath -split ';')
     
             $ExpectedUserModulePath = Join-Path -Path ([Environment]::GetFolderPath('MyDocuments')) -ChildPath WindowsPowerShell\Modules
-            $Destination = $ModulePaths | Where-Object { $_ -eq $ExpectedUserModulePath}
+            $Destination = $ModulePaths | Where-Object { $_ -eq $ExpectedUserModulePath} | Select-Object -First 1
             if (-not $Destination) {
                 $Destination = $ModulePaths | Select-Object -Index 0
             }
@@ -31,16 +31,16 @@ function Install-PSBuild {
     if($psbPsm1File -eq $null){
         throw ('Unable to locate psbuild.psm1 file as expected')
     }
-    $modsFolder = $null
+    [System.IO.FileInfo]$modsFolder = $null
     try{
         $modsFolder= GetPsModulesPath
     }
     catch{
-        $_.Exception | Write-Warning
+        'Error installing psbuld to modules folder: {0}' | Write-Error
     }
     $moduleFile = $null
     if(-not [string]::IsNullOrWhiteSpace($modsFolder)){
-        $destFolder = (join-path $modsFolder 'psbuild\')
+        $destFolder = (join-path $modsFolder.FullName 'psbuild\')
         $destFile = (join-path $destFolder 'psbuild.psm1')
 
         if(!(test-path $destFolder)){
