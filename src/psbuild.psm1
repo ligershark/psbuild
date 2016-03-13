@@ -2289,26 +2289,20 @@ function Write-BuildMessage{
 function Import-Pester{
     [cmdletbinding()]
     param(
-        $pesterVersion = '3.3.6'
+        $pesterVersion = '3.3.14'
     )
     process{
         Import-NuGetPowershell
 
-        $pesterDir = (Get-NuGetPackageExpectedPath -name 'pester' -version $pesterVersion -expandedPath)
-        $pesterModulepath = (Join-Path $pesterDir ('tools\Pester.psm1' -f $pesterVersion))
+        Remove-Module pester -ErrorAction SilentlyContinue
 
-        if(!(Test-Path $pesterModulepath)){
-            $pesterDir = Get-NuGetPackage -name pester -version $pesterVersion
-        }
-        else{
-            'Skipping pester download because it was found at [{0}]' -f $pesterModulepath | Write-Verbose
+        [System.IO.DirectoryInfo]$pesterDir = (Get-NuGetPackage -name 'pester' -version $pesterVersion -binpath)
+        [System.IO.FileInfo]$pesterModPath = (Join-Path $pesterDir.FullName 'pester.psd1')
+        if(-not (Test-Path $pesterModPath.FullName)){
+            throw ('Pester not found at [{0}]' -f $pesterModPath.FullName)
         }
 
-        if(!(Test-Path $pesterModulepath)){
-            throw ('Pester not found at [{0}]' -f $pesterModulepath)
-        }
-
-        Import-Module $pesterModulepath -Global -Force
+        Import-Module $pesterModPath.FullName -Global
     }
 }
 
