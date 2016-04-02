@@ -21,10 +21,6 @@ function InternalGet-ScriptDirectory{
 
 $scriptDir = ((InternalGet-ScriptDirectory) + "\")
 
-# when true any secretes will be masked when cmdlets like Write-Output are called
-if(-not (test-path env:PSBUlidEnableMaskingSecretsInPSCmdlets)){
-    $env:PSBUlidEnableMaskingSecretsInPSCmdlets=$true
-}
 # User settings can override these
 $global:PSBuildSettings = New-Object PSObject -Property @{
     EnableBuildLogging = $true
@@ -180,7 +176,7 @@ function Invoke-CommandString{
 
                 $actualCmd = ('"{0}"' -f $destPath)
                 if($maskSecrets){
-                    cmd.exe /D /C $actualCmd | Write-Output
+                    cmd.exe /D /C $actualCmd | Get-FilteredString
                 }
                 else{
                     cmd.exe /D /C $actualCmd
@@ -592,194 +588,201 @@ function Invoke-MSBuild{
             $projectsToBuild = @($null)
         }
         foreach($project in $projectsToBuild){
-            $msbuildArgs = @()
+            try{
+                $msbuildArgs = @()
 
-            [string]$projArg = [string]$project
-            if(![string]::IsNullOrWhiteSpace($projArg)){
-                $projArg = ('"{0}"' -f $projArg)
-            }
+                [string]$projArg = [string]$project
+                if(![string]::IsNullOrWhiteSpace($projArg)){
+                    $projArg = ('"{0}"' -f $projArg)
+                }
 
-            $msbuildArgs += ([string]$projArg)
+                $msbuildArgs += ([string]$projArg)
 
-            if(-not $properties){
-                $properties = @{}
-            }
+                if(-not $properties){
+                    $properties = @{}
+                }
 
-            if($toolsversion){
-                $msbuildArgs += ('/toolsversion:{0}' -f $toolsversion)
-            }
+                if($toolsversion){
+                    $msbuildArgs += ('/toolsversion:{0}' -f $toolsversion)
+                }
 
-            if($visualStudioVersion){
-                $properties['VisualStudioVersion']=$visualStudioVersion
-            }
-            if($configuration){
-                $properties['Configuration']=$configuration
-            }
-            if($platform){
-                $properties['Platform']=$platform
-            }
-            if($outputPath){
-                $properties['OutputPath']=$outputPath
-            }
-            if($deployOnBuild){
-                $properties['DeployOnBuild']=$deployOnBuild.ToString()
-            }
-            if($publishProfile){
-                $properties['PublishProfile']=$publishProfile
-            }
-            if($password){
-                $properties['Password']=$password
-            }
+                if($visualStudioVersion){
+                    $properties['VisualStudioVersion']=$visualStudioVersion
+                }
+                if($configuration){
+                    $properties['Configuration']=$configuration
+                }
+                if($platform){
+                    $properties['Platform']=$platform
+                }
+                if($outputPath){
+                    $properties['OutputPath']=$outputPath
+                }
+                if($deployOnBuild){
+                    $properties['DeployOnBuild']=$deployOnBuild.ToString()
+                }
+                if($publishProfile){
+                    $properties['PublishProfile']=$publishProfile
+                }
+                if($password){
+                    $properties['Password']=$password
+                }
 
-            if($properties){
-                foreach($key in $properties.Keys){
-                    $value=$properties[$key]
-                    if(!($value)){
-                        continue;
-                    }
-                    else{
-                        $valueStr = $value
-                        if(($valueStr -match '\s') -and
-                            $global:PSBuildSettings.EnablePropertyQuoting -and 
-                            !($disablePropertyQuoting)){
-                            # if it's already quoted don't add quotes
-                            if(!($value -match $global:PSBuildSettings.PropertyQuotingRegex)){
-                                $valueStr = ('"{0}"' -f $value.Replace('"','""'))
-                            }
+                if($properties){
+                    foreach($key in $properties.Keys){
+                        $value=$properties[$key]
+                        if(!($value)){
+                            continue;
                         }
+                        else{
+                            $valueStr = $value
+                            if(($valueStr -match '\s') -and
+                                $global:PSBuildSettings.EnablePropertyQuoting -and 
+                                !($disablePropertyQuoting)){
+                                # if it's already quoted don't add quotes
+                                if(!($value -match $global:PSBuildSettings.PropertyQuotingRegex)){
+                                    $valueStr = ('"{0}"' -f $value.Replace('"','""'))
+                                }
+                            }
                         
-                        $msbuildArgs += ('/p:{0}={1}' -f $key, $valueStr)
+                            $msbuildArgs += ('/p:{0}={1}' -f $key, $valueStr)
+                        }
                     }
                 }
-            }
-            if($targets){
-                foreach($target in $targets){
-                    $msbuildArgs += ('/t:{0}' -f $target)
-                }
-            }
 
-            if($nologo){
-                $msbuildArgs += '/nologo'
-            }
-
-            if($preprocess){
-                $msbuildArgs += '/preprocess'
-            }
-
-            if($detailedSummary){
-                $msbuildArgs += '/detailedsummary'
-            }
-
-            if($maxcpucount){
-                $msbuildArgs += ('/m:{0}' -f $maxcpucount)
-            }
-            else{
-                $msbuildArgs += ('/m')
-            }
-
-            if($consoleLoggerParams){
-                $msbuildArgs += $consoleLoggerParams
-            }
-
-            if($extraArgs){
-                foreach($exArg in $extraArgs){
-                    $msbuildArgs += $exArg
-                }
-            }
-
-            if($global:PSBuildSettings.EnableBuildLogging -and !($noLogFiles)){
-                $logDir = $global:PSBuildSettings.LastLogDirectory = (Get-PSBuildLogDirectory -projectPath $project)
-
-                Get-ChildItem $logDir *.log* | Remove-Item -ErrorAction SilentlyContinue | Out-Null
-
-                $loggers = (InternalGet-PSBuildLoggers -projectPath $project -enabledLoggers $enabledLoggers)
-                foreach($logger in $loggers){
-                    $msbuildArgs += $logger
-                }
-            }
-
-            if($pscmdlet.ShouldProcess("`n`tmsbuild.exe {0}" -f ($msbuildArgs -join ' '))){
-                if(-not $debugMode){
-                    if(!$script:defaultMSBuildPath){
-                        'Using msbuild.exe from "{0}". You can use Set-MSBuild to update this.' -f $msbuildPath | Write-BuildMessage
+                if($targets){
+                    foreach($target in $targets){
+                        $msbuildArgs += ('/t:{0}' -f $target)
                     }
+                }
 
-                    if( ($env:APPVEYOR -eq $true) -and (get-command Add-AppveyorMessage -ErrorAction SilentlyContinue) ){
-                        [string]$projstr = $projArg
-                        if([string]::IsNullOrWhiteSpace($projstr)){
-                            $projstr = '(project not specified)'
-                        }
-                        $avmsg = (Get-FilteredString -message ('Building projects {0}' -f $projstr))
-                        $avdetails = (Get-FilteredString -message ('"{0}" {1}' -f $msbuildPath, ($msbuildArgs -join ' ' )))
-                        Add-AppveyorMessage -Message $avmsg -Category Information -Details $avdetails -ErrorAction SilentlyContinue | Out-NUll
-                    }
+                if($nologo){
+                    $msbuildArgs += '/nologo'
+                }
 
-                    $invokeargs = @{'command'=$msbuildPath;'commandArgs'=$msbuildArgs;'maskSecrets'=(HasSecretsToMask -textToMask $textToMask -password $password );'ignoreErrors'=$ignoreExitCode}
-                    Invoke-CommandString @invokeargs
+                if($preprocess){
+                    $msbuildArgs += '/preprocess'
+                }
 
-                    if( ($global:PSBuildSettings.EnableBuildLogging -and !($noLogFiles)) -and
-                        ($global:PSBuildSettings.EnableMaskLogFiles -eq $true) -and (HasSecretsToMask -textToMask $textToMask -password $password)){
-                        # replace secrets in log files
-                        Import-FileReplacer
+                if($detailedSummary){
+                    $msbuildArgs += '/detailedsummary'
+                }
 
-                        $replacements = @{}
-
-                        $allTextToMask = New-Object System.Collections.Generic.List[System.String]
-                        foreach($str in $textToMask){
-                            if(-not [string]::IsNullOrWhiteSpace($str) -and (-not ($replacements.ContainsKey($str)) )) {
-                                $replacements.Add($str,$global:FilterStringSettings.DefaultMask)
-                            }
-                        }
-                        if(-not [string]::IsNullOrWhiteSpace($password) -and (-not ($replacements.ContainsKey($password)) )) {
-                            $replacements.Add($password,$global:FilterStringSettings.DefaultMask)
-                        }
-                        foreach($str in $global:FilterStringSettings.GlobalReplacements){
-                            if(-not [string]::IsNullOrWhiteSpace($str) -and (-not ($replacements.ContainsKey($password))) ) {
-                                $replacements.Add($str,$global:FilterStringSettings.DefaultMask)
-                            }
-                        }
-
-                        Replace-TextInFolder -folder $logDir -replacements $replacements -include '*'
-                    }
+                if($maxcpucount){
+                    $msbuildArgs += ('/m:{0}' -f $maxcpucount)
                 }
                 else{
-                    # in debug mode we call msbuild using the APIs
-                    Add-Type -AssemblyName Microsoft.Build
-                    $globalProps = (PSBuild-ConverToDictionary -valueToConvert $properties)
-                    $pc = (New-Object -TypeName Microsoft.Build.Evaluation.ProjectCollection -ArgumentList $globalProps)
+                    $msbuildArgs += ('/m')
+                }
 
-                    # todo: add loggers
-                    # $conLogger = New-Object -TypeName Microsoft.Build.Logging.ConsoleLogger
-                    # $conLogger.Verbosity = [Microsoft.Build.Framework.LoggerVerbosity]::Detailed
-                    # 'Registering logger' | Write-Host
-                    # $pc.RegisterLogger($conLogger)
+                if($consoleLoggerParams){
+                    $msbuildArgs += $consoleLoggerParams
+                }
 
-                    $projectObj = $pc.LoadProject((Resolve-Path $project))
+                if($extraArgs){
+                    foreach($exArg in $extraArgs){
+                        $msbuildArgs += $exArg
+                    }
+                }
 
-                    $projectInstance = $projectObj.CreateProjectInstance()
+                if($global:PSBuildSettings.EnableBuildLogging -and !($noLogFiles)){
+                    $logDir = $global:PSBuildSettings.LastLogDirectory = (Get-PSBuildLogDirectory -projectPath $project)
 
-                    # PS will convert null strings to '' which causes some APIs to fail.
-                    # This is the best way I've found to work around this.
-                    if($PSBoundParameters.ContainsKey('targets')){
-                        $brd = New-Object -TypeName Microsoft.Build.Execution.BuildRequestData -ArgumentList @($projectInstance, ([string[]](@()+$targets)), [Microsoft.Build.Execution.HostServices]$null, [Microsoft.Build.Execution.BuildRequestDataFlags]::ProvideProjectStateAfterBuild)
+                    Get-ChildItem $logDir *.log* | Remove-Item -ErrorAction SilentlyContinue | Out-Null
+
+                    $loggers = (InternalGet-PSBuildLoggers -projectPath $project -enabledLoggers $enabledLoggers)
+                    foreach($logger in $loggers){
+                        $msbuildArgs += $logger
+                    }
+                }
+
+                if($pscmdlet.ShouldProcess("`n`tmsbuild.exe {0}" -f ($msbuildArgs -join ' '))){
+                    if(-not $debugMode){
+                        if(!$script:defaultMSBuildPath){
+                            'Using msbuild.exe from "{0}". You can use Set-MSBuild to update this.' -f $msbuildPath | Write-BuildMessage
+                        }
+
+                        if( ($env:APPVEYOR -eq $true) -and (get-command Add-AppveyorMessage -ErrorAction SilentlyContinue) ){
+                            [string]$projstr = $projArg
+                            if([string]::IsNullOrWhiteSpace($projstr)){
+                                $projstr = '(project not specified)'
+                            }
+                            $avmsg = (Get-FilteredString -message ('Building projects {0}' -f $projstr))
+                            $avdetails = (Get-FilteredString -message ('"{0}" {1}' -f $msbuildPath, ($msbuildArgs -join ' ' )))
+                            Add-AppveyorMessage -Message $avmsg -Category Information -Details $avdetails -ErrorAction SilentlyContinue | Out-NUll
+                        }
+
+                        $invokeargs = @{'command'=$msbuildPath;'commandArgs'=$msbuildArgs;'maskSecrets'=(HasSecretsToMask -textToMask $textToMask -password $password );'ignoreErrors'=$ignoreExitCode}
+                        Invoke-CommandString @invokeargs | Get-FilteredString
                     }
                     else{
-                        $brd = New-Object -TypeName Microsoft.Build.Execution.BuildRequestData -ArgumentList @($projectInstance, ([string[]]@()), [Microsoft.Build.Execution.HostServices]$null, [Microsoft.Build.Execution.BuildRequestDataFlags]::ProvideProjectStateAfterBuild)
+                        # in debug mode we call msbuild using the APIs
+                        Add-Type -AssemblyName Microsoft.Build
+                        $globalProps = (PSBuild-ConverToDictionary -valueToConvert $properties)
+                        $pc = (New-Object -TypeName Microsoft.Build.Evaluation.ProjectCollection -ArgumentList $globalProps)
+
+                        # todo: add loggers
+                        # $conLogger = New-Object -TypeName Microsoft.Build.Logging.ConsoleLogger
+                        # $conLogger.Verbosity = [Microsoft.Build.Framework.LoggerVerbosity]::Detailed
+                        # 'Registering logger' | Write-Host
+                        # $pc.RegisterLogger($conLogger)
+
+                        $projectObj = $pc.LoadProject((Resolve-Path $project))
+
+                        $projectInstance = $projectObj.CreateProjectInstance()
+
+                        # PS will convert null strings to '' which causes some APIs to fail.
+                        # This is the best way I've found to work around this.
+                        if($PSBoundParameters.ContainsKey('targets')){
+                            $brd = New-Object -TypeName Microsoft.Build.Execution.BuildRequestData -ArgumentList @($projectInstance, ([string[]](@()+$targets)), [Microsoft.Build.Execution.HostServices]$null, [Microsoft.Build.Execution.BuildRequestDataFlags]::ProvideProjectStateAfterBuild)
+                        }
+                        else{
+                            $brd = New-Object -TypeName Microsoft.Build.Execution.BuildRequestData -ArgumentList @($projectInstance, ([string[]]@()), [Microsoft.Build.Execution.HostServices]$null, [Microsoft.Build.Execution.BuildRequestDataFlags]::ProvideProjectStateAfterBuild)
+                        }
+
+                        $buildResult = [Microsoft.Build.Execution.BuildManager]::DefaultBuildManager.Build(
+                            (New-Object -TypeName Microsoft.Build.Execution.BuildParameters -ArgumentList $pc),
+                            $brd)
+
+                        $postBuildProjFilePath = (Join-Path -Path $logDir -ChildPath (Get-Item $project).Name)
+                        'Saving post build project file to: [{0}]' -f $postBuildProjFilePath | Write-Verbose
+                        $projectInstance.ToProjectRootElement().Save($postBuildProjFilePath) | Out-Null
+
+                        $psbuildResult = New-PSBuildResult -buildResult $buildResult -projectInstance $projectInstance -postBuildProjectFile $postBuildProjFilePath
+                    
+                        $script:lastDebugBuildResult = $psbuildResult
+
+                        return $psbuildResult
+                    }
+                }
+            }
+            catch{
+                throw ("{0}`r`n{1}" -f ($_.Exception.ToString()|Get-FilteredString), (Get-PSCallStack|Out-String|Get-FilteredString))
+            }
+            finally{                
+                if( ($global:PSBuildSettings.EnableBuildLogging -and !($noLogFiles)) -and
+                    ($global:PSBuildSettings.EnableMaskLogFiles -eq $true) -and (HasSecretsToMask -textToMask $textToMask -password $password)){
+                    # replace secrets in log files
+                    Import-FileReplacer
+
+                    $replacements = @{}
+
+                    $allTextToMask = New-Object System.Collections.Generic.List[System.String]
+                    foreach($str in $textToMask){
+                        if(-not [string]::IsNullOrWhiteSpace($str) -and (-not ($replacements.ContainsKey($str)) )) {
+                            $replacements.Add($str,$global:FilterStringSettings.DefaultMask)
+                        }
+                    }
+                    if(-not [string]::IsNullOrWhiteSpace($password) -and (-not ($replacements.ContainsKey($password)) )) {
+                        $replacements.Add($password,$global:FilterStringSettings.DefaultMask)
+                    }
+                    foreach($str in $global:FilterStringSettings.GlobalReplacements){
+                        if(-not [string]::IsNullOrWhiteSpace($str) -and (-not ($replacements.ContainsKey($password))) ) {
+                            $replacements.Add($str,$global:FilterStringSettings.DefaultMask)
+                        }
                     }
 
-                    $buildResult = [Microsoft.Build.Execution.BuildManager]::DefaultBuildManager.Build(
-                        (New-Object -TypeName Microsoft.Build.Execution.BuildParameters -ArgumentList $pc),
-                        $brd)
-
-                    $postBuildProjFilePath = (Join-Path -Path $logDir -ChildPath (Get-Item $project).Name)
-                    'Saving post build project file to: [{0}]' -f $postBuildProjFilePath | Write-Verbose
-                    $projectInstance.ToProjectRootElement().Save($postBuildProjFilePath) | Out-Null
-
-                    $psbuildResult = New-PSBuildResult -buildResult $buildResult -projectInstance $projectInstance -postBuildProjectFile $postBuildProjFilePath
-                    
-                    $script:lastDebugBuildResult = $psbuildResult
-
-                    return $psbuildResult
+                    Replace-TextInFolder -folder $logDir -replacements $replacements -include '*'
                 }
             }
         }
@@ -2144,7 +2147,7 @@ $script:BuildTextToMask = [array]@()
 $global:FilterStringSettings = New-Object PSObject -Property @{
     DefaultMask = '********'
     GlobalReplacements = [array]@()
-    WriteFunctionsToCreate = 'Out-Default','Write-Output','Write-Host','Write-Debug','Write-Error','Write-Warning','Write-Verbose','Out-Host','Out-String'
+    # WriteFunctionsToCreate = 'Out-Default','Write-Output','Write-Host','Write-Debug','Write-Error','Write-Warning','Write-Verbose','Out-Host','Out-String'
 }
 <#
 .SYNOPSIS
@@ -2211,33 +2214,6 @@ function Get-FilteredString{
             # required so that empty lines are output to the console
             $message
         }
-    }
-}
-
-if($env:PSBUlidEnableMaskingSecretsInPSCmdlets -eq $true){
-    $strOutputOverrideFnFormatStr = @'
-        [cmdletbinding(ConfirmImpact='Medium')]
-        param(
-            [Parameter(ValueFromPipeline=$true)]
-            [System.Management.Automation.PSObject]$InputObject
-        )
-        begin{
-            $wrappedObject = $ExecutionContext.InvokeCommand.GetCmdlet('<name>')
-            $sb = { & $wrappedObject @PSBoundParameters }
-            $__sp = $sb.GetSteppablePipeline()
-            $__sp.Begin($pscmdlet)
-        }
-        process{
-            $__sp.Process( ($_ | Get-FilteredString) )
-        }
-        end{
-            $__sp.End()
-        }
-'@
-    # added a try/catch in case the cmdlet is not available or some other error is produced, test cases
-    $fnFormatStr = 'try{ ${function:<fnname>} = ([scriptblock]::Create($strOutputOverrideFnFormatStr.Replace("<name>","<fnname>"))) } catch{}'
-    $global:FilterStringSettings.WriteFunctionsToCreate | % {
-        $fnFormatStr.Replace('<fnname>',$_)|iex    
     }
 }
 
