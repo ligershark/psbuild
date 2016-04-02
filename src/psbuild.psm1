@@ -86,6 +86,13 @@ function InternalOverrideSettingsFromEnv{
 }
 InternalOverrideSettingsFromEnv -settings $global:PSBuildSettings -prefix PSBuild
 
+function Get-PSBuildVersion{
+    param()
+    process{
+        New-Object -TypeName 'system.version' -ArgumentList '1.1.8.1'
+    }
+}
+
 <#
 .SYNOPSIS  
 	This returns the path to the tools folder. The tools folder is where you can find
