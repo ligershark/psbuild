@@ -89,7 +89,7 @@ InternalOverrideSettingsFromEnv -settings $global:PSBuildSettings -prefix PSBuil
 function Get-PSBuildVersion{
     param()
     process{
-        New-Object -TypeName 'system.version' -ArgumentList '1.1.8.1'
+        New-Object -TypeName 'system.version' -ArgumentList '1.1.9.1'
     }
 }
 
