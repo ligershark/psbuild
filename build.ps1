@@ -28,7 +28,10 @@ param(
 
     [Parameter(ParameterSetName='openciwebsite',Position=0)]
     [Alias('openci')]
-    [switch]$openciwebsite
+    [switch]$openciwebsite,
+
+    [Parameter(ParameterSetName='updateDeps',Position=0)]
+    [switch]$updateDeps
 )
  
  function Get-ScriptDirectory
@@ -341,6 +344,38 @@ function Build{
         }
     }
 }
+<#
+.SYNOPSIS
+This will update the contents of the contrib folder for nuget-powershell and file-replacer
+#>
+function Update-Dependencies{
+    [cmdletbinding()]
+    param(
+        [string]$destDir
+    )
+    process{
+
+        if([string]::IsNullOrWhiteSpace($destDir)){
+            $destDir = (Join-Path $scriptDir 'contrib')
+        }
+
+        # create a new temp folder
+        $tempFolder = (Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath ('psbuild\build\{0}' -f [System.IO.Path]::GetRandomFileName().Replace('.','')))
+        New-Item -Path $tempFolder -ItemType Directory
+        # restore the packages to that folder
+        'Getting latest file-replacer' | Write-Output
+        $fpPath = Get-NuGetPackage -name 'file-replacer' -prerelease -cachePath $tempFolder -binpath
+        
+        'Getting latest nuget-powershell' | Write-Output
+        $npPath = Get-NuGetPackage -name 'nuget-powershell' -prerelease -cachePath $tempFolder -binpath
+
+        #move the files to the dest dir
+        Copy-Item -path "$fpPath\*.ps*1" -Destination "$destDir\file-replacer\"
+        Copy-Item -path "$fpPath\*.dll" -Destination "$destDir\file-replacer\"
+
+        Copy-Item -path "$fpPath\*.ps*1" -Destination "$destDir\nuget-powershell\"
+    }
+}
 
 function OpenCiWebsite{
     [cmdletbinding()]
@@ -350,16 +385,16 @@ function OpenCiWebsite{
     }
 }
 
-if(!$build -and !$setversion -and !$getversion -and !$openciwebsite){
+if(!$build -and !$setversion -and !$getversion -and !$openciwebsite -and !$updateDeps){
     $build = $true
 }
-
 
 try{
     if($build){ Build }
     elseif($setversion){ SetVersion -newversion $newversion }
     elseif($getversion){ GetExistingVersion | Write-Output }
-    elseif($openciwebsite){ OpenCiWebsite }
+    elseif($updateDeps){ Update-Dependencies | Write-Output}
+    elseif($openciwebsite){ OpenCiWebsite }    
     else{
         $cmds = @('-build','-setversion')
         'Command not found or empty, please pass in one of the following [{0}]' -f ($cmds -join ' ') | Write-Error
