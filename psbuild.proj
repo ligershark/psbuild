@@ -73,12 +73,7 @@
       <ToolsItems Include="$(NugetSourceRoot)psbuild.psd1"/>
       <ToolsItems Include="$(PSBuildOutputRoot)*.dll"/>
 
-      <ToolsItems Include="$(ContribSourceRoot)file-replacer\**\*.*">
-        <!--<DestDir>file-replacer\</DestDir>-->
-      </ToolsItems>
-      <ToolsItems Include="$(ContribSourceRoot)nuget-powershell\**\*.*">
-        <!--<DestDir>nuget-powershell\</DestDir>-->
-      </ToolsItems>
+      <ToolsItems Include="$(ContribSourceRoot)*.*" />
     </ItemGroup>
   </Target>
   
