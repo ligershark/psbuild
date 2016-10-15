@@ -48,6 +48,7 @@ $global:PSBuildSettings = New-Object PSObject -Property @{
     AppVeyorLoggerPath = 'C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll'
     EnableMaskLogFiles = $true
     EnableAddingHashToLogDir = $true
+    ContribDirs = @($scriptDir,(Join-Path $scriptDir '..\contrib\'))
 }
 
 function InternalOverrideSettingsFromEnv{
@@ -2309,15 +2310,23 @@ function Import-NuGetPowershell{
         $nugetpsloaded = $false
         if((get-command Get-NuGetPackage -ErrorAction SilentlyContinue)){
             # check the module to ensure we have the correct version
-
+            <#
             $currentversion = (Get-Module -Name nuget-powershell).Version
             if( ($currentversion -ne $null) -and ($currentversion.CompareTo([version]::Parse($nugetPsMinModVersion)) -ge 0 )){
                 $nugetpsloaded = $true
             }
+            #>
         }
 
         if(!$nugetpsloaded){
-            (new-object Net.WebClient).DownloadString("https://raw.githubusercontent.com/ligershark/nuget-powershell/master/get-nugetps.ps1") | iex
+            #(new-object Net.WebClient).DownloadString("https://raw.githubusercontent.com/ligershark/nuget-powershell/master/get-nugetps.ps1") | iex
+            'Looking for nuget-powershell' | Write-Verbose
+            foreach($path in $global:PSBuildSettings.ContribDirs){
+                $modpath = (Join-Path $path 'nuget-powershell.psd1')
+                if(Test-Path $modpath){
+                    Import-Module $modpath -DisableNameChecking -Global | Write-Verbose
+                }
+            }
         }
 
         # check to see that it was loaded
@@ -2355,10 +2364,13 @@ function Import-FileReplacer{
 
         # download/import file-replacer
         if(-not $fileReplacerLoaded){
-            'Importing file-replacer version [{0}]' -f $fileReplacerVersion | Write-Verbose
-            Import-NuGetPowershell | Out-Null
-            $pkgpath = (Get-NuGetPackage 'file-replacer' -version $fileReplacerVersion -binpath)
-            Import-Module (Join-Path $pkgpath 'file-replacer.psm1') -DisableNameChecking -Global | Out-Null
+            'Loading file-replacer' | Write-Verbose
+            foreach($path in $global:PSBuildSettings.ContribDirs){
+                $modpath = (Join-Path $path 'file-replacer.psm1')
+                if(Test-Path $modpath){
+                    Import-Module $modpath -DisableNameChecking -Global | Write-Verbose
+                }
+            }
         }
     }
 }

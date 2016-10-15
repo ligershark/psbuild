@@ -26,6 +26,7 @@
   <PropertyGroup>
     <NuspecFile Condition=" '$(NuspecFile)'=='' ">$(MSBuildThisProjectDirectory)psbuild.nuspec</NuspecFile>
     <NugetSourceRoot Condition=" ''=='' ">$(PsbuildSourceRoot)</NugetSourceRoot>
+    <ContribSourceRoot Condition=" ''=='' ">$(PsbuildSourceRoot)..\contrib\</ContribSourceRoot>
     <PackageRoot Condition=" '$(PackageRoot)'=='' ">$(OutputRoot)_psbuild-nuget\</PackageRoot>
     <_ls-tempoutfolder Condition=" '$(_ls-tempoutfolder)'=='' ">$(OutputRoot)temp\</_ls-tempoutfolder>
   </PropertyGroup>
@@ -57,6 +58,7 @@
   </Target>
 
   <Target Name="GatherNuGetFiles">
+
     <ItemGroup>
       <!-- This item should never have more than 1 value -->
       <_NugetSpecFile Include="$(NuspecFile)" />
@@ -70,6 +72,13 @@
       <ToolsItems Include="$(NugetSourceRoot)psbuild.psm1"/>
       <ToolsItems Include="$(NugetSourceRoot)psbuild.psd1"/>
       <ToolsItems Include="$(PSBuildOutputRoot)*.dll"/>
+
+      <ToolsItems Include="$(ContribSourceRoot)file-replacer\**\*.*">
+        <!--<DestDir>file-replacer\</DestDir>-->
+      </ToolsItems>
+      <ToolsItems Include="$(ContribSourceRoot)nuget-powershell\**\*.*">
+        <!--<DestDir>nuget-powershell\</DestDir>-->
+      </ToolsItems>
     </ItemGroup>
   </Target>
   

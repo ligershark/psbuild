@@ -19,6 +19,9 @@ param(
     [Parameter(ParameterSetName='build',Position=3)]
     [string]$nugetApiKey = ($env:NuGetApiKey),
 
+    [Parameter(ParameterSetName='build',Position=4)]
+    [switch]$noTests,
+
     # setversion parameters
     [Parameter(ParameterSetName='setversion',Position=1,Mandatory=$true)]
     [string]$newversion,
@@ -336,7 +339,9 @@ function Build{
 
         & ((Get-MSBuildExe).FullName) $msbuildArgs
 
-        Run-Tests
+        if(-not ($noTests)){
+            Run-Tests
+        }
 
         # publish to nuget if selected
         if($publishToNuget){
@@ -370,10 +375,10 @@ function Update-Dependencies{
         $npPath = Get-NuGetPackage -name 'nuget-powershell' -prerelease -cachePath $tempFolder -binpath
 
         #move the files to the dest dir
-        Copy-Item -path "$fpPath\*.ps*1" -Destination "$destDir\file-replacer\"
-        Copy-Item -path "$fpPath\*.dll" -Destination "$destDir\file-replacer\"
+        Copy-Item -path "$fpPath\*.ps*1" -Destination "$destDir"
+        Copy-Item -path "$fpPath\*.dll" -Destination "$destDir"
 
-        Copy-Item -path "$fpPath\*.ps*1" -Destination "$destDir\nuget-powershell\"
+        Copy-Item -path "$npPath\*.ps*1" -Destination "$destDir"
     }
 }
 
