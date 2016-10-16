@@ -36,10 +36,10 @@
     }
     <#
     It "can specify password" {
-        $env:PSBUlidEnableMaskingSecretsInPSCmdlets=$false
+        $env:PSBuildMaskSecrets=$false
         $sourceProj = ("$TestDrive\{0}" -f $script:printpropertiesproj)
         $msbuildOutput = (Invoke-MSBuild $sourceProj -Password PasswordHere -nologo)
         Validate-PropFromMSBuildOutput $msbuildOutput Password PasswordHere
-        $env:PSBUlidEnableMaskingSecretsInPSCmdlets=$true
+        $env:PSBuildMaskSecrets=$true
     }
     #>

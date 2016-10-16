@@ -19,6 +19,9 @@ param(
     [Parameter(ParameterSetName='build',Position=3)]
     [string]$nugetApiKey = ($env:NuGetApiKey),
 
+    [Parameter(ParameterSetName='build',Position=4)]
+    [switch]$noTests,
+
     # setversion parameters
     [Parameter(ParameterSetName='setversion',Position=1,Mandatory=$true)]
     [string]$newversion,
@@ -28,7 +31,10 @@ param(
 
     [Parameter(ParameterSetName='openciwebsite',Position=0)]
     [Alias('openci')]
-    [switch]$openciwebsite
+    [switch]$openciwebsite,
+
+    [Parameter(ParameterSetName='updateDeps',Position=0)]
+    [switch]$updateDeps
 )
  
  function Get-ScriptDirectory
@@ -203,7 +209,7 @@ function SetVersion{
         $replacements = @{
             ($oldversion.Replace('-beta','.1'))=($newversion.Replace('-beta','.1'))
         }
-        Replace-TextInFolder -folder $folder -include '*.psd1' -exclude $exclude -replacements $replacements | Write-Verbose
+        Replace-TextInFolder -folder $folder -include '*.ps*1' -exclude $exclude -replacements $replacements | Write-Verbose
         'Replacement complete' | Write-Verbose
     }
 }
@@ -333,12 +339,46 @@ function Build{
 
         & ((Get-MSBuildExe).FullName) $msbuildArgs
 
-        Run-Tests
+        if(-not ($noTests)){
+            Run-Tests
+        }
 
         # publish to nuget if selected
         if($publishToNuget){
             (Get-ChildItem -Path (Get-OutputRoot) 'psbuild*.nupkg').FullName | PublishNuGetPackage -nugetApiKey $nugetApiKey
         }
+    }
+}
+<#
+.SYNOPSIS
+This will update the contents of the contrib folder for nuget-powershell and file-replacer
+#>
+function Update-Dependencies{
+    [cmdletbinding()]
+    param(
+        [string]$destDir
+    )
+    process{
+
+        if([string]::IsNullOrWhiteSpace($destDir)){
+            $destDir = (Join-Path $scriptDir 'contrib')
+        }
+
+        # create a new temp folder
+        $tempFolder = (Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath ('psbuild\build\{0}' -f [System.IO.Path]::GetRandomFileName().Replace('.','')))
+        New-Item -Path $tempFolder -ItemType Directory
+        # restore the packages to that folder
+        'Getting latest file-replacer' | Write-Output
+        $fpPath = Get-NuGetPackage -name 'file-replacer' -prerelease -cachePath $tempFolder -binpath
+        
+        'Getting latest nuget-powershell' | Write-Output
+        $npPath = Get-NuGetPackage -name 'nuget-powershell' -prerelease -cachePath $tempFolder -binpath
+
+        #move the files to the dest dir
+        Copy-Item -path "$fpPath\*.ps*1" -Destination "$destDir"
+        Copy-Item -path "$fpPath\*.dll" -Destination "$destDir"
+
+        Copy-Item -path "$npPath\*.ps*1" -Destination "$destDir"
     }
 }
 
@@ -350,16 +390,16 @@ function OpenCiWebsite{
     }
 }
 
-if(!$build -and !$setversion -and !$getversion -and !$openciwebsite){
+if(!$build -and !$setversion -and !$getversion -and !$openciwebsite -and !$updateDeps){
     $build = $true
 }
-
 
 try{
     if($build){ Build }
     elseif($setversion){ SetVersion -newversion $newversion }
     elseif($getversion){ GetExistingVersion | Write-Output }
-    elseif($openciwebsite){ OpenCiWebsite }
+    elseif($updateDeps){ Update-Dependencies | Write-Output}
+    elseif($openciwebsite){ OpenCiWebsite }    
     else{
         $cmds = @('-build','-setversion')
         'Command not found or empty, please pass in one of the following [{0}]' -f ($cmds -join ' ') | Write-Error

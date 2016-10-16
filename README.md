@@ -194,6 +194,11 @@ To report any issues please [create an new item](https://github.com/ligershark/p
 
 # Release Notes
 
+- Made psbuild [self contained](https://github.com/ligershark/psbuild/issues/76) so that nothing needs to be downloaded at build time
+- Added Get-PSBuildVersion method
+- Update on how [secrets are masked](https://github.com/ligershark/psbuild/commit/ce2386b46aa6884e3f023ca7d4b1e32ec32712e3). The previous impl caused the users prompt to be modified.
+- Update to [only add quotes when needed](https://github.com/ligershark/psbuild/issues/76)
+- Fixed [an issue](https://github.com/ligershark/psbuild/issues/76) where commands were being quoted unnecessarily
 - Update to allow overriding settings with env variables https://github.com/ligershark/psbuild/commit/b00cc3c63a81c20f9101cbd111d1b1e1bffe874a
 - Update to ensure log directory is unique for every project built https://github.com/ligershark/psbuild/issues/71.
 - Update to filter secrets from log files. https://github.com/ligershark/psbuild/issues/59.
