@@ -51,6 +51,23 @@ $global:PSBuildSettings = New-Object PSObject -Property @{
     ContribDirs = @($scriptDir,(Join-Path $scriptDir '..\contrib\'))
 }
 
+function GetMSBuildDir{
+    [cmdletbinding()]
+    param()
+    process{
+        $res = $env:MSBuildPath
+        if([string]::IsNullOrWhiteSpace($res)){
+            $res = 'C:\Users\sayedha\AppData\Local\LigerShark\nuget-ps\v1.1\Microsoft.Build.Runtime.15.1.262-preview5\Microsoft.Build.15.1.262-preview5\lib\netstandard1.5'
+        }
+
+        if( ([string]::IsNullOrWhiteSpace($res)) -or (-not (Test-Path $res))){
+            throw ('MSBuild not found at [{0}]' -f $res)
+        }
+
+        $res
+    }
+}
+
 function InternalOverrideSettingsFromEnv{
     [cmdletbinding()]
     param(
@@ -557,7 +574,8 @@ function Invoke-MSBuild{
     )
 
     begin{
-        Add-Type -AssemblyName Microsoft.Build
+        Add-Type -Path "$(GetMSBuildDir)\Microsoft.Build.dll"
+        # Add-Type -AssemblyName Microsoft.Build
         if($defaultProperties){
             $defaultProperties | PSBuildSet-TempVar
         }
@@ -725,7 +743,8 @@ function Invoke-MSBuild{
                     }
                     else{
                         # in debug mode we call msbuild using the APIs
-                        Add-Type -AssemblyName Microsoft.Build
+                        # Add-Type -AssemblyName Microsoft.Build
+                        Add-Type -Path "$(GetMSBuildDir)\Microsoft.Build.dll"
                         $globalProps = (PSBuild-ConverToDictionary -valueToConvert $properties)
                         $pc = (New-Object -TypeName Microsoft.Build.Evaluation.ProjectCollection -ArgumentList $globalProps)
 
@@ -886,7 +905,8 @@ function New-PSBuildResult{
         $postBuildProjectFile
     )
     begin{
-        Add-Type -AssemblyName Microsoft.Build
+        # Add-Type -AssemblyName Microsoft.Build
+        Add-Type -Path "$(GetMSBuildDir)\Microsoft.Build.dll"
     }
     process{
         $result = New-Object PSObject -Property @{
@@ -1150,7 +1170,8 @@ function InternalGet-PSBuildLoggers{
         $enabledLoggers = ($global:PSBuildSettings.EnabledLoggers)
     )
     begin{
-        Add-Type -AssemblyName Microsoft.Build
+        # Add-Type -AssemblyName Microsoft.Build
+        Add-Type -Path "$(GetMSBuildDir)\Microsoft.Build.dll"
     }
     process{  
         [string]$logDir = (Get-PSBuildLogDirectory -projectPath $projectPath)
@@ -1312,7 +1333,8 @@ function New-MSBuildProject{
         [string]$toolsVersion
     )
     begin{
-        Add-Type -AssemblyName Microsoft.Build
+        # Add-Type -AssemblyName Microsoft.Build
+        Add-Type -Path "$(GetMSBuildDir)\Microsoft.Build.dll"
     }
 
     process{
@@ -1357,7 +1379,8 @@ function Save-MSBuildProject{
     )
 
     begin{
-        Add-Type -AssemblyName Microsoft.Build
+        Add-Type -Path "$(GetMSBuildDir)\Microsoft.Build.dll"
+        # Add-Type -AssemblyName Microsoft.Build
     }
 
     process{
@@ -1439,8 +1462,9 @@ function Get-MSBuildProject{
         $projectCollection = (New-Object Microsoft.Build.Evaluation.ProjectCollection)
     )
     begin{
-        Add-Type -AssemblyName System.Core
-        Add-Type -AssemblyName Microsoft.Build
+        # Add-Type -AssemblyName System.Core
+        Add-Type -Path "$(GetMSBuildDir)\Microsoft.Build.dll"
+        # Add-Type -AssemblyName Microsoft.Build
     }
     process{
         $project = $null
@@ -1480,7 +1504,8 @@ function Test-Import{
         $projectValue
     )
     begin{
-        Add-Type -AssemblyName Microsoft.Build
+        Add-Type -Path "$(GetMSBuildDir)\Microsoft.Build.dll"
+        # Add-Type -AssemblyName Microsoft.Build
     }
     process{
         $foundImport = (Find-Import -project $project -labelValue $labelValue -projectValue $projectValue)
@@ -1517,7 +1542,8 @@ function Find-Import{
         $stopOnFirstResult
     )
     begin{
-        Add-Type -AssemblyName Microsoft.Build
+        Add-Type -Path "$(GetMSBuildDir)\Microsoft.Build.dll"
+        # Add-Type -AssemblyName Microsoft.Build
     }
     process{
         "Looking for an import, label=[{0}], projet=[{0}]" -f $labelValue,$projectValue | Write-Verbose
@@ -1604,7 +1630,7 @@ function Add-Import{
         $importCondition
     )
     begin{
-        Add-Type -AssemblyName Microsoft.Build
+        # Add-Type -AssemblyName Microsoft.Build
     }
     process{
         $importToAdd = $project.AddImport($importProject)
@@ -1644,7 +1670,8 @@ function Remove-Import{
         $projectValue
     )
     begin{
-        Add-Type -AssemblyName Microsoft.Build
+        # Add-Type -AssemblyName Microsoft.Build
+        Add-Type -Path "$(GetMSBuildDir)\Microsoft.Build.dll"
     }
     process{
         $importsToRemove = (Find-Import -project $project -labelValue $labelValue -projectValue $projectValue)
@@ -1697,7 +1724,8 @@ function Find-PropertyGroup{
         $stopOnFirstResult
     )
     begin{
-        Add-Type -AssemblyName Microsoft.Build
+        Add-Type -Path "$(GetMSBuildDir)\Microsoft.Build.dll"
+        # Add-Type -AssemblyName Microsoft.Build
     }
     process{
         "Looking for a PropertyGroup. Label=[{0}]" -f $labelValue | Write-Verbose
@@ -1756,7 +1784,8 @@ function Remove-PropertyGroup{
         $labelValue
     )
     begin{
-        Add-Type -AssemblyName Microsoft.Build
+        Add-Type -Path "$(GetMSBuildDir)\Microsoft.Build.dll"
+        # Add-Type -AssemblyName Microsoft.Build
     }
     process{
         $pgsToRemove = (Find-PropertyGroup -project $project -labelValue $labelValue)
@@ -1799,7 +1828,8 @@ function Add-PropertyGroup{
         $condition
     )
     begin{
-        Add-Type -AssemblyName Microsoft.Build
+        Add-Type -Path "$(GetMSBuildDir)\Microsoft.Build.dll"
+        # Add-Type -AssemblyName Microsoft.Build
     }
     process{
         $pgToAdd = $project.AddPropertyGroup();
@@ -1842,7 +1872,8 @@ function Test-PropertyGroup{
         $label
     )
     begin{
-        Add-Type -AssemblyName Microsoft.Build
+        Add-Type -Path "$(GetMSBuildDir)\Microsoft.Build.dll"
+        # Add-Type -AssemblyName Microsoft.Build
     }
     process{
         $foundPg = (Find-PropertyGroup -project $project -label $label)
@@ -1885,7 +1916,8 @@ function Find-Property{
         $stopOnFirstResult
     )
     begin{
-        Add-Type -AssemblyName Microsoft.Build
+        Add-Type -Path "$(GetMSBuildDir)\Microsoft.Build.dll"
+        # Add-Type -AssemblyName Microsoft.Build
     }
     process{
         if(!($name) -and !($label)){
@@ -1960,7 +1992,8 @@ function Test-Property{
         $label
     )
     begin{
-        Add-Type -AssemblyName Microsoft.Build
+        Add-Type -Path "$(GetMSBuildDir)\Microsoft.Build.dll"
+        # Add-Type -AssemblyName Microsoft.Build
     }
     process{
         $foundProp = (Find-Property -propertyContainer $propertyContainer -name $name -label $label -stopOnFirstResult)
@@ -2012,7 +2045,8 @@ function Remove-Property{
         $label
     )
     begin{
-        Add-Type -AssemblyName Microsoft.Build
+        Add-Type -Path "$(GetMSBuildDir)\Microsoft.Build.dll"
+        # Add-Type -AssemblyName Microsoft.Build
     }
     process{
         $propsToRemove = (Find-Property -propertyContainer $propertyContainer -name $name -label $label)
@@ -2069,7 +2103,8 @@ function Add-Property{
         $condition
     )
     begin{
-        Add-Type -AssemblyName Microsoft.Build
+        Add-Type -Path "$(GetMSBuildDir)\Microsoft.Build.dll"
+        # Add-Type -AssemblyName Microsoft.Build
     }
     process{
         $propToAdd = $propertyContainer.AddProperty($name,$value)
@@ -2389,7 +2424,8 @@ else{
 # begin script portions
 #################################################################
 
-Add-Type -AssemblyName Microsoft.Build
+Add-Type -Path "$(GetMSBuildDir)\Microsoft.Build.dll"
+# Add-Type -AssemblyName Microsoft.Build
 
 [string]$script:defaultMSBuildPath = $null
 [string]$script:VisualStudioVersion = $null
