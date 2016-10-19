@@ -2427,7 +2427,7 @@ else{
 Add-Type -Path "$(GetMSBuildDir)\Microsoft.Build.dll"
 # Add-Type -AssemblyName Microsoft.Build
 
-[string]$script:defaultMSBuildPath = $null
+[string]$script:defaultMSBuildPath = $env:DefaultMSBuildPath
 [string]$script:VisualStudioVersion = $null
 # call this once to ensure the alias is set
 Get-MSBuild | Set-MSBuild -persist $false

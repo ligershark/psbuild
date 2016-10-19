@@ -37,7 +37,7 @@ param(
     [switch]$updateDeps
 )
  
- function Get-ScriptDirectory
+function Get-ScriptDirectory
 {
     $Invocation = (Get-Variable MyInvocation -Scope 1).Value
     Split-Path $Invocation.MyCommand.Path
@@ -315,10 +315,80 @@ function Run-Tests{
     }
 }
 
+<#
+get-command Get-NuGetPackage -ErrorAction SilentlyContinue
+#>
+function Import-NuGetPowershell{
+    [cmdletbinding()]
+    param(
+        $nugetPsMinModVersion = $nugetPsMinModuleVersion
+    )
+    process{
+        # see if nuget-powershell is available and load if not
+        $nugetpsloaded = $false
+        if((get-command Get-NuGetPackage -ErrorAction SilentlyContinue)){
+            # check the module to ensure we have the correct version
+            <#
+            $currentversion = (Get-Module -Name nuget-powershell).Version
+            if( ($currentversion -ne $null) -and ($currentversion.CompareTo([version]::Parse($nugetPsMinModVersion)) -ge 0 )){
+                $nugetpsloaded = $true
+            }
+            #>
+        }
+
+        if(!$nugetpsloaded){
+            #(new-object Net.WebClient).DownloadString("https://raw.githubusercontent.com/ligershark/nuget-powershell/master/get-nugetps.ps1") | iex
+            'Looking for nuget-powershell' | Write-Verbose
+            foreach($path in (@($scriptDir,(Join-Path $scriptDir '..\contrib\'))) ) {
+                $modpath = (Join-Path $path 'nuget-powershell.psd1')
+                if(Test-Path $modpath){
+                    Import-Module $modpath -DisableNameChecking -Global | Write-Verbose
+                }
+            }
+        }
+
+        # check to see that it was loaded
+        if((get-command Get-NuGetPackage -ErrorAction SilentlyContinue)){
+            $nugetpsloaded = $true
+        }
+
+        if(-not $nugetpsloaded){
+            throw ('Unable to load nuget-powershell, unknown error')
+        }
+    }
+}
+function ConfigureCoreBuild{
+    [cmdletbinding()]
+    param()
+    process{
+        # download the msbuild nuget package and set the env vars.
+        try{
+
+            if(-not (get-command Get-NuGetPackage -ErrorAction SilentlyContinue)){
+                Import-NuGetPowershell
+            }
+
+            $msbuildpkg = (Get-NuGetPackage -name 'Microsoft.Build' -version '15.1.262-preview5')
+            $msrunpkg = (Get-NugetPackage -name 'Microsoft.Build.Runtime' -version '15.1.262-preview5')
+
+            $env:MSBuildPath = (Join-Path $msbuildpkg 'Microsoft.Build.15.1.262-preview5\lib\netstandard1.5\')
+            $env:DefaultMSBuildPath = (join-path $msrunpkg 'Microsoft.Build.Runtime.15.1.262-preview5\contentFiles\any\netcoreapp1.0')
+        }
+        catch{
+            if(-not([string]::IsNullOrWhiteSpace($tempfilepath)) -and (test-path $tempfilepath)) {
+                Remove-Item (Get-Item $tempfilepath).FullName -Recurse
+            }
+        }
+    }
+}
+
 function Build{
     [cmdletbinding()]
     param()
     process{
+        # TODO: Update this
+        ConfigureCoreBuild
+
         if($publishToNuget){ $CleanOutputFolder = $true }
 
         if($CleanOutputFolder){
