@@ -44,6 +44,37 @@ function Get-ScriptDirectory
 }
 
 $scriptDir = ((Get-ScriptDirectory) + "\")
+
+<#
+.SYNOPSIS
+    Can be used to convert a relative path (i.e. .\project.proj) to a full path.
+#>
+function Get-Fullpath{
+    [cmdletbinding()]
+    param(
+        [Parameter(
+            Mandatory=$true,
+            ValueFromPipeline = $true)]
+        $path,
+
+        $workingDir = ($pwd)
+    )
+    process{
+        $fullPath = $path
+        $oldPwd = $pwd
+
+        Push-Location
+        Set-Location $workingDir
+        [Environment]::CurrentDirectory = $pwd
+        $fullPath = ([System.IO.Path]::GetFullPath($path))
+        
+        Pop-Location
+        [Environment]::CurrentDirectory = $oldPwd
+
+        return $fullPath
+    }
+}
+
 [string]$script:defaultMSBuildPath=$null
 <#
 .SYNOPSIS  
@@ -339,8 +370,8 @@ function Import-NuGetPowershell{
         if(!$nugetpsloaded){
             #(new-object Net.WebClient).DownloadString("https://raw.githubusercontent.com/ligershark/nuget-powershell/master/get-nugetps.ps1") | iex
             'Looking for nuget-powershell' | Write-Verbose
-            foreach($path in (@($scriptDir,(Join-Path $scriptDir '..\contrib\'))) ) {
-                $modpath = (Join-Path $path 'nuget-powershell.psd1')
+            foreach($path in (@($scriptDir,(Join-Path $scriptDir 'contrib\'))) ) {
+                $modpath = (get-fullpath (Join-Path $path 'nuget-powershell.psd1'))
                 if(Test-Path $modpath){
                     Import-Module $modpath -DisableNameChecking -Global | Write-Verbose
                 }
@@ -439,16 +470,19 @@ function Update-Dependencies{
         New-Item -Path $tempFolder -ItemType Directory
         # restore the packages to that folder
         'Getting latest file-replacer' | Write-Output
-        $fpPath = Get-NuGetPackage -name 'file-replacer' -prerelease -cachePath $tempFolder -binpath
-        
+        $fpPath = (Get-NuGetPackage -name 'file-replacer' -prerelease -cachePath $tempFolder -binpath)
+
         'Getting latest nuget-powershell' | Write-Output
-        $npPath = Get-NuGetPackage -name 'nuget-powershell' -prerelease -cachePath $tempFolder -binpath
+        $npPath = (Get-NuGetPackage -name 'nuget-powershell' -prerelease -cachePath $tempFolder -binpath)
+
+        $cryptoPath = (Get-NugetPackage -name 'System.Security.Cryptography.Algorithms' -version '4.2.0' -binpath)
 
         #move the files to the dest dir
-        Copy-Item -path "$fpPath\*.ps*1" -Destination "$destDir"
-        Copy-Item -path "$fpPath\*.dll" -Destination "$destDir"
+        Copy-Item -path "$fpPath\*.ps*1" -Destination $destDir
+        Copy-Item -path "$fpPath\*.dll" -Destination $destDir
 
-        Copy-Item -path "$npPath\*.ps*1" -Destination "$destDir"
+        Copy-Item -path "$npPath\*.ps*1" -Destination $destDir
+        Copy-Item -Path "$cryptoPath\netstandard1.3\System.Security.Cryptography.Primitives.dll" -Destination $destDir
     }
 }
 

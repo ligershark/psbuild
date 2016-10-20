@@ -49,6 +49,7 @@ $global:PSBuildSettings = New-Object PSObject -Property @{
     EnableMaskLogFiles = $true
     EnableAddingHashToLogDir = $true
     ContribDirs = @($scriptDir,(Join-Path $scriptDir '..\contrib\'))
+    LoadedCryptoApi = $false
 }
 
 function GetMSBuildDir{
@@ -1028,9 +1029,12 @@ Function Get-StringHash{
         [String] $text,
         $HashName = "MD5"
     )
+    begin{
+        InternalLoad-CryptoApi
+    }
     process{
         $sb = New-Object System.Text.StringBuilder
-        [System.Security.Cryptography.HashAlgorithm]::Create($HashName).ComputeHash([System.Text.Encoding]::UTF8.GetBytes($text))|%{
+        [System.Security.Cryptography.SHA256]::Create($HashName).ComputeHash([System.Text.Encoding]::UTF8.GetBytes($text))|%{
                 [Void]$sb.Append($_.ToString("x2"))
             }
         $sb.ToString()
@@ -2360,6 +2364,7 @@ function Import-NuGetPowershell{
                 $modpath = (Join-Path $path 'nuget-powershell.psd1')
                 if(Test-Path $modpath){
                     Import-Module $modpath -DisableNameChecking -Global | Write-Verbose
+                    break
                 }
             }
         }
@@ -2371,6 +2376,32 @@ function Import-NuGetPowershell{
 
         if(-not $nugetpsloaded){
             throw ('Unable to load nuget-powershell, unknown error')
+        }
+    }
+}
+
+function InternalLoad-CryptoApi{
+    [cmdletbinding()]
+    param()
+    process{
+        if($global:PSBuildSettings.LoadedCryptoApi -ne $true){
+            foreach($path in $global:PSBuildSettings.ContribDirs){
+                $dllpath = (Join-Path $path 'System.Security.Cryptography.Primitives.dll')
+                if(Test-Path $dllpath){
+                    try{
+                        Add-type -Path (Get-Fullpath $dllpath)
+                        break
+                    }
+                    catch
+                    {
+                        $_.LoaderExceptions | %
+                        {
+                            Write-Error 'LoaderExceptions: ' + $_.Message
+                        }
+                    }
+                }
+            }
+            'Did not find System.Security.Cryptography.Primitives.dll' | Write-Warning
         }
     }
 }
@@ -2424,7 +2455,21 @@ else{
 # begin script portions
 #################################################################
 
-Add-Type -Path "$(GetMSBuildDir)\Microsoft.Build.dll"
+try{
+    Add-Type -Path "$(GetMSBuildDir)\Microsoft.Build.dll"
+}
+catch
+{
+    if( ($_ -ne $null) -and ([bool]($_.PSobject.Properties.name -match "LoaderExceptions")) ){
+        $_.LoaderExceptions | %
+        {
+            Write-Error 'LoaderExceptions: ' + $_.Message
+        }    
+    }
+    else{
+        Write-Error $_
+    }
+}
 # Add-Type -AssemblyName Microsoft.Build
 
 [string]$script:defaultMSBuildPath = $env:DefaultMSBuildPath
