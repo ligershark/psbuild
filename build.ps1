@@ -370,15 +370,16 @@ function Update-Dependencies{
         # restore the packages to that folder
         'Getting latest file-replacer' | Write-Output
         $fpPath = Get-NuGetPackage -name 'file-replacer' -prerelease -cachePath $tempFolder -binpath
-        
-        'Getting latest nuget-powershell' | Write-Output
-        $npPath = Get-NuGetPackage -name 'nuget-powershell' -prerelease -cachePath $tempFolder -binpath
-
-        #move the files to the dest dir
         Copy-Item -path "$fpPath\*.ps*1" -Destination "$destDir"
         Copy-Item -path "$fpPath\*.dll" -Destination "$destDir"
 
-        Copy-Item -path "$npPath\*.ps*1" -Destination "$destDir"
+        'Getting latest nuget-powershell' | Write-Output
+        $npPath = Get-NuGetPackage -name 'nuget-powershell' -prerelease -cachePath $tempFolder -binpath
+        Copy-Item -path "$npPath\*.dll" -Destination "$destDir"
+        
+        'Getting latest System.Security.Cryptography.Primitives.dll' | Write-Output
+        $cryptoPath = (Get-NugetPackage -name 'System.Security.Cryptography.Algorithms' -version '4.2.0' -binpath)
+        Copy-Item -Path "$cryptoPath\netstandard1.3\System.Security.Cryptography.Primitives.dll" -Destination $destDir
     }
 }
 

@@ -49,6 +49,7 @@ $global:PSBuildSettings = New-Object PSObject -Property @{
     EnableMaskLogFiles = $true
     EnableAddingHashToLogDir = $true
     ContribDirs = @($scriptDir,(Join-Path $scriptDir '..\contrib\'))
+    LoadedCryptoApi = $false
 }
 
 function InternalOverrideSettingsFromEnv{
@@ -1008,15 +1009,17 @@ Function Get-StringHash{
         [String] $text,
         $HashName = "MD5"
     )
+    begin{
+        InternalLoad-CryptoApi
+    }
     process{
         $sb = New-Object System.Text.StringBuilder
-        [System.Security.Cryptography.HashAlgorithm]::Create($HashName).ComputeHash([System.Text.Encoding]::UTF8.GetBytes($text))|%{
+        [System.Security.Cryptography.MD5CryptoServiceProvider]::Create($HashName).ComputeHash([System.Text.Encoding]::UTF8.GetBytes($text))|%{
                 [Void]$sb.Append($_.ToString("x2"))
             }
         $sb.ToString()
     }
 }
-
 function Open-PSBuildLogDirectory{
     [cmdletbinding()]
     param()
@@ -2336,6 +2339,37 @@ function Import-NuGetPowershell{
 
         if(-not $nugetpsloaded){
             throw ('Unable to load nuget-powershell, unknown error')
+        }
+    }
+}
+
+function InternalLoad-CryptoApi{
+    [cmdletbinding()]
+    param()
+    process{
+        [bool]$foundIt = $false
+        if($global:PSBuildSettings.LoadedCryptoApi -ne $true){
+            foreach($path in $global:PSBuildSettings.ContribDirs){
+                $dllpath = (get-fullpath (Join-Path $path 'System.Security.Cryptography.Primitives.dll'))
+                if(Test-Path $dllpath){
+                    try{
+                        Add-type -Path $dllpath
+                        $foundIt = $true
+                        break
+                    }
+                    catch
+                    {
+                        $_.LoaderExceptions | %
+                        {
+                            Write-Error 'LoaderExceptions: ' + $_.Message
+                        }
+                    }
+                }
+            }
+
+            if(-not $foundIt){
+                'Did not find System.Security.Cryptography.Primitives.dll' | Write-Warning    
+            }
         }
     }
 }
