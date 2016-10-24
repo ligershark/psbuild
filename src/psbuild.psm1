@@ -50,6 +50,7 @@ $global:PSBuildSettings = New-Object PSObject -Property @{
     EnableAddingHashToLogDir = $true
     ContribDirs = @($scriptDir,(Join-Path $scriptDir '..\contrib\'))
     LoadedCryptoApi = $false
+    MSBuildLibraryPath = $null
 }
 
 function InternalOverrideSettingsFromEnv{
@@ -87,6 +88,42 @@ function InternalOverrideSettingsFromEnv{
     }
 }
 InternalOverrideSettingsFromEnv -settings $global:PSBuildSettings -prefix PSBuild
+
+<#
+If Set-MSBuildLibraryPath has been called with a path then this will return that path, ortherwise null/empty string.
+#>
+function InternalGet-MSBuildAssemblyPath{
+    [cmdletbinding()]
+    param()
+    process{
+        if(-not ([string]::IsNullOrWhiteSpace($global:PSBuildSettings.MSBuildLibraryPath)) -and (test-path $global:PSBuildSettings.MSBuildLibraryPath) ){
+            $global:PSBuildSettings.MSBuildLibraryPath
+        }
+        else{
+            $null
+        }
+    }
+}
+
+<#
+This function will make the call to Add-Type to get Microsoft.Build loaded.
+#>
+function InternalLoad-MSBuildLibrary{
+    [cmdletbinding()]
+    param()
+    process{
+        $msbLibPath = (InternalGet-MSBuildAssemblyPath)
+        if(-not ([string]::IsNullOrWhiteSpace($msbLibPath))){
+            'Loading MSBuild library from file [{0}]' -f $msbLibPath | Write-Verbose
+            Add-Type -Path $msbLibPath
+        }
+        else{
+            'Loading MSBuild Library by AssemblyName' | Write-Verbose
+            Add-Type -AssemblyName Microsoft.Build
+        }
+    }
+}
+
 
 function Get-PSBuildVersion{
     param()
@@ -558,7 +595,8 @@ function Invoke-MSBuild{
     )
 
     begin{
-        Add-Type -AssemblyName Microsoft.Build
+        #InternalLoad-MSBuildLibrary | Out-Null
+
         if($defaultProperties){
             $defaultProperties | PSBuildSet-TempVar
         }
@@ -726,7 +764,7 @@ function Invoke-MSBuild{
                     }
                     else{
                         # in debug mode we call msbuild using the APIs
-                        Add-Type -AssemblyName Microsoft.Build
+                        InternalLoad-MSBuildLibrary | Out-Null
                         $globalProps = (PSBuild-ConverToDictionary -valueToConvert $properties)
                         $pc = (New-Object -TypeName Microsoft.Build.Evaluation.ProjectCollection -ArgumentList $globalProps)
 
@@ -887,7 +925,7 @@ function New-PSBuildResult{
         $postBuildProjectFile
     )
     begin{
-        Add-Type -AssemblyName Microsoft.Build
+        InternalLoad-MSBuildLibrary | Out-Null
     }
     process{
         $result = New-Object PSObject -Property @{
@@ -1152,9 +1190,9 @@ function InternalGet-PSBuildLoggers{
         [Parameter(Position=2)]
         $enabledLoggers = ($global:PSBuildSettings.EnabledLoggers)
     )
-    begin{
-        Add-Type -AssemblyName Microsoft.Build
-    }
+    <#begin{
+        InternalLoad-MSBuildLibrary | Out-Null
+    }#>
     process{  
         [string]$logDir = (Get-PSBuildLogDirectory -projectPath $projectPath)
         [string]$toolsDir = InternalGet-PSBuildToolsDir
@@ -1315,7 +1353,7 @@ function New-MSBuildProject{
         [string]$toolsVersion
     )
     begin{
-        Add-Type -AssemblyName Microsoft.Build
+        InternalLoad-MSBuildLibrary | Out-Null
     }
 
     process{
@@ -1360,7 +1398,7 @@ function Save-MSBuildProject{
     )
 
     begin{
-        Add-Type -AssemblyName Microsoft.Build
+        InternalLoad-MSBuildLibrary | Out-Null
     }
 
     process{
@@ -1443,7 +1481,7 @@ function Get-MSBuildProject{
     )
     begin{
         Add-Type -AssemblyName System.Core
-        Add-Type -AssemblyName Microsoft.Build
+        InternalLoad-MSBuildLibrary | Out-Null
     }
     process{
         $project = $null
@@ -1483,7 +1521,7 @@ function Test-Import{
         $projectValue
     )
     begin{
-        Add-Type -AssemblyName Microsoft.Build
+        InternalLoad-MSBuildLibrary | Out-Null
     }
     process{
         $foundImport = (Find-Import -project $project -labelValue $labelValue -projectValue $projectValue)
@@ -1520,7 +1558,7 @@ function Find-Import{
         $stopOnFirstResult
     )
     begin{
-        Add-Type -AssemblyName Microsoft.Build
+        InternalLoad-MSBuildLibrary | Out-Null
     }
     process{
         "Looking for an import, label=[{0}], projet=[{0}]" -f $labelValue,$projectValue | Write-Verbose
@@ -1607,7 +1645,7 @@ function Add-Import{
         $importCondition
     )
     begin{
-        Add-Type -AssemblyName Microsoft.Build
+        InternalLoad-MSBuildLibrary | Out-Null
     }
     process{
         $importToAdd = $project.AddImport($importProject)
@@ -1647,7 +1685,7 @@ function Remove-Import{
         $projectValue
     )
     begin{
-        Add-Type -AssemblyName Microsoft.Build
+        InternalLoad-MSBuildLibrary | Out-Null
     }
     process{
         $importsToRemove = (Find-Import -project $project -labelValue $labelValue -projectValue $projectValue)
@@ -1700,7 +1738,7 @@ function Find-PropertyGroup{
         $stopOnFirstResult
     )
     begin{
-        Add-Type -AssemblyName Microsoft.Build
+        InternalLoad-MSBuildLibrary | Out-Null
     }
     process{
         "Looking for a PropertyGroup. Label=[{0}]" -f $labelValue | Write-Verbose
@@ -1759,7 +1797,7 @@ function Remove-PropertyGroup{
         $labelValue
     )
     begin{
-        Add-Type -AssemblyName Microsoft.Build
+        InternalLoad-MSBuildLibrary | Out-Null
     }
     process{
         $pgsToRemove = (Find-PropertyGroup -project $project -labelValue $labelValue)
@@ -1802,7 +1840,7 @@ function Add-PropertyGroup{
         $condition
     )
     begin{
-        Add-Type -AssemblyName Microsoft.Build
+        InternalLoad-MSBuildLibrary | Out-Null
     }
     process{
         $pgToAdd = $project.AddPropertyGroup();
@@ -1845,7 +1883,7 @@ function Test-PropertyGroup{
         $label
     )
     begin{
-        Add-Type -AssemblyName Microsoft.Build
+        InternalLoad-MSBuildLibrary | Out-Null
     }
     process{
         $foundPg = (Find-PropertyGroup -project $project -label $label)
@@ -1888,7 +1926,7 @@ function Find-Property{
         $stopOnFirstResult
     )
     begin{
-        Add-Type -AssemblyName Microsoft.Build
+        InternalLoad-MSBuildLibrary | Out-Null
     }
     process{
         if(!($name) -and !($label)){
@@ -1963,7 +2001,7 @@ function Test-Property{
         $label
     )
     begin{
-        Add-Type -AssemblyName Microsoft.Build
+        InternalLoad-MSBuildLibrary | Out-Null
     }
     process{
         $foundProp = (Find-Property -propertyContainer $propertyContainer -name $name -label $label -stopOnFirstResult)
@@ -2015,7 +2053,7 @@ function Remove-Property{
         $label
     )
     begin{
-        Add-Type -AssemblyName Microsoft.Build
+        InternalLoad-MSBuildLibrary | Out-Null
     }
     process{
         $propsToRemove = (Find-Property -propertyContainer $propertyContainer -name $name -label $label)
@@ -2072,7 +2110,7 @@ function Add-Property{
         $condition
     )
     begin{
-        Add-Type -AssemblyName Microsoft.Build
+        InternalLoad-MSBuildLibrary | Out-Null
     }
     process{
         $propToAdd = $propertyContainer.AddProperty($name,$value)
@@ -2423,7 +2461,6 @@ else{
 # begin script portions
 #################################################################
 
-Add-Type -AssemblyName Microsoft.Build
 
 [string]$script:defaultMSBuildPath = $null
 [string]$script:VisualStudioVersion = $null
