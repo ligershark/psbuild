@@ -402,8 +402,9 @@ function ConfigureCoreBuild{
             $msbuildpkg = (Get-NuGetPackage -name 'Microsoft.Build' -version '15.1.262-preview5')
             $msrunpkg = (Get-NugetPackage -name 'Microsoft.Build.Runtime' -version '15.1.262-preview5')
 
-            $env:MSBuildPath = (Join-Path $msbuildpkg 'Microsoft.Build.15.1.262-preview5\lib\netstandard1.5\')
-            $env:DefaultMSBuildPath = (join-path $msrunpkg 'Microsoft.Build.Runtime.15.1.262-preview5\contentFiles\any\netcoreapp1.0')
+            $env:PSBuildMSBuildLibraryPath = (Join-Path $msbuildpkg 'Microsoft.Build.15.1.262-preview5\lib\netstandard1.5\Microsoft.Build.dll')
+            #$env:MSBuildPath = (Join-Path $msbuildpkg 'Microsoft.Build.15.1.262-preview5\lib\netstandard1.5\')
+            #$env:DefaultMSBuildPath = (join-path $msrunpkg 'Microsoft.Build.Runtime.15.1.262-preview5\contentFiles\any\netcoreapp1.0')
         }
         catch{
             if(-not([string]::IsNullOrWhiteSpace($tempfilepath)) -and (test-path $tempfilepath)) {
@@ -471,18 +472,20 @@ function Update-Dependencies{
         # restore the packages to that folder
         'Getting latest file-replacer' | Write-Output
         $fpPath = (Get-NuGetPackage -name 'file-replacer' -prerelease -cachePath $tempFolder -binpath)
-
-        'Getting latest nuget-powershell' | Write-Output
-        $npPath = (Get-NuGetPackage -name 'nuget-powershell' -prerelease -cachePath $tempFolder -binpath)
-
-        $cryptoPath = (Get-NugetPackage -name 'System.Security.Cryptography.Algorithms' -version '4.2.0' -binpath)
-
-        #move the files to the dest dir
         Copy-Item -path "$fpPath\*.ps*1" -Destination $destDir
         Copy-Item -path "$fpPath\*.dll" -Destination $destDir
 
+        'Getting latest nuget-powershell' | Write-Output
+        $npPath = (Get-NuGetPackage -name 'nuget-powershell' -prerelease -cachePath $tempFolder -binpath)
         Copy-Item -path "$npPath\*.ps*1" -Destination $destDir
+
+        'Getting latest System.Security.Cryptography.Primitives.dll' | Write-Output
+        $cryptoPath = (Get-NugetPackage -name 'System.Security.Cryptography.Algorithms' -version '4.2.0' -binpath)
         Copy-Item -Path "$cryptoPath\netstandard1.3\System.Security.Cryptography.Primitives.dll" -Destination $destDir
+    
+        'Getting latest Microsoft.Build.dll' | Write-Output
+        $msbuildPkgPath = (Get-NuGetPackage -name 'Microsoft.Build' -version '15.1.262-preview5' -binpath)
+        Copy-Item -Path "$msbuildPkgPath\netstandard1.5\*.dll" -Destination $destDir
     }
 }
 
