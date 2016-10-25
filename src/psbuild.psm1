@@ -263,6 +263,10 @@ function Get-MSBuild{
     process{
         $path = $script:defaultMSBuildPath
 
+        if([string]::IsNullOrWhiteSpace($path)){
+            $path = $env:MSBuildPath
+        }
+
 	    if(!$path){
             $regLocalKey = $null
 
