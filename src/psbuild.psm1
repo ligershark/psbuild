@@ -377,6 +377,7 @@ function Set-MSBuild{
         11.0
         12.0
         14.0
+        15.0
 
 .PARAMETER Configuration
     This sets the MSBuild property Configuration to the value specified. This will override any value
@@ -521,7 +522,7 @@ function Invoke-MSBuild{
         
         [Parameter(ParameterSetName='build')]
         [Parameter(ParameterSetName='debugMode')]
-        [ValidateSet('10.0','11.0','12.0','14.0')]
+        [ValidateSet('10.0','11.0','12.0','14.0','15.0')]
         [alias('vsv')]
         [string]$visualStudioVersion,
         
