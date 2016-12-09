@@ -18,3 +18,4 @@ artifacts:
   - path: OutputRoot\PSBuild\**\*.dll
   - path: OutputRoot\PSBuild\**\*.pdb
   - path: OutputRoot\**\*.nupkg
+  - path: \Users\appveyor\AppData\Local\LigerShark\PSBuild\logs\printprops.proj-log\*.log
