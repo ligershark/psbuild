@@ -3,7 +3,7 @@ os: Windows Server 2012
 environment:
   VisualStudioVersion: 12.0
   NuGetApiKey:
-    secure: HFUEQanhaxHV/sRQYznQqg7LToxSGeIoSvrmyY29PJ1eDbXxUuYrEQ6MPAsZIQFT
+    secure: QhBKodhwR4EQRcpK5Bz2p2ihQiV8WeLCAomT+mqqT8ENGPzskqf4FLWrYm9b3ety
 
 configuration: Release
 
