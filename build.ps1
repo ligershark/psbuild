@@ -226,7 +226,7 @@ function PublishNuGetPackage{
     process{
         foreach($nugetPackage in $nugetPackages){
             $pkgPath = (get-item $nugetPackage).FullName
-            $cmdArgs = @('push',$pkgPath,$nugetApiKey,'-NonInteractive')
+            $cmdArgs = @('push',$pkgPath,'ApiKey',$nugetApiKey,'Source','https://api.nuget.org/v3/index.json','-NonInteractive')
 
             'Publishing nuget package with the following args: [nuget.exe {0}]' -f ($cmdArgs -join ' ') | Write-Verbose
             &(Get-Nuget) $cmdArgs
