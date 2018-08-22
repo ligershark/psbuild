@@ -90,7 +90,7 @@ InternalOverrideSettingsFromEnv -settings $global:PSBuildSettings -prefix PSBuil
 function Get-PSBuildVersion{
     param()
     process{
-        New-Object -TypeName 'system.version' -ArgumentList '1.1.11.1'
+        New-Object -TypeName 'system.version' -ArgumentList '1.2.0.1'
     }
 }
 
@@ -335,6 +335,8 @@ function Set-MSBuild{
         11.0
         12.0
         14.0
+        15.0
+        16.0
 
 .PARAMETER Configuration
     This sets the MSBuild property Configuration to the value specified. This will override any value
@@ -479,7 +481,7 @@ function Invoke-MSBuild{
         
         [Parameter(ParameterSetName='build')]
         [Parameter(ParameterSetName='debugMode')]
-        [ValidateSet('10.0','11.0','12.0','14.0')]
+        [ValidateSet('10.0','11.0','12.0','14.0','15.0','16.0')]
         [alias('vsv')]
         [string]$visualStudioVersion,
         
