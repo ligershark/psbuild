@@ -230,6 +230,11 @@ function PublishNuGetPackage{
 
             'Publishing nuget package with the following args: [nuget.exe {0}]' -f ($cmdArgs -join ' ') | Write-Verbose
             &(Get-Nuget) $cmdArgs
+                
+            if($? -eq $false){
+                "Upload of [{0}] to appveyor failed; Failing Build..." -f $pkgPath | Write-Error
+                exit 1
+            }
         }
     }
 }
