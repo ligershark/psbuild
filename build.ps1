@@ -78,7 +78,7 @@ function Get-MSBuildExe{
 function Get-Nuget(){
     [cmdletbinding()]
     param(
-        $toolsDir = ("$env:LOCALAPPDATA\LigerShark\tools\"),
+        $toolsDir = ("$env:LOCALAPPDATA\LigerShark\tools.01\"),
 
         $nugetDownloadUrl = 'https://dist.nuget.org/win-x86-commandline/latest/nuget.exe'
     )
@@ -118,7 +118,7 @@ $script:pkgDownloaderEnabled = $false
 function Enable-PackageDownloader{
     [cmdletbinding()]
     param(
-        $toolsDir = "$env:LOCALAPPDATA\LigerShark\tools\package-downloader\v1\",
+        $toolsDir = "$env:LOCALAPPDATA\LigerShark\tools.01\package-downloader\v1\",
         $pkgDownloaderDownloadUrl = 'http://go.microsoft.com/fwlink/?LinkId=524325') # package-downloader.psm1
     process{
 
