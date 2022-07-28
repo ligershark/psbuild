@@ -2,8 +2,8 @@
 param(
     $versionToInstall = '1.2.0-beta',
     $appDataDir = ("$env:LOCALAPPDATA\LigerShark\psbuild\"),
-    $nugetDownloadUrl = 'http://nuget.org/nuget.exe',
-    $nugetSource = 'https://www.nuget.org/api/v2/'
+    $nugetDownloadUrl = 'https://dist.nuget.org/win-x86-commandline/latest/nuget.exe',
+    $nugetSource = 'https://api.nuget.org/v3/index.json'
 )
 
 function GetPsModulesPath{
@@ -90,7 +90,7 @@ function Get-Nuget{
     [cmdletbinding()]
     param(
         $toolsDir = $appDataDir,
-        $nugetDownloadUrl = 'http://nuget.org/nuget.exe'
+        $nugetDownloadUrl = 'https://dist.nuget.org/win-x86-commandline/latest/nuget.exe'
     )
     process{
         $nugetDestPath = Join-Path -Path $toolsDir -ChildPath nuget.exe
@@ -143,7 +143,7 @@ function GetPsBuildPsm1{
     [cmdletbinding()]
     param(
         $toolsDir = $appDataDir,
-        $nugetDownloadUrl = 'http://nuget.org/nuget.exe'
+        $nugetDownloadUrl = 'https://dist.nuget.org/win-x86-commandline/latest/nuget.exe'
     )
     process{
         if(!(Test-Path $toolsDir)){
