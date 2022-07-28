@@ -3,7 +3,7 @@ param(
     $versionToInstall = '1.2.0-beta',
     $appDataDir = ("$env:LOCALAPPDATA\LigerShark\psbuild\"),
     $nugetDownloadUrl = 'https://dist.nuget.org/win-x86-commandline/latest/nuget.exe',
-    $nugetSource = 'https://www.nuget.org/api/v3/'
+    $nugetSource = 'https://api.nuget.org/v3/index.json'
 )
 
 function GetPsModulesPath{
